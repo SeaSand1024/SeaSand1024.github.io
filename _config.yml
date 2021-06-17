@@ -4,7 +4,7 @@
 
 # Site
 title: Mr_Chen
-subtitle:
+subtitle: yyds
 description: 
 keywords:
 author: Gin
@@ -82,3 +82,9 @@ deploy:
   repo: git@github.com:SeaSand1024/SeaSand1024.github.io.git
   branch: master
 
+
+search:
+  path: search.xml
+  field: post
+  format: html
+  limit: 10000
