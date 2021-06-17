@@ -6,7 +6,7 @@
   <link href="http://yoursite.com/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2021-06-16T15:10:35.715Z</updated>
+  <updated>2021-06-17T10:35:20.981Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -15,6 +15,70 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>POC总结</title>
+    <link href="http://yoursite.com/2021/06/17/POC%E6%80%BB%E7%BB%93/"/>
+    <id>http://yoursite.com/2021/06/17/POC%E6%80%BB%E7%BB%93/</id>
+    <published>2021-06-17T10:35:20.000Z</published>
+    <updated>2021-06-17T10:35:20.981Z</updated>
+    
+    
+    
+    
+    
+  </entry>
+  
+  <entry>
+    <title>java实现多线程的6种方式</title>
+    <link href="http://yoursite.com/2021/06/17/java%E5%AE%9E%E7%8E%B0%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%846%E7%A7%8D%E6%96%B9%E5%BC%8F/"/>
+    <id>http://yoursite.com/2021/06/17/java%E5%AE%9E%E7%8E%B0%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%846%E7%A7%8D%E6%96%B9%E5%BC%8F/</id>
+    <published>2021-06-17T09:49:37.000Z</published>
+    <updated>2021-06-17T09:50:17.894Z</updated>
+    
+    <content type="html"><![CDATA[<p>java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。</p><p>####1.基于继承Thread类的实现</p><blockquote><pre><code>/*** @Author: Cyy* @Description: 使用继承Thread实现线程的方式* @Date:Created in 23:33 2018/7/27*/public class Thread01 extends Thread {@Override public void run() {    super.run();    System.out.println(&quot;使用继承Thread实现线程的方式。。。&quot;);    int i=0;    while (true) {        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);        try {            Thread.sleep(1000);        } catch (InterruptedException  e) {            e.printStackTrace();        }    }}public Thread01(String name){    super(name);}public static void main(String[] args) {    Thread01 thread_1=new Thread01(&quot;t1&quot;);    Thread01 thread_2=new Thread01(&quot;t2&quot;);    thread_1.start();    thread_2.start();    while (true) {            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);        try {            Thread.sleep(1000);        } catch (InterruptedException  e) {            e.printStackTrace();        }    } }}</code></pre><p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-88d736905e9966c0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p></blockquote><p>####2.基于实现Runnable接口的实现</p><blockquote><pre><code>/*** @Author: Cyy* @Description:基于实现Runnable接口的实现* @Date:Created in 23:46 2018/7/27*/public class Thread02 implements Runnable {@Overridepublic void run() {    System.out.println(&quot;使用实现Runnable实现线程的方式。。。&quot;);    while(true){            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);        try{            Thread.sleep(1000);        }catch (InterruptedException  e){            e.printStackTrace();        }    }}public static void main(String[] args) {    Thread02 thread01=new Thread02();    Thread02 thread02=new Thread02();    Thread thread1=new Thread(thread01,&quot;t1&quot;);    thread1.start();    Thread thread2=new Thread(thread02,&quot;t2&quot;);    thread2.start();    while (true) {        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);        try {            Thread.sleep(1000);        } catch (InterruptedException  e) {            e.printStackTrace();        }    }  } }</code></pre><p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-f166fcf2937e4e63.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p></blockquote><p>####3.基于内部类的实现</p><blockquote><pre><code>public class Thread00 {    public static void main(String[] args) {        //基于子类的实现        new Thread(&quot;t_t&quot;){            @Override            public void run() {                super.run();                while (true) {                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);                    try {                        Thread.sleep(1000);                    } catch (InterruptedException e) {                        e.printStackTrace();                    }                }            }        }.start();        //基于接口的实现        new Thread(new Runnable() {            @Override            public void run() {                while (true) {                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);                    try {                        Thread.sleep(1000);                    } catch (InterruptedException e) {                        e.printStackTrace();                    }                }            }        },&quot;t_r&quot;){}.start();        while (true) {                System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);            try {                Thread.sleep(1000);            } catch (InterruptedException e) {                e.printStackTrace();            }        }    }}</code></pre></blockquote><p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-4551d8c4def647f6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>另外，还有同时实现基于子类和接口的实现的情况：</p><blockquote><pre><code>/** * @Author: Cyy * @Description: 同时基于子类和内部类 * @Date:Created in 10:11 2018/7/28 */public class Thread03 {    public static void main(String args[]){        new Thread(new Runnable() {            @Override            public void run() {                while (true) {                    System.out.println(&quot;Runnable is running...&quot;);                    try {                        Thread.sleep(1000);                    } catch (InterruptedException e) {                        e.printStackTrace();                    }                }            }        }){            @Override            public void run() {//                super.run();                while (true) {                    System.out.println(&quot;sub is running...&quot;);                    try {                            Thread.sleep(1000);                    } catch (InterruptedException e) {                        e.printStackTrace();                    }                }            }        }.start();    }}</code></pre></blockquote><p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-61a1e5b9bb26d736.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>这里运行结果只有子类线程的打印，原因是虽然实现了Thread类构造办法里Runnable接口的实例，但是子类已经将父类的run方法进行重写了，所以只会执行子类的办法。</p><p>####4.基于带返回值的线程实现方式</p><blockquote><pre><code>import java.util.concurrent.Callable;import java.util.concurrent.ExecutionException;import java.util.concurrent.FutureTask;/** * @Author: Cyy * @Description: * @Date:Created in 10:35 2018/7/28 */public class Thread04 {    public static void main(String args[]) throws ExecutionException, InterruptedException {        Callable&lt;Integer&gt; call=new Callable&lt;Integer&gt;() {            @Override            public Integer call() throws Exception {                System.out.println(&quot;thread start...&quot;);                Thread.sleep(2000);                return 520;            }        };        FutureTask&lt;Integer&gt; task=new FutureTask&lt;&gt;(call);        Thread t=new Thread(task);        t.start();        System.out.println(&quot;线程的执行结果 &quot;+task.get());    }}</code></pre></blockquote><p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-13077b7fb6481123.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p><p>####5.基于线程池的方式。</p><blockquote><pre><code>import java.util.concurrent.Executor;import java.util.concurrent.ExecutorService;import java.util.concurrent.Executors;/** * @Author: Cyy * @Description: * @Date:Created in 13:02 2018/7/28 */public class Thread05 {    public static void main(String[] args) {        ExecutorService threadPool= Executors.newFixedThreadPool(5);        while (true) {            threadPool.execute(new Runnable() {                @Override                public void run() {                    System.out.println(Thread.currentThread().getName() + &quot; is running...&quot;);                    try {                        Thread.sleep(1000);                    } catch (InterruptedException e) {                        e.printStackTrace();                    }                }            });        }    }}</code></pre></blockquote><p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-2133e7d7e0cd6a0e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p><ul><li>可以基于ExecutorService、Callable、Future实现有返回结果的多线程。</li></ul><blockquote><pre><code>import java.util.ArrayList;import java.util.Date;import java.util.List;import java.util.concurrent.*;/** * @Author: Cyy * @Description: * @Date:Created in 13:16 2018/7/28 */public class Thread06 {    public static void main(String[] args) throws ExecutionException, InterruptedException {        System.out.println(&quot;----程序开始运行-----&quot;);        Date date1=new Date();        int taskSize=5;        ExecutorService threadPool= Executors.newFixedThreadPool(taskSize);        List&lt;Future&gt; list=new ArrayList&lt;Future&gt;();        for (int i=0;i&lt;taskSize;i++) {            Callable c=new Callable() {                @Override                public Object call() throws Exception {                    Date dateTmp1 = new Date();                    Thread.sleep(2000);                    Date dateTmp2 = new Date();                    long time = dateTmp2.getTime() - dateTmp1.getTime();                    return time;                }            };            Future f = threadPool.submit(c);            list.add(f);        }        threadPool.shutdown();        for (Future f : list) {            System.out.println(&quot;&gt;&gt;&gt;&quot;+f.get().toString());        }        Date date2=new Date();        System.out.println(&quot;-----程序结束运行-----，程序运行时间【&quot;+(date2.getTime()-date1.getTime())+&quot;毫秒】&quot;);    }}</code></pre></blockquote><p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-77c92e58f3e72d7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p><p>####6.基于定时任务实现的多线程</p><blockquote><pre><code>import java.text.ParseException;import java.text.SimpleDateFormat;import java.util.Date;import java.util.Timer;import java.util.TimerTask;/** * @Author: Cyy * @Description: * @Date:Created in 16:43 2018/7/28 */public class Thread07 {    private static final SimpleDateFormat format=new SimpleDateFormat(&quot;yyyy-MM-dd hh:mm:ss&quot;);    //定时任务    public static void timeLapse() throws ParseException {        new Timer().schedule(new TimerTask() {            @Override            public void run() {                System.out.println(&quot;定时任务开始执行。。。。。&quot;);            }        },format.parse(&quot;2018-07-28 16:51:00&quot;));    }    public static void timeLapseBySomeTimes(){        new Timer().schedule(new TimerTask() {            @Override            public void run() {                System.out.println(Thread.currentThread().getName()+&quot; is Running...&quot;);            }        },new Date(),1000);    }    public static void main(String[] args) throws ParseException {//        timeLapse();        timeLapseBySomeTimes();        timeLapseBySomeTimes();        while (true) {            System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);            try {                Thread.sleep(1000);            } catch (InterruptedException e) {                e.printStackTrace();            }        }    }}</code></pre></blockquote><p>运行结果：</p><p><img src="https://upload-images.jianshu.io/upload_images/10224563-a872cc0e4d4c4047.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时</summary>
+      
+    
+    
+    
+    <category term="后端" scheme="http://yoursite.com/categories/后端/"/>
+    
+    
+    <category term="java" scheme="http://yoursite.com/tags/java/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>hive跨集群迁移表</title>
+    <link href="http://yoursite.com/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/"/>
+    <id>http://yoursite.com/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/</id>
+    <published>2021-06-17T09:29:38.000Z</published>
+    <updated>2021-06-17T09:41:02.984Z</updated>
+    
+    <content type="html"><![CDATA[<p>1.export table xxx to ‘/tmp/xxxx’;</p><p>2.hadoop fs - get /tmp/xxx /tmp/xxx</p><p>3.scp文件。。。</p><p>4.zip -r /tmp/xxxx.zip /tmp/xxx</p><p>5.unzip xxx.zip /tmp/</p><p>6.hadoop fs -put /tmp/xxxx /tmp/xxxx</p><p>7.import table xxx from ‘/tmp/xxx’__</p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;1.export table xxx to ‘/tmp/xxxx’;&lt;/p&gt;
+&lt;p&gt;2.hadoop fs - get /tmp/xxx /tmp/xxx&lt;/p&gt;
+&lt;p&gt;3.scp文件。。。&lt;/p&gt;
+&lt;p&gt;4.zip -r /tmp/xxxx.zip /tmp/xxx&lt;/p</summary>
+      
+    
+    
+    
+    <category term="数据开发" scheme="http://yoursite.com/categories/数据开发/"/>
+    
+    
+    <category term="hive" scheme="http://yoursite.com/tags/hive/"/>
+    
+  </entry>
   
   <entry>
     <title>Hello World</title>
