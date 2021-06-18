@@ -88,16 +88,16 @@
 
 
 
-<meta name="description" content="不要轻易表达爱意，万一对方无法给予">
+<meta name="description" content="因上努力，果上随缘">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Mr_Chen">
 <meta property="og:url" content="https://seasand1024.github.io/index.html">
 <meta property="og:site_name" content="Mr_Chen">
-<meta property="og:description" content="不要轻易表达爱意，万一对方无法给予">
+<meta property="og:description" content="因上努力，果上随缘">
 <meta property="og:locale" content="zh-Hans">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Mr_Chen">
-<meta name="twitter:description" content="不要轻易表达爱意，万一对方无法给予">
+<meta name="twitter:description" content="因上努力，果上随缘">
 
 
 
@@ -235,16 +235,6 @@
               <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
             
             归档
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-love">
-          <a href="/love/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-heart-o"></i> <br>
-            
-            love
           </a>
         </li>
       
@@ -1058,60 +1048,60 @@
         
           
             <p><strong>前言</strong>：Mysql索引的底层实现原理包括数据结构和不同的mysql引擎下索引的实现方式会在另一篇文章中详细描写，这里主要讨论的是具体优化策略体现。</p>
-<p>####1. 导入<br>这里的数据库示例用mysql的官方数据库<a href="https://dev.mysql.com/doc/employee/en/employees-installation.html" target="_blank" rel="noopener">employees</a>做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-45e4cc03129ed99b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>####1. 导入<br>这里的数据库示例用mysql的官方数据库<a href="https://dev.mysql.com/doc/employee/en/employees-installation.html" target="_blank" rel="noopener">employees</a>做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下：<br><img src="../../../../images/post-images/10224563-45e4cc03129ed99b.png" alt="image.png"></p>
 <p>####2. 最左前缀原理和相关优化</p>
 <ul>
 <li>首先可以查看employees数据库titles都有哪些索引<blockquote>
-<p>SHOW INDEX FROM employees.titles;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-cc44fd8c9f7b2653.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>SHOW INDEX FROM employees.titles;<br><img src="../../../../images/post-images/10224563-cc44fd8c9f7b2653.png" alt="image.png"></p>
 </blockquote>
 </li>
 <li>进行全列匹配的索引优化</li>
 </ul>
 <blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND title=’Senior Engineer’ AND from_date=’1986-06-26’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-4504c92892def3aa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND title=’Senior Engineer’ AND from_date=’1986-06-26’;<br><img src="../../../../images/post-images/10224563-4504c92892def3aa.png" alt="image.png"></p>
 </blockquote>
 <p>很明显，当按照索引中所有列进行精确匹配（这里精确匹配指“=”或“IN”匹配）时，索引可以被用到。这里有一点需要注意，理论上索引对顺序是敏感的，但是由于MySQL的查询优化器会自动调整where子句的条件顺序以使用适合的索引，例如我们将where中的条件顺序颠倒：</p>
 <blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE from_date=’1986-06-26’ AND emp_no=’10001’ AND title=’Senior Engineer’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-d020984801980a97.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE from_date=’1986-06-26’ AND emp_no=’10001’ AND title=’Senior Engineer’;<br><img src="../../../../images/post-images/10224563-d020984801980a97.png" alt="image.png"></p>
 </blockquote>
 <p>结果是一样的。</p>
 <ul>
 <li>最左前缀匹配</li>
 </ul>
 <blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-d1734f04eb662bd4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’;<br><img src="../../../../images/post-images/10224563-d1734f04eb662bd4.png" alt="image.png"></p>
 </blockquote>
 <p>当查询条件精确匹配索引的左边连续一个或几个列时，如&lt;emp_no&gt;或&lt;emp_no, title&gt;，所以可以被用到，但是只能用到一部分，即条件所组成的最左前缀。上面的查询从分析结果看用到了PRIMARY索引，但是key_len为4，说明只用到了索引的第一列前缀。</p>
 <ul>
 <li>查询条件用到了索引中列的精确匹配，但是中间某个条件未提供。<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND from_date=’1986-06-26’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-9c77d2a698d41dc7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND from_date=’1986-06-26’;<br><img src="../../../../images/post-images/10224563-9c77d2a698d41dc7.png" alt="image.png"></p>
 </blockquote>
 </li>
 </ul>
 <p>此时索引使用情况和情况二相同，因为title未提供，所以查询只用到了索引的第一列，而后面的from_date虽然也在索引中，但是由于title不存在而无法和左前缀连接，因此需要对结果进行扫描过滤from_date（这里由于emp_no唯一，所以不存在扫描）。如果想让from_date也使用索引而不是where过滤，可以增加一个辅助索引&lt;emp_no, from_date&gt;，此时上面的查询会使用这个索引。除此之外，还可以使用一种称之为“隔离列”的优化方法，将emp_no与from_date之间的“坑”填上。</p>
 <p>查看下title一共有几种不同的值：</p>
 <blockquote>
-<p>SELECT DISTINCT(title) FROM employees.titles;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-37d8a8fd146786bb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>SELECT DISTINCT(title) FROM employees.titles;<br><img src="../../../../images/post-images/10224563-37d8a8fd146786bb.png" alt="image.png"></p>
 </blockquote>
 <p>在这种成为“坑”的列值比较少的情况下，可以考虑用“IN”来填补这个“坑”从而形成最左前缀：</p>
 <blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no=’10001’<br>AND title IN (‘Senior Engineer’, ‘Staff’, ‘Engineer’, ‘Senior Staff’, ‘Assistant Engineer’, ‘Technique Leader’, ‘Manager’)<br>AND from_date=’1986-06-26’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-d4ca4d8f0d64a15d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no=’10001’<br>AND title IN (‘Senior Engineer’, ‘Staff’, ‘Engineer’, ‘Senior Staff’, ‘Assistant Engineer’, ‘Technique Leader’, ‘Manager’)<br>AND from_date=’1986-06-26’;<br><img src="../../../../images/post-images/10224563-d4ca4d8f0d64a15d.png" alt="image.png"></p>
 </blockquote>
 <p>这次key_len为59，说明索引被用全了，但是从type和rows看出IN实际上执行了一个range查询，这里检查了7个key。看下两种查询的性能比较：</p>
 <blockquote>
-<p>SHOW PROFILES(这句话的开启具体见<a href="https://www.cnblogs.com/binyue/p/4645278.html" target="_blank" rel="noopener">这里</a>);<br><img src="https://upload-images.jianshu.io/upload_images/10224563-5410d96ad7176623.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>SHOW PROFILES(这句话的开启具体见<a href="https://www.cnblogs.com/binyue/p/4645278.html" target="_blank" rel="noopener">这里</a>);<br><img src="../../../../images/post-images/10224563-5410d96ad7176623.png" alt="image.png"></p>
 </blockquote>
 <p>“填坑”后性能提升了一点。如果经过emp_no筛选后余下很多数据，则后者性能优势会更加明显。当然，如果title的值很多，用填坑就不合适了，必须建立辅助索引。</p>
 <ul>
 <li>查询条件没有指定索引第一列。<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE from_date=’1986-06-26’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-21746f17ceb280d2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE from_date=’1986-06-26’;<br><img src="../../../../images/post-images/10224563-21746f17ceb280d2.png" alt="image.png"></p>
 </blockquote>
 </li>
 </ul>
 <p>由于不是最左前缀，索引这样的查询显然用不到索引。</p>
 <ul>
 <li>匹配某列的前缀字符串。<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND title LIKE ‘Senior%’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-401134b8f07c46e9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND title LIKE ‘Senior%’;<br><img src="../../../../images/post-images/10224563-401134b8f07c46e9.png" alt="image.png"></p>
 </blockquote>
 </li>
 </ul>
@@ -1120,63 +1110,63 @@
 <li>范围查询。</li>
 </ul>
 <blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no &lt; ‘10010’ and title=’Senior Engineer’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-b64a39145ac12926.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no &lt; ‘10010’ and title=’Senior Engineer’;<br><img src="../../../../images/post-images/10224563-b64a39145ac12926.png" alt="image.png"></p>
 </blockquote>
 <p>范围列可以用到索引（必须是最左前缀），但是范围列后面的列无法用到索引。同时，索引最多用于一个范围列，因此如果查询条件中有两个范围列则无法全用到索引。</p>
 <blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no &lt; ‘10010’<br>AND title=’Senior Engineer’<br>AND from_date BETWEEN ‘1986-01-01’ AND ‘1986-12-31’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-50d9787670fd9f67.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no &lt; ‘10010’<br>AND title=’Senior Engineer’<br>AND from_date BETWEEN ‘1986-01-01’ AND ‘1986-12-31’;<br><img src="../../../../images/post-images/10224563-50d9787670fd9f67.png" alt="image.png"></p>
 </blockquote>
 <p>可以看到索引对第二个范围索引无能为力。这里特别要说明MySQL一个有意思的地方，那就是仅用explain可能无法区分范围索引和多值匹配，因为在type中这两者都显示为range。同时，用了“between”并不意味着就是范围查询，例如下面的查询：</p>
 <blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no BETWEEN ‘10001’ AND ‘10010’<br>AND title=’Senior Engineer’<br>AND from_date BETWEEN ‘1986-01-01’ AND ‘1986-12-31’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-28294aabdcd0ebcd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no BETWEEN ‘10001’ AND ‘10010’<br>AND title=’Senior Engineer’<br>AND from_date BETWEEN ‘1986-01-01’ AND ‘1986-12-31’;<br><img src="../../../../images/post-images/10224563-28294aabdcd0ebcd.png" alt="image.png"></p>
 </blockquote>
 <p>看起来是用了两个范围查询，但作用于emp_no上的“BETWEEN”实际上相当于“IN”，也就是说emp_no实际是多值精确匹配。可以看到这个查询用到了索引全部三个列。因此在MySQL中要谨慎地区分多值匹配和范围匹配，否则会对MySQL的行为产生困惑。</p>
 <ul>
 <li>查询条件中含有函数或表达式。</li>
 </ul>
 <blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND left(title, 6)=’Senior’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-d0a27360c122966f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND left(title, 6)=’Senior’;<br><img src="../../../../images/post-images/10224563-d0a27360c122966f.png" alt="image.png"></p>
 </blockquote>
 <p>虽然这个查询和情况五中功能相同，但是由于使用了函数left，则无法为title列应用索引，而情况五中用LIKE则可以。再如：</p>
 <blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no - 1=’10000’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-241d6ebae51777f1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no - 1=’10000’;<br><img src="../../../../images/post-images/10224563-241d6ebae51777f1.png" alt="image.png"></p>
 </blockquote>
 <p>显然这个查询等价于查询emp_no为10001的函数，但是由于查询条件是一个表达式，MySQL无法为其使用索引。看来MySQL还没有智能到自动优化常量表达式的程度，因此在写查询语句时尽量避免表达式出现在查询中，而是先手工私下代数运算，转换为无表达式的查询语句。</p>
 <p>####3.如何选择索引和使用前缀索引<br>&nbsp;&nbsp;&nbsp;&nbsp;如何建立索引可以根据一条公式决定：</p>
 <blockquote>
-<p>######Index Selectivity = Cardinality / #T<br>其中Selectivity是索引的选择性指数，显然范围在（0,1]之间，Cardinality是指不重复的数据，也叫基数，#T是表的记录数，选择性指数越高建立索引的价值就越高（由B+Tree的性质决定的）；可以验证上面employees.titles表的title字段选择性指数数值：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-e9090f77202275e6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>######Index Selectivity = Cardinality / #T<br>其中Selectivity是索引的选择性指数，显然范围在（0,1]之间，Cardinality是指不重复的数据，也叫基数，#T是表的记录数，选择性指数越高建立索引的价值就越高（由B+Tree的性质决定的）；可以验证上面employees.titles表的title字段选择性指数数值：<br><img src="../../../../images/post-images/10224563-e9090f77202275e6.png" alt="image.png"></p>
 </blockquote>
-<p>title的选择性不足0.0001（精确值为0.00001579），所以实在没有什么必要为其单独建索引。<br>可以多试几个数据，比如employees.salaries表的salary字段：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-b7b0ab46eca3cfb4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>title的选择性不足0.0001（精确值为0.00001579），所以实在没有什么必要为其单独建索引。<br>可以多试几个数据，比如employees.salaries表的salary字段：<br><img src="../../../../images/post-images/10224563-b7b0ab46eca3cfb4.png" alt="image.png"></p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;有一种与索引选择性有关的索引优化策略叫做前缀索引，就是用列的前缀代替整个列作为索引key，当前缀长度合适时，可以做到既使得前缀索引的选择性接近全列索引，同时因为索引key变短而减少了索引文件的大小和维护开销。下面以employees.employees表为例介绍前缀索引的选择和使用。</p>
 <p>查询employees表的索引可得：</p>
 <blockquote>
-<p>SHOW INDEX FROM employees.employees;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-347586f49822bb49.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>SHOW INDEX FROM employees.employees;<br><img src="../../../../images/post-images/10224563-347586f49822bb49.png" alt="image.png"></p>
 </blockquote>
 <p>只有主键emp_no一个索引，搜索人名比较麻烦,做全表扫描:</p>
 <blockquote>
-<p>EXPLAIN SELECT * FROM employees.employees WHERE first_name=’Eric’ AND last_name=’Anido’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-558df6c160859f5a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>EXPLAIN SELECT * FROM employees.employees WHERE first_name=’Eric’ AND last_name=’Anido’;<br><img src="../../../../images/post-images/10224563-558df6c160859f5a.png" alt="image.png"></p>
 </blockquote>
 <p>如果频繁按名字搜索员工，这样显然效率很低，因此我们可以考虑建索引。有两种选择，建&lt;first_name&gt;或&lt;first_name, last_name&gt;，看下两个索引的选择性：</p>
 <blockquote>
-<p>SELECT count(DISTINCT(first_name))/count(*) AS Selectivity FROM employees.employees;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-fb24654acc406d52.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>SELECT count(DISTINCT(first_name))/count(*) AS Selectivity FROM employees.employees;<br><img src="../../../../images/post-images/10224563-fb24654acc406d52.png" alt="image.png"></p>
 </blockquote>
 <blockquote>
-<p>SELECT count(DISTINCT(concat(first_name, last_name)))/count(*) AS Selectivity FROM employees.employees;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-933b3da0cc778bd9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>SELECT count(DISTINCT(concat(first_name, last_name)))/count(*) AS Selectivity FROM employees.employees;<br><img src="../../../../images/post-images/10224563-933b3da0cc778bd9.png" alt="image.png"></p>
 </blockquote>
 <p>&lt;first_name, last_name&gt;选择性很好，但是first_name和last_name加起来长度为30,可以考虑用first_name和last_name的前几个字符建立索引，例如&lt;first_name, left(last_name, 3)&gt;，看看其选择性：</p>
 <blockquote>
-<p>SELECT count(DISTINCT(concat(first_name, left(last_name, 3))))/count(*) AS Selectivity FROM employees.employees;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-e2c12045fd8fd094.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>SELECT count(DISTINCT(concat(first_name, left(last_name, 3))))/count(*) AS Selectivity FROM employees.employees;<br><img src="../../../../images/post-images/10224563-e2c12045fd8fd094.png" alt="image.png"></p>
 </blockquote>
 <p>可以尝试把last_name前缀加到4：</p>
 <blockquote>
-<p>SELECT count(DISTINCT(concat(first_name, left(last_name, 4))))/count(*) AS Selectivity FROM employees.employees;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-92a51386d3355253.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>SELECT count(DISTINCT(concat(first_name, left(last_name, 4))))/count(*) AS Selectivity FROM employees.employees;<br><img src="../../../../images/post-images/10224563-92a51386d3355253.png" alt="image.png"></p>
 </blockquote>
 <p>这时选择性已经很理想了，而这个索引的长度只有18，比&lt;first_name, last_name&gt;短了接近一半，我们把这个前缀索引 建上：</p>
 <blockquote>
-<p>ALTER TABLE employees.employees<br>ADD INDEX `first_name_last_name4` (first_name, last_name(4));<br><img src="https://upload-images.jianshu.io/upload_images/10224563-0aed7b6b0101e3d1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>ALTER TABLE employees.employees<br>ADD INDEX `first_name_last_name4` (first_name, last_name(4));<br><img src="../../../../images/post-images/10224563-0aed7b6b0101e3d1.png" alt="image.png"></p>
 </blockquote>
 <blockquote>
-<p>SHOW PROFILES;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-229aa6a225ecdd9c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>SHOW PROFILES;<br><img src="../../../../images/post-images/10224563-229aa6a225ecdd9c.png" alt="image.png"></p>
 </blockquote>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;前缀索引兼顾索引大小和查询速度，但是其缺点是不能用于ORDER BY和GROUP BY操作，也不能用于Covering index（即当索引本身包含查询所需全部数据时，不再访问数据文件本身）。</p>
 
@@ -1332,7 +1322,7 @@
 <p>#####修改表结构的方式创建索引：<br>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
 <p>#####或者也可以创建表的时候指明：<br>    CREATE TABLE sys_user(<br>    id INT NOT NULL primary key,<br>    account VARCHAR(16) NOT NULL,<br>    password VARCHAR(32) NOT NULL,<br>    INDEX ac (account (16))<br>    );  </p>
 <p>#####删除索引的语法：<br>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
-<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-2af9d972939f6a7a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
 
           
         
@@ -2659,7 +2649,7 @@ public void demo02(){
               <img class="site-author-image" itemprop="image" src="/images/head.gif" alt="Gin">
             
               <p class="site-author-name" itemprop="name">Gin</p>
-              <p class="site-description motion-element" itemprop="description">不要轻易表达爱意，万一对方无法给予</p>
+              <p class="site-description motion-element" itemprop="description">因上努力，果上随缘</p>
           </div>
 
           <nav class="site-state motion-element">
@@ -2755,7 +2745,7 @@ public void demo02(){
           
 
           <div id="music163player">
-<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="//music.163.com/outchain/player?type=2&id=516657051&auto=1&height=66"></iframe>
+<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="//music.163.com/outchain/player?type=2&id=1295212153&auto=1&height=66"></iframe>
 </div>
         </div>
       </section>

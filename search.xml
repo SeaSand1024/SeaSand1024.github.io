@@ -107,140 +107,6 @@ cd ui/angular
       </tags>
   </entry>
   <entry>
-    <title>Mysql 索引的具体优化策略</title>
-    <url>/2021/06/17/Mysql-%E7%B4%A2%E5%BC%95%E7%9A%84%E5%85%B7%E4%BD%93%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/</url>
-    <content><![CDATA[<p><strong>前言</strong>：Mysql索引的底层实现原理包括数据结构和不同的mysql引擎下索引的实现方式会在另一篇文章中详细描写，这里主要讨论的是具体优化策略体现。</p>
-<p>####1. 导入<br>这里的数据库示例用mysql的官方数据库<a href="https://dev.mysql.com/doc/employee/en/employees-installation.html" target="_blank" rel="noopener">employees</a>做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-45e4cc03129ed99b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>####2. 最左前缀原理和相关优化</p>
-<ul>
-<li>首先可以查看employees数据库titles都有哪些索引<blockquote>
-<p>SHOW INDEX FROM employees.titles;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-cc44fd8c9f7b2653.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-</li>
-<li>进行全列匹配的索引优化</li>
-</ul>
-<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND title=’Senior Engineer’ AND from_date=’1986-06-26’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-4504c92892def3aa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>很明显，当按照索引中所有列进行精确匹配（这里精确匹配指“=”或“IN”匹配）时，索引可以被用到。这里有一点需要注意，理论上索引对顺序是敏感的，但是由于MySQL的查询优化器会自动调整where子句的条件顺序以使用适合的索引，例如我们将where中的条件顺序颠倒：</p>
-<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE from_date=’1986-06-26’ AND emp_no=’10001’ AND title=’Senior Engineer’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-d020984801980a97.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>结果是一样的。</p>
-<ul>
-<li>最左前缀匹配</li>
-</ul>
-<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-d1734f04eb662bd4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>当查询条件精确匹配索引的左边连续一个或几个列时，如&lt;emp_no&gt;或&lt;emp_no, title&gt;，所以可以被用到，但是只能用到一部分，即条件所组成的最左前缀。上面的查询从分析结果看用到了PRIMARY索引，但是key_len为4，说明只用到了索引的第一列前缀。</p>
-<ul>
-<li>查询条件用到了索引中列的精确匹配，但是中间某个条件未提供。<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND from_date=’1986-06-26’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-9c77d2a698d41dc7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-</li>
-</ul>
-<p>此时索引使用情况和情况二相同，因为title未提供，所以查询只用到了索引的第一列，而后面的from_date虽然也在索引中，但是由于title不存在而无法和左前缀连接，因此需要对结果进行扫描过滤from_date（这里由于emp_no唯一，所以不存在扫描）。如果想让from_date也使用索引而不是where过滤，可以增加一个辅助索引&lt;emp_no, from_date&gt;，此时上面的查询会使用这个索引。除此之外，还可以使用一种称之为“隔离列”的优化方法，将emp_no与from_date之间的“坑”填上。</p>
-<p>查看下title一共有几种不同的值：</p>
-<blockquote>
-<p>SELECT DISTINCT(title) FROM employees.titles;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-37d8a8fd146786bb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>在这种成为“坑”的列值比较少的情况下，可以考虑用“IN”来填补这个“坑”从而形成最左前缀：</p>
-<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no=’10001’<br>AND title IN (‘Senior Engineer’, ‘Staff’, ‘Engineer’, ‘Senior Staff’, ‘Assistant Engineer’, ‘Technique Leader’, ‘Manager’)<br>AND from_date=’1986-06-26’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-d4ca4d8f0d64a15d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>这次key_len为59，说明索引被用全了，但是从type和rows看出IN实际上执行了一个range查询，这里检查了7个key。看下两种查询的性能比较：</p>
-<blockquote>
-<p>SHOW PROFILES(这句话的开启具体见<a href="https://www.cnblogs.com/binyue/p/4645278.html" target="_blank" rel="noopener">这里</a>);<br><img src="https://upload-images.jianshu.io/upload_images/10224563-5410d96ad7176623.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>“填坑”后性能提升了一点。如果经过emp_no筛选后余下很多数据，则后者性能优势会更加明显。当然，如果title的值很多，用填坑就不合适了，必须建立辅助索引。</p>
-<ul>
-<li>查询条件没有指定索引第一列。<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE from_date=’1986-06-26’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-21746f17ceb280d2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-</li>
-</ul>
-<p>由于不是最左前缀，索引这样的查询显然用不到索引。</p>
-<ul>
-<li>匹配某列的前缀字符串。<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND title LIKE ‘Senior%’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-401134b8f07c46e9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-</li>
-</ul>
-<p>此时可以用到索引，如果通配符%不出现在开头，则可以用到索引，但根据具体情况不同可能只会用其中一个前缀。</p>
-<ul>
-<li>范围查询。</li>
-</ul>
-<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no &lt; ‘10010’ and title=’Senior Engineer’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-b64a39145ac12926.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>范围列可以用到索引（必须是最左前缀），但是范围列后面的列无法用到索引。同时，索引最多用于一个范围列，因此如果查询条件中有两个范围列则无法全用到索引。</p>
-<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no &lt; ‘10010’<br>AND title=’Senior Engineer’<br>AND from_date BETWEEN ‘1986-01-01’ AND ‘1986-12-31’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-50d9787670fd9f67.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>可以看到索引对第二个范围索引无能为力。这里特别要说明MySQL一个有意思的地方，那就是仅用explain可能无法区分范围索引和多值匹配，因为在type中这两者都显示为range。同时，用了“between”并不意味着就是范围查询，例如下面的查询：</p>
-<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no BETWEEN ‘10001’ AND ‘10010’<br>AND title=’Senior Engineer’<br>AND from_date BETWEEN ‘1986-01-01’ AND ‘1986-12-31’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-28294aabdcd0ebcd.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>看起来是用了两个范围查询，但作用于emp_no上的“BETWEEN”实际上相当于“IN”，也就是说emp_no实际是多值精确匹配。可以看到这个查询用到了索引全部三个列。因此在MySQL中要谨慎地区分多值匹配和范围匹配，否则会对MySQL的行为产生困惑。</p>
-<ul>
-<li>查询条件中含有函数或表达式。</li>
-</ul>
-<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND left(title, 6)=’Senior’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-d0a27360c122966f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>虽然这个查询和情况五中功能相同，但是由于使用了函数left，则无法为title列应用索引，而情况五中用LIKE则可以。再如：</p>
-<blockquote>
-<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no - 1=’10000’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-241d6ebae51777f1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>显然这个查询等价于查询emp_no为10001的函数，但是由于查询条件是一个表达式，MySQL无法为其使用索引。看来MySQL还没有智能到自动优化常量表达式的程度，因此在写查询语句时尽量避免表达式出现在查询中，而是先手工私下代数运算，转换为无表达式的查询语句。</p>
-<p>####3.如何选择索引和使用前缀索引<br>&nbsp;&nbsp;&nbsp;&nbsp;如何建立索引可以根据一条公式决定：</p>
-<blockquote>
-<p>######Index Selectivity = Cardinality / #T<br>其中Selectivity是索引的选择性指数，显然范围在（0,1]之间，Cardinality是指不重复的数据，也叫基数，#T是表的记录数，选择性指数越高建立索引的价值就越高（由B+Tree的性质决定的）；可以验证上面employees.titles表的title字段选择性指数数值：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-e9090f77202275e6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>title的选择性不足0.0001（精确值为0.00001579），所以实在没有什么必要为其单独建索引。<br>可以多试几个数据，比如employees.salaries表的salary字段：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-b7b0ab46eca3cfb4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;有一种与索引选择性有关的索引优化策略叫做前缀索引，就是用列的前缀代替整个列作为索引key，当前缀长度合适时，可以做到既使得前缀索引的选择性接近全列索引，同时因为索引key变短而减少了索引文件的大小和维护开销。下面以employees.employees表为例介绍前缀索引的选择和使用。</p>
-<p>查询employees表的索引可得：</p>
-<blockquote>
-<p>SHOW INDEX FROM employees.employees;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-347586f49822bb49.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>只有主键emp_no一个索引，搜索人名比较麻烦,做全表扫描:</p>
-<blockquote>
-<p>EXPLAIN SELECT * FROM employees.employees WHERE first_name=’Eric’ AND last_name=’Anido’;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-558df6c160859f5a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>如果频繁按名字搜索员工，这样显然效率很低，因此我们可以考虑建索引。有两种选择，建&lt;first_name&gt;或&lt;first_name, last_name&gt;，看下两个索引的选择性：</p>
-<blockquote>
-<p>SELECT count(DISTINCT(first_name))/count(*) AS Selectivity FROM employees.employees;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-fb24654acc406d52.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<blockquote>
-<p>SELECT count(DISTINCT(concat(first_name, last_name)))/count(*) AS Selectivity FROM employees.employees;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-933b3da0cc778bd9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>&lt;first_name, last_name&gt;选择性很好，但是first_name和last_name加起来长度为30,可以考虑用first_name和last_name的前几个字符建立索引，例如&lt;first_name, left(last_name, 3)&gt;，看看其选择性：</p>
-<blockquote>
-<p>SELECT count(DISTINCT(concat(first_name, left(last_name, 3))))/count(*) AS Selectivity FROM employees.employees;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-e2c12045fd8fd094.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>可以尝试把last_name前缀加到4：</p>
-<blockquote>
-<p>SELECT count(DISTINCT(concat(first_name, left(last_name, 4))))/count(*) AS Selectivity FROM employees.employees;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-92a51386d3355253.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>这时选择性已经很理想了，而这个索引的长度只有18，比&lt;first_name, last_name&gt;短了接近一半，我们把这个前缀索引 建上：</p>
-<blockquote>
-<p>ALTER TABLE employees.employees<br>ADD INDEX `first_name_last_name4` (first_name, last_name(4));<br><img src="https://upload-images.jianshu.io/upload_images/10224563-0aed7b6b0101e3d1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<blockquote>
-<p>SHOW PROFILES;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-229aa6a225ecdd9c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-</blockquote>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;前缀索引兼顾索引大小和查询速度，但是其缺点是不能用于ORDER BY和GROUP BY操作，也不能用于Covering index（即当索引本身包含查询所需全部数据时，不再访问数据文件本身）。</p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-        <tag>索引</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Mysql之索引的基本概念语法</title>
     <url>/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</url>
     <content><![CDATA[<p>####1.Mysql中索引的概念<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
@@ -250,7 +116,7 @@ cd ui/angular
 <p>#####修改表结构的方式创建索引：<br>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
 <p>#####或者也可以创建表的时候指明：<br>    CREATE TABLE sys_user(<br>    id INT NOT NULL primary key,<br>    account VARCHAR(16) NOT NULL,<br>    password VARCHAR(32) NOT NULL,<br>    INDEX ac (account (16))<br>    );  </p>
 <p>#####删除索引的语法：<br>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
-<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="https://upload-images.jianshu.io/upload_images/10224563-2af9d972939f6a7a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
 ]]></content>
       <categories>
         <category>后端</category>
@@ -261,37 +127,137 @@ cd ui/angular
       </tags>
   </entry>
   <entry>
-    <title>flink 理解</title>
-    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
-    <content><![CDATA[<p>统一的批处理与流处理系统</p>
-<p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
-<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
+    <title>Mysql 索引的具体优化策略</title>
+    <url>/2021/06/17/Mysql-%E7%B4%A2%E5%BC%95%E7%9A%84%E5%85%B7%E4%BD%93%E4%BC%98%E5%8C%96%E7%AD%96%E7%95%A5/</url>
+    <content><![CDATA[<p><strong>前言</strong>：Mysql索引的底层实现原理包括数据结构和不同的mysql引擎下索引的实现方式会在另一篇文章中详细描写，这里主要讨论的是具体优化策略体现。</p>
+<p>####1. 导入<br>这里的数据库示例用mysql的官方数据库<a href="https://dev.mysql.com/doc/employee/en/employees-installation.html" target="_blank" rel="noopener">employees</a>做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下：<br><img src="../../../../images/post-images/10224563-45e4cc03129ed99b.png" alt="image.png"></p>
+<p>####2. 最左前缀原理和相关优化</p>
+<ul>
+<li>首先可以查看employees数据库titles都有哪些索引<blockquote>
+<p>SHOW INDEX FROM employees.titles;<br><img src="../../../../images/post-images/10224563-cc44fd8c9f7b2653.png" alt="image.png"></p>
+</blockquote>
+</li>
+<li>进行全列匹配的索引优化</li>
+</ul>
+<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND title=’Senior Engineer’ AND from_date=’1986-06-26’;<br><img src="../../../../images/post-images/10224563-4504c92892def3aa.png" alt="image.png"></p>
+</blockquote>
+<p>很明显，当按照索引中所有列进行精确匹配（这里精确匹配指“=”或“IN”匹配）时，索引可以被用到。这里有一点需要注意，理论上索引对顺序是敏感的，但是由于MySQL的查询优化器会自动调整where子句的条件顺序以使用适合的索引，例如我们将where中的条件顺序颠倒：</p>
+<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE from_date=’1986-06-26’ AND emp_no=’10001’ AND title=’Senior Engineer’;<br><img src="../../../../images/post-images/10224563-d020984801980a97.png" alt="image.png"></p>
+</blockquote>
+<p>结果是一样的。</p>
+<ul>
+<li>最左前缀匹配</li>
+</ul>
+<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’;<br><img src="../../../../images/post-images/10224563-d1734f04eb662bd4.png" alt="image.png"></p>
+</blockquote>
+<p>当查询条件精确匹配索引的左边连续一个或几个列时，如&lt;emp_no&gt;或&lt;emp_no, title&gt;，所以可以被用到，但是只能用到一部分，即条件所组成的最左前缀。上面的查询从分析结果看用到了PRIMARY索引，但是key_len为4，说明只用到了索引的第一列前缀。</p>
+<ul>
+<li>查询条件用到了索引中列的精确匹配，但是中间某个条件未提供。<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND from_date=’1986-06-26’;<br><img src="../../../../images/post-images/10224563-9c77d2a698d41dc7.png" alt="image.png"></p>
+</blockquote>
+</li>
+</ul>
+<p>此时索引使用情况和情况二相同，因为title未提供，所以查询只用到了索引的第一列，而后面的from_date虽然也在索引中，但是由于title不存在而无法和左前缀连接，因此需要对结果进行扫描过滤from_date（这里由于emp_no唯一，所以不存在扫描）。如果想让from_date也使用索引而不是where过滤，可以增加一个辅助索引&lt;emp_no, from_date&gt;，此时上面的查询会使用这个索引。除此之外，还可以使用一种称之为“隔离列”的优化方法，将emp_no与from_date之间的“坑”填上。</p>
+<p>查看下title一共有几种不同的值：</p>
+<blockquote>
+<p>SELECT DISTINCT(title) FROM employees.titles;<br><img src="../../../../images/post-images/10224563-37d8a8fd146786bb.png" alt="image.png"></p>
+</blockquote>
+<p>在这种成为“坑”的列值比较少的情况下，可以考虑用“IN”来填补这个“坑”从而形成最左前缀：</p>
+<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no=’10001’<br>AND title IN (‘Senior Engineer’, ‘Staff’, ‘Engineer’, ‘Senior Staff’, ‘Assistant Engineer’, ‘Technique Leader’, ‘Manager’)<br>AND from_date=’1986-06-26’;<br><img src="../../../../images/post-images/10224563-d4ca4d8f0d64a15d.png" alt="image.png"></p>
+</blockquote>
+<p>这次key_len为59，说明索引被用全了，但是从type和rows看出IN实际上执行了一个range查询，这里检查了7个key。看下两种查询的性能比较：</p>
+<blockquote>
+<p>SHOW PROFILES(这句话的开启具体见<a href="https://www.cnblogs.com/binyue/p/4645278.html" target="_blank" rel="noopener">这里</a>);<br><img src="../../../../images/post-images/10224563-5410d96ad7176623.png" alt="image.png"></p>
+</blockquote>
+<p>“填坑”后性能提升了一点。如果经过emp_no筛选后余下很多数据，则后者性能优势会更加明显。当然，如果title的值很多，用填坑就不合适了，必须建立辅助索引。</p>
+<ul>
+<li>查询条件没有指定索引第一列。<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE from_date=’1986-06-26’;<br><img src="../../../../images/post-images/10224563-21746f17ceb280d2.png" alt="image.png"></p>
+</blockquote>
+</li>
+</ul>
+<p>由于不是最左前缀，索引这样的查询显然用不到索引。</p>
+<ul>
+<li>匹配某列的前缀字符串。<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND title LIKE ‘Senior%’;<br><img src="../../../../images/post-images/10224563-401134b8f07c46e9.png" alt="image.png"></p>
+</blockquote>
+</li>
+</ul>
+<p>此时可以用到索引，如果通配符%不出现在开头，则可以用到索引，但根据具体情况不同可能只会用其中一个前缀。</p>
+<ul>
+<li>范围查询。</li>
+</ul>
+<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no &lt; ‘10010’ and title=’Senior Engineer’;<br><img src="../../../../images/post-images/10224563-b64a39145ac12926.png" alt="image.png"></p>
+</blockquote>
+<p>范围列可以用到索引（必须是最左前缀），但是范围列后面的列无法用到索引。同时，索引最多用于一个范围列，因此如果查询条件中有两个范围列则无法全用到索引。</p>
+<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no &lt; ‘10010’<br>AND title=’Senior Engineer’<br>AND from_date BETWEEN ‘1986-01-01’ AND ‘1986-12-31’;<br><img src="../../../../images/post-images/10224563-50d9787670fd9f67.png" alt="image.png"></p>
+</blockquote>
+<p>可以看到索引对第二个范围索引无能为力。这里特别要说明MySQL一个有意思的地方，那就是仅用explain可能无法区分范围索引和多值匹配，因为在type中这两者都显示为range。同时，用了“between”并不意味着就是范围查询，例如下面的查询：</p>
+<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles<br>WHERE emp_no BETWEEN ‘10001’ AND ‘10010’<br>AND title=’Senior Engineer’<br>AND from_date BETWEEN ‘1986-01-01’ AND ‘1986-12-31’;<br><img src="../../../../images/post-images/10224563-28294aabdcd0ebcd.png" alt="image.png"></p>
+</blockquote>
+<p>看起来是用了两个范围查询，但作用于emp_no上的“BETWEEN”实际上相当于“IN”，也就是说emp_no实际是多值精确匹配。可以看到这个查询用到了索引全部三个列。因此在MySQL中要谨慎地区分多值匹配和范围匹配，否则会对MySQL的行为产生困惑。</p>
+<ul>
+<li>查询条件中含有函数或表达式。</li>
+</ul>
+<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no=’10001’ AND left(title, 6)=’Senior’;<br><img src="../../../../images/post-images/10224563-d0a27360c122966f.png" alt="image.png"></p>
+</blockquote>
+<p>虽然这个查询和情况五中功能相同，但是由于使用了函数left，则无法为title列应用索引，而情况五中用LIKE则可以。再如：</p>
+<blockquote>
+<p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no - 1=’10000’;<br><img src="../../../../images/post-images/10224563-241d6ebae51777f1.png" alt="image.png"></p>
+</blockquote>
+<p>显然这个查询等价于查询emp_no为10001的函数，但是由于查询条件是一个表达式，MySQL无法为其使用索引。看来MySQL还没有智能到自动优化常量表达式的程度，因此在写查询语句时尽量避免表达式出现在查询中，而是先手工私下代数运算，转换为无表达式的查询语句。</p>
+<p>####3.如何选择索引和使用前缀索引<br>&nbsp;&nbsp;&nbsp;&nbsp;如何建立索引可以根据一条公式决定：</p>
+<blockquote>
+<p>######Index Selectivity = Cardinality / #T<br>其中Selectivity是索引的选择性指数，显然范围在（0,1]之间，Cardinality是指不重复的数据，也叫基数，#T是表的记录数，选择性指数越高建立索引的价值就越高（由B+Tree的性质决定的）；可以验证上面employees.titles表的title字段选择性指数数值：<br><img src="../../../../images/post-images/10224563-e9090f77202275e6.png" alt="image.png"></p>
+</blockquote>
+<p>title的选择性不足0.0001（精确值为0.00001579），所以实在没有什么必要为其单独建索引。<br>可以多试几个数据，比如employees.salaries表的salary字段：<br><img src="../../../../images/post-images/10224563-b7b0ab46eca3cfb4.png" alt="image.png"></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;有一种与索引选择性有关的索引优化策略叫做前缀索引，就是用列的前缀代替整个列作为索引key，当前缀长度合适时，可以做到既使得前缀索引的选择性接近全列索引，同时因为索引key变短而减少了索引文件的大小和维护开销。下面以employees.employees表为例介绍前缀索引的选择和使用。</p>
+<p>查询employees表的索引可得：</p>
+<blockquote>
+<p>SHOW INDEX FROM employees.employees;<br><img src="../../../../images/post-images/10224563-347586f49822bb49.png" alt="image.png"></p>
+</blockquote>
+<p>只有主键emp_no一个索引，搜索人名比较麻烦,做全表扫描:</p>
+<blockquote>
+<p>EXPLAIN SELECT * FROM employees.employees WHERE first_name=’Eric’ AND last_name=’Anido’;<br><img src="../../../../images/post-images/10224563-558df6c160859f5a.png" alt="image.png"></p>
+</blockquote>
+<p>如果频繁按名字搜索员工，这样显然效率很低，因此我们可以考虑建索引。有两种选择，建&lt;first_name&gt;或&lt;first_name, last_name&gt;，看下两个索引的选择性：</p>
+<blockquote>
+<p>SELECT count(DISTINCT(first_name))/count(*) AS Selectivity FROM employees.employees;<br><img src="../../../../images/post-images/10224563-fb24654acc406d52.png" alt="image.png"></p>
+</blockquote>
+<blockquote>
+<p>SELECT count(DISTINCT(concat(first_name, last_name)))/count(*) AS Selectivity FROM employees.employees;<br><img src="../../../../images/post-images/10224563-933b3da0cc778bd9.png" alt="image.png"></p>
+</blockquote>
+<p>&lt;first_name, last_name&gt;选择性很好，但是first_name和last_name加起来长度为30,可以考虑用first_name和last_name的前几个字符建立索引，例如&lt;first_name, left(last_name, 3)&gt;，看看其选择性：</p>
+<blockquote>
+<p>SELECT count(DISTINCT(concat(first_name, left(last_name, 3))))/count(*) AS Selectivity FROM employees.employees;<br><img src="../../../../images/post-images/10224563-e2c12045fd8fd094.png" alt="image.png"></p>
+</blockquote>
+<p>可以尝试把last_name前缀加到4：</p>
+<blockquote>
+<p>SELECT count(DISTINCT(concat(first_name, left(last_name, 4))))/count(*) AS Selectivity FROM employees.employees;<br><img src="../../../../images/post-images/10224563-92a51386d3355253.png" alt="image.png"></p>
+</blockquote>
+<p>这时选择性已经很理想了，而这个索引的长度只有18，比&lt;first_name, last_name&gt;短了接近一半，我们把这个前缀索引 建上：</p>
+<blockquote>
+<p>ALTER TABLE employees.employees<br>ADD INDEX `first_name_last_name4` (first_name, last_name(4));<br><img src="../../../../images/post-images/10224563-0aed7b6b0101e3d1.png" alt="image.png"></p>
+</blockquote>
+<blockquote>
+<p>SHOW PROFILES;<br><img src="../../../../images/post-images/10224563-229aa6a225ecdd9c.png" alt="image.png"></p>
+</blockquote>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;前缀索引兼顾索引大小和查询速度，但是其缺点是不能用于ORDER BY和GROUP BY操作，也不能用于Covering index（即当索引本身包含查询所需全部数据时，不再访问数据文件本身）。</p>
 ]]></content>
       <categories>
-        <category>数据开发</category>
+        <category>后端</category>
       </categories>
       <tags>
-        <tag>flink</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2018/06/28/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>hadoop</tag>
+        <tag>mysql</tag>
+        <tag>索引</tag>
       </tags>
   </entry>
   <entry>
@@ -330,6 +296,58 @@ cd ui/angular
       </tags>
   </entry>
   <entry>
+    <title>flink 理解</title>
+    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
+    <content><![CDATA[<p>统一的批处理与流处理系统</p>
+<p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
+<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
+]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>flink</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2018/06/28/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
+]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>hadoop</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>hive跨集群迁移表</title>
+    <url>/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/</url>
+    <content><![CDATA[<p>1.export table xxx to ‘/tmp/xxxx’;</p>
+<p>2.hadoop fs - get /tmp/xxx /tmp/xxx</p>
+<p>3.scp文件。。。</p>
+<p>4.zip -r /tmp/xxxx.zip /tmp/xxx</p>
+<p>5.unzip xxx.zip /tmp/</p>
+<p>6.hadoop fs -put /tmp/xxxx /tmp/xxxx</p>
+<p>7.import table xxx from ‘/tmp/xxx’__</p>
+]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>hive</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>idea2017 搭建ssm框架过程</title>
     <url>/2021/06/17/idea2017-%E6%90%AD%E5%BB%BAssm%E6%A1%86%E6%9E%B6%E8%BF%87%E7%A8%8B/</url>
     <content><![CDATA[<p>环境：</p>
@@ -362,396 +380,6 @@ dao层
       <tags>
         <tag>idea</tag>
         <tag>ssm</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>hive跨集群迁移表</title>
-    <url>/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/</url>
-    <content><![CDATA[<p>1.export table xxx to ‘/tmp/xxxx’;</p>
-<p>2.hadoop fs - get /tmp/xxx /tmp/xxx</p>
-<p>3.scp文件。。。</p>
-<p>4.zip -r /tmp/xxxx.zip /tmp/xxx</p>
-<p>5.unzip xxx.zip /tmp/</p>
-<p>6.hadoop fs -put /tmp/xxxx /tmp/xxxx</p>
-<p>7.import table xxx from ‘/tmp/xxx’__</p>
-]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>hive</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>java的3种代理模式</title>
-    <url>/2021/06/17/java%E7%9A%843%E7%A7%8D%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F/</url>
-    <content><![CDATA[<p>1.静态代理</p>
-<pre><code>静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。
-</code></pre><p>IUserDao接口：</p>
-<p>package com.cyy.i.dao;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description:接口</p>
-</li>
-<li><p>@Date:Created in 17:00 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public interface IUserDao {</p>
-<p>void save();</p>
-<p>}<br>UserDao实现类：</p>
-<p>package com.cyy.i.dao.impl;</p>
-<p>import com.cyy.i.dao.IUserDao;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description:实现类</p>
-</li>
-<li><p>@Date:Created in 17:01 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class UserDaoimplements IUserDao {</p>
-<p>@Override</p>
-<pre><code>public void save() {
-</code></pre><p>System.out.println(“——已经保存数据！——“);</p>
-<pre><code>}
-</code></pre><p>}<br>静态代理类StaticUserDaoProxy：</p>
-<p>package com.cyy.i.proxy;</p>
-<p>import com.cyy.i.dao.IUserDao;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 代理对象，静态代理</p>
-</li>
-<li><p>@Date:Created in 17:05 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class StaticUserDaoProxyimplements IUserDao{</p>
-<p>private IUserDaotarget;</p>
-<pre><code>public StaticUserDaoProxy(IUserDao target) {
-</code></pre><p>this.target = target;</p>
-<pre><code>}
-</code></pre><p>@Override</p>
-<pre><code>public void save() {
-</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
-<pre><code>    target.save();
-
-    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
-
-}
-</code></pre><p>}<br>编写一个静态测试办法去主函数调用：</p>
-<p>public static void staticProxy(){</p>
-<p>System.out.println(“—-静态代理—-“);</p>
-<pre><code>IUserDao dao=new UserDao();
-
-//静态代理的实质是用代理类引用目标类的实例执行，将原来的办法做二层封装，实现原有事务执行前后的一些操作，即办法的重写，是事先编译好的，生成字节码的代理类。
-
-StaticUserDaoProxy daoProxy=new StaticUserDaoProxy(dao);
-
-//执行调用
-
-daoProxy.save();
-</code></pre><p>}</p>
-<p>public static void main(String[] args) {</p>
-<pre><code>staticProxy();
-</code></pre><p>}<br>测试结果：</p>
-<p>静态代理<br>2.jdk动态代理模式</p>
-<pre><code>jdk动态代理模式是通过java的反射机制实现的，避免静态代理下多个接口多种事务需求而需要多写冗余的代码，而且不需要实现目标接口，同上使用相同的目标接口和实现类，只是代理类变成了DynamicUserDaoProxy。
-</code></pre><p>动态代理类DynamicUserDaoProxy：</p>
-<p>package com.cyy.i.proxy;</p>
-<p>import java.lang.reflect.InvocationHandler;</p>
-<p>import java.lang.reflect.Method;</p>
-<p>import java.lang.reflect.Proxy;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description:jdk动态代理类</p>
-</li>
-<li><p>@Date:Created in 17:15 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class DynamicUserDaoProxy {</p>
-<p>private Objecttarget;</p>
-<pre><code>public DynamicUserDaoProxy(Object target) {
-</code></pre><p>this.target = target;</p>
-<pre><code>}
-</code></pre><p>public ObjectgetProxyInstance(){</p>
-<p>return Proxy.newProxyInstance(</p>
-<p>target.getClass().getClassLoader(),</p>
-<pre><code>target.getClass().getInterfaces(),
-
-new InvocationHandler(){
-</code></pre><p>@Override</p>
-<pre><code>public Objectinvoke(Object proxy, Method method, Object[] args)throws Throwable {
-</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
-<pre><code>    Object returnValue=method.invoke(target,args);
-
-    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
-
-    return returnValue;
-
-}
-</code></pre><p>});</p>
-<pre><code>}
-</code></pre><p>}<br>同样在主函数添加测试静态方法dynamicProxy():</p>
-<p>public static void dynamicProxy(){</p>
-<p>System.out.println(“—-jdk动态代理—-“);</p>
-<pre><code>IUserDao dao=new UserDao();
-
-System.out.println(dao.getClass());
-
-IUserDao daoProxy = (IUserDao)new DynamicUserDaoProxy(dao).getProxyInstance();
-
-System.out.println(daoProxy.getClass());
-
-//执行调用
-
-daoProxy.save();
-</code></pre><p>}</p>
-<p>public static void main(String[] args) {</p>
-<pre><code>staticProxy();
-
-dynamicProxy();
-</code></pre><p>}<br>测试结果:</p>
-<p>jdk动态代理<br>3.基于cglib的动态代理</p>
-<pre><code>基于jdk的动态代理是需要一个实现接口的目标对象，实现单独对象的话要使用cglib的代理。新建一个CUserDao目标类，以及一个代理工厂类ProxyFactory，spring的核心包已经包括cglib的包，这里导入spring-core-4.0.0.RELEASE.jar的版本。
-</code></pre><p>CUserDao目标类：</p>
-<p>package com.cyy.ni.dao;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: CUserDao目标类</p>
-</li>
-<li><p>@Date:Created in 18:01 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class CUserDao {</p>
-<p>public void save() {</p>
-<p>System.out.println(“—-已经保存数据!—-“);</p>
-<pre><code>}
-</code></pre><p>}<br>代理工厂类ProxyFactory：</p>
-<p>package com.cyy.ni.proxy;</p>
-<p>import org.springframework.cglib.proxy.Enhancer;</p>
-<p>import org.springframework.cglib.proxy.MethodInterceptor;</p>
-<p>import org.springframework.cglib.proxy.MethodProxy;</p>
-<p>import java.lang.reflect.Method;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 代理工厂类ProxyFactory</p>
-</li>
-<li><p>@Date:Created in 18:01 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class ProxyFactoryimplements MethodInterceptor {</p>
-<p>private Objecttarget;</p>
-<pre><code>public ProxyFactory(Object target) {
-</code></pre><p>this.target = target;</p>
-<pre><code>}
-</code></pre><p>public ObjectgetProxyInstance() {</p>
-<p>Enhancer en=new Enhancer();</p>
-<pre><code>    en.setSuperclass(target.getClass());
-
-    en.setCallback(this);
-
-    return en.create();
-
-}
-</code></pre><p>@Override</p>
-<pre><code>public Objectintercept(Object o, Method method, Object[] objects, MethodProxy proxy)throws Throwable {
-</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
-<pre><code>    Object reuturnValue = method.invoke(target, objects);
-
-    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
-
-    return reuturnValue;
-
-}
-</code></pre><p>}<br>主函数中的的静态方法：</p>
-<p>public static void CGlibDynamicProxy(){</p>
-<pre><code>System.out.println(&quot;----CGlib动态代理----&quot;);
-
-CUserDao target =new CUserDao();
-
-CUserDao proxy = (CUserDao)new ProxyFactory(target).getProxyInstance();
-
-System.out.println(proxy.getClass());
-
-proxy.save();
-</code></pre><p>}</p>
-<p>public static void main(String[] args) {</p>
-<pre><code>    CGlibDynamicProxy();
-
-}
-</code></pre><p>测试结果：</p>
-<p>cglib代理<br>4.spring中的代理</p>
-<pre><code>Spring中代理对象可通过xml配置方式获得，也可通过ProxyFactory手动编程方式创建对象。先讲手动编程的方式。Spring中的代理对象其实是JDK Proxy和CGLIB Proxy 的结合。 下面我们新建spring包，新建目标类MyTarget，目标接口PeopleService，它的实现类EnglishService，织入类AroundInteceptor实现aop包下MethodInterceptor的接口，测试类ProxyFactoryTest，这里要导入的几个jar包有spring-aop-4.0.0.RELEASE.jar，aopalliance-1.0.jar，aspectjweaver-1.8.1.jar，commons-logging-1.0.4.jar。
-</code></pre><p>目标类MyTarget：</p>
-<p>package com.cyy.spring;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 目标类MyTarget</p>
-</li>
-<li><p>@Date:Created in 19:29 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class MyTarget {</p>
-<p>public void printName(){</p>
-<p>System.out.println(“name:Target-“);</p>
-<pre><code>}
-</code></pre><p>}<br>目标接口PeopleService：</p>
-<p>package com.cyy.spring;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 目标接口PeopleService</p>
-</li>
-<li><p>@Date:Created in 19:30 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public interface PeopleService {</p>
-<p>public void sayHello();</p>
-<pre><code>public void printName(String name);
-</code></pre><p>}<br>实现类EnglishService：</p>
-<p>package com.cyy.spring;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 实现类EnglishService</p>
-</li>
-<li><p>@Date:Created in 19:34 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class EnglishServiceimplements PeopleService {</p>
-<p>@Override</p>
-<pre><code>public void sayHello() {
-</code></pre><p>System.out.println(“Hi”);</p>
-<pre><code>}
-</code></pre><p>@Override</p>
-<pre><code>public void printName(String name) {
-</code></pre><p>System.out.println(“Your name:”+name);</p>
-<pre><code>}
-</code></pre><p>}<br>织入类AroundInteceptor：</p>
-<p>package com.cyy.spring;</p>
-<p>import org.aopalliance.intercept.MethodInterceptor;</p>
-<p>import org.aopalliance.intercept.MethodInvocation;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 织入类AroundInteceptor</p>
-</li>
-<li><p>@Date:Created in 19:40 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class AroundInteceptorimplements MethodInterceptor {</p>
-<p>@Override</p>
-<pre><code>public Objectinvoke(MethodInvocation methodInvocation)throws Throwable {
-</code></pre><p>System.out.println(methodInvocation.getMethod().getName()+”调用之前”);</p>
-<pre><code>    Object res=methodInvocation.proceed();
-
-    System.out.println(methodInvocation.getMethod().getName()+&quot;调用之后&quot;);
-
-    return res;
-
-}
-</code></pre><p>}<br>测试类ProxyFactoryTest：</p>
-<p>package com.cyy.spring;</p>
-<p>import org.junit.Test;</p>
-<p>import org.springframework.aop.framework.ProxyFactory;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 测试类ProxyFactoryTest</p>
-</li>
-<li><p>@Date:Created in 19:42 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class ProxyFactoryTest {</p>
-<p>//没有指定代理类的使用cglib代理</p>
-<p>@Test</p>
-<pre><code>public void classProxy(){
-
-    ProxyFactory factory=new ProxyFactory();
-
-    factory.setTarget(new MyTarget());
-
-    factory.addAdvice(new AroundInteceptor());
-
-    MyTarget myTarget = (MyTarget) factory.getProxy();
-
-    myTarget.printName();
-
-    System.out.println(myTarget.getClass().getName());
-
-}
-</code></pre><p>//指定代理类的使用jdk代理</p>
-<p>@Test</p>
-<pre><code>public void interfaceProxy(){
-</code></pre><p>ProxyFactory factory=new ProxyFactory();</p>
-<pre><code>    factory.setInterfaces(new Class[]{PeopleService.class});
-
-    factory.addAdvice(new AroundInteceptor());
-
-    factory.setTarget(new EnglishService());
-
-    PeopleService peopleProxy = (PeopleService) factory.getProxy();
-
-    peopleProxy.sayHello();
-
-    peopleProxy.printName(&quot;cyy&quot;);
-
-    System.out.println(peopleProxy.getClass().getName());
-
-}
-</code></pre><p>}<br>测试结果：</p>
-<pre><code>从运行结果的代理类的class name ,以及前两节中讲的，很清晰的看到Spring中对于指定接口的代理类，Spring中使用的是JDK的Proxy，对于不指定接口的使用CGLIB的方式。对于上面的测试方法interfaceProxy，我们只注释掉 
-</code></pre><p>//factory.setInterfaces(new Class[] { PeopleService.class }) 这行代码，在次运行，结果为：</p>
-<p>使用的是CGLIB处理，从而验证我们的猜想。 </p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>mysql 连接</title>
-    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
-    <content><![CDATA[<p>####1.内连接<br>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
-<p>####2.左外连接<br>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
-<p>####3.右外连接<br>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
-<p>####4.全连接<br>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-        <tag>SQL</tag>
       </tags>
   </entry>
   <entry>
@@ -1174,6 +802,790 @@ public class Thread07 {
       </categories>
       <tags>
         <tag>java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>mysql 连接</title>
+    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
+    <content><![CDATA[<p>####1.内连接<br>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
+<p>####2.左外连接<br>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
+<p>####3.右外连接<br>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
+<p>####4.全连接<br>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+        <tag>SQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>java的3种代理模式</title>
+    <url>/2021/06/17/java%E7%9A%843%E7%A7%8D%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F/</url>
+    <content><![CDATA[<p>1.静态代理</p>
+<pre><code>静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。
+</code></pre><p>IUserDao接口：</p>
+<p>package com.cyy.i.dao;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description:接口</p>
+</li>
+<li><p>@Date:Created in 17:00 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public interface IUserDao {</p>
+<p>void save();</p>
+<p>}<br>UserDao实现类：</p>
+<p>package com.cyy.i.dao.impl;</p>
+<p>import com.cyy.i.dao.IUserDao;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description:实现类</p>
+</li>
+<li><p>@Date:Created in 17:01 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class UserDaoimplements IUserDao {</p>
+<p>@Override</p>
+<pre><code>public void save() {
+</code></pre><p>System.out.println(“——已经保存数据！——“);</p>
+<pre><code>}
+</code></pre><p>}<br>静态代理类StaticUserDaoProxy：</p>
+<p>package com.cyy.i.proxy;</p>
+<p>import com.cyy.i.dao.IUserDao;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 代理对象，静态代理</p>
+</li>
+<li><p>@Date:Created in 17:05 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class StaticUserDaoProxyimplements IUserDao{</p>
+<p>private IUserDaotarget;</p>
+<pre><code>public StaticUserDaoProxy(IUserDao target) {
+</code></pre><p>this.target = target;</p>
+<pre><code>}
+</code></pre><p>@Override</p>
+<pre><code>public void save() {
+</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
+<pre><code>    target.save();
+
+    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
+
+}
+</code></pre><p>}<br>编写一个静态测试办法去主函数调用：</p>
+<p>public static void staticProxy(){</p>
+<p>System.out.println(“—-静态代理—-“);</p>
+<pre><code>IUserDao dao=new UserDao();
+
+//静态代理的实质是用代理类引用目标类的实例执行，将原来的办法做二层封装，实现原有事务执行前后的一些操作，即办法的重写，是事先编译好的，生成字节码的代理类。
+
+StaticUserDaoProxy daoProxy=new StaticUserDaoProxy(dao);
+
+//执行调用
+
+daoProxy.save();
+</code></pre><p>}</p>
+<p>public static void main(String[] args) {</p>
+<pre><code>staticProxy();
+</code></pre><p>}<br>测试结果：</p>
+<p>静态代理<br>2.jdk动态代理模式</p>
+<pre><code>jdk动态代理模式是通过java的反射机制实现的，避免静态代理下多个接口多种事务需求而需要多写冗余的代码，而且不需要实现目标接口，同上使用相同的目标接口和实现类，只是代理类变成了DynamicUserDaoProxy。
+</code></pre><p>动态代理类DynamicUserDaoProxy：</p>
+<p>package com.cyy.i.proxy;</p>
+<p>import java.lang.reflect.InvocationHandler;</p>
+<p>import java.lang.reflect.Method;</p>
+<p>import java.lang.reflect.Proxy;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description:jdk动态代理类</p>
+</li>
+<li><p>@Date:Created in 17:15 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class DynamicUserDaoProxy {</p>
+<p>private Objecttarget;</p>
+<pre><code>public DynamicUserDaoProxy(Object target) {
+</code></pre><p>this.target = target;</p>
+<pre><code>}
+</code></pre><p>public ObjectgetProxyInstance(){</p>
+<p>return Proxy.newProxyInstance(</p>
+<p>target.getClass().getClassLoader(),</p>
+<pre><code>target.getClass().getInterfaces(),
+
+new InvocationHandler(){
+</code></pre><p>@Override</p>
+<pre><code>public Objectinvoke(Object proxy, Method method, Object[] args)throws Throwable {
+</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
+<pre><code>    Object returnValue=method.invoke(target,args);
+
+    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
+
+    return returnValue;
+
+}
+</code></pre><p>});</p>
+<pre><code>}
+</code></pre><p>}<br>同样在主函数添加测试静态方法dynamicProxy():</p>
+<p>public static void dynamicProxy(){</p>
+<p>System.out.println(“—-jdk动态代理—-“);</p>
+<pre><code>IUserDao dao=new UserDao();
+
+System.out.println(dao.getClass());
+
+IUserDao daoProxy = (IUserDao)new DynamicUserDaoProxy(dao).getProxyInstance();
+
+System.out.println(daoProxy.getClass());
+
+//执行调用
+
+daoProxy.save();
+</code></pre><p>}</p>
+<p>public static void main(String[] args) {</p>
+<pre><code>staticProxy();
+
+dynamicProxy();
+</code></pre><p>}<br>测试结果:</p>
+<p>jdk动态代理<br>3.基于cglib的动态代理</p>
+<pre><code>基于jdk的动态代理是需要一个实现接口的目标对象，实现单独对象的话要使用cglib的代理。新建一个CUserDao目标类，以及一个代理工厂类ProxyFactory，spring的核心包已经包括cglib的包，这里导入spring-core-4.0.0.RELEASE.jar的版本。
+</code></pre><p>CUserDao目标类：</p>
+<p>package com.cyy.ni.dao;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: CUserDao目标类</p>
+</li>
+<li><p>@Date:Created in 18:01 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class CUserDao {</p>
+<p>public void save() {</p>
+<p>System.out.println(“—-已经保存数据!—-“);</p>
+<pre><code>}
+</code></pre><p>}<br>代理工厂类ProxyFactory：</p>
+<p>package com.cyy.ni.proxy;</p>
+<p>import org.springframework.cglib.proxy.Enhancer;</p>
+<p>import org.springframework.cglib.proxy.MethodInterceptor;</p>
+<p>import org.springframework.cglib.proxy.MethodProxy;</p>
+<p>import java.lang.reflect.Method;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 代理工厂类ProxyFactory</p>
+</li>
+<li><p>@Date:Created in 18:01 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class ProxyFactoryimplements MethodInterceptor {</p>
+<p>private Objecttarget;</p>
+<pre><code>public ProxyFactory(Object target) {
+</code></pre><p>this.target = target;</p>
+<pre><code>}
+</code></pre><p>public ObjectgetProxyInstance() {</p>
+<p>Enhancer en=new Enhancer();</p>
+<pre><code>    en.setSuperclass(target.getClass());
+
+    en.setCallback(this);
+
+    return en.create();
+
+}
+</code></pre><p>@Override</p>
+<pre><code>public Objectintercept(Object o, Method method, Object[] objects, MethodProxy proxy)throws Throwable {
+</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
+<pre><code>    Object reuturnValue = method.invoke(target, objects);
+
+    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
+
+    return reuturnValue;
+
+}
+</code></pre><p>}<br>主函数中的的静态方法：</p>
+<p>public static void CGlibDynamicProxy(){</p>
+<pre><code>System.out.println(&quot;----CGlib动态代理----&quot;);
+
+CUserDao target =new CUserDao();
+
+CUserDao proxy = (CUserDao)new ProxyFactory(target).getProxyInstance();
+
+System.out.println(proxy.getClass());
+
+proxy.save();
+</code></pre><p>}</p>
+<p>public static void main(String[] args) {</p>
+<pre><code>    CGlibDynamicProxy();
+
+}
+</code></pre><p>测试结果：</p>
+<p>cglib代理<br>4.spring中的代理</p>
+<pre><code>Spring中代理对象可通过xml配置方式获得，也可通过ProxyFactory手动编程方式创建对象。先讲手动编程的方式。Spring中的代理对象其实是JDK Proxy和CGLIB Proxy 的结合。 下面我们新建spring包，新建目标类MyTarget，目标接口PeopleService，它的实现类EnglishService，织入类AroundInteceptor实现aop包下MethodInterceptor的接口，测试类ProxyFactoryTest，这里要导入的几个jar包有spring-aop-4.0.0.RELEASE.jar，aopalliance-1.0.jar，aspectjweaver-1.8.1.jar，commons-logging-1.0.4.jar。
+</code></pre><p>目标类MyTarget：</p>
+<p>package com.cyy.spring;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 目标类MyTarget</p>
+</li>
+<li><p>@Date:Created in 19:29 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class MyTarget {</p>
+<p>public void printName(){</p>
+<p>System.out.println(“name:Target-“);</p>
+<pre><code>}
+</code></pre><p>}<br>目标接口PeopleService：</p>
+<p>package com.cyy.spring;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 目标接口PeopleService</p>
+</li>
+<li><p>@Date:Created in 19:30 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public interface PeopleService {</p>
+<p>public void sayHello();</p>
+<pre><code>public void printName(String name);
+</code></pre><p>}<br>实现类EnglishService：</p>
+<p>package com.cyy.spring;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 实现类EnglishService</p>
+</li>
+<li><p>@Date:Created in 19:34 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class EnglishServiceimplements PeopleService {</p>
+<p>@Override</p>
+<pre><code>public void sayHello() {
+</code></pre><p>System.out.println(“Hi”);</p>
+<pre><code>}
+</code></pre><p>@Override</p>
+<pre><code>public void printName(String name) {
+</code></pre><p>System.out.println(“Your name:”+name);</p>
+<pre><code>}
+</code></pre><p>}<br>织入类AroundInteceptor：</p>
+<p>package com.cyy.spring;</p>
+<p>import org.aopalliance.intercept.MethodInterceptor;</p>
+<p>import org.aopalliance.intercept.MethodInvocation;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 织入类AroundInteceptor</p>
+</li>
+<li><p>@Date:Created in 19:40 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class AroundInteceptorimplements MethodInterceptor {</p>
+<p>@Override</p>
+<pre><code>public Objectinvoke(MethodInvocation methodInvocation)throws Throwable {
+</code></pre><p>System.out.println(methodInvocation.getMethod().getName()+”调用之前”);</p>
+<pre><code>    Object res=methodInvocation.proceed();
+
+    System.out.println(methodInvocation.getMethod().getName()+&quot;调用之后&quot;);
+
+    return res;
+
+}
+</code></pre><p>}<br>测试类ProxyFactoryTest：</p>
+<p>package com.cyy.spring;</p>
+<p>import org.junit.Test;</p>
+<p>import org.springframework.aop.framework.ProxyFactory;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 测试类ProxyFactoryTest</p>
+</li>
+<li><p>@Date:Created in 19:42 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class ProxyFactoryTest {</p>
+<p>//没有指定代理类的使用cglib代理</p>
+<p>@Test</p>
+<pre><code>public void classProxy(){
+
+    ProxyFactory factory=new ProxyFactory();
+
+    factory.setTarget(new MyTarget());
+
+    factory.addAdvice(new AroundInteceptor());
+
+    MyTarget myTarget = (MyTarget) factory.getProxy();
+
+    myTarget.printName();
+
+    System.out.println(myTarget.getClass().getName());
+
+}
+</code></pre><p>//指定代理类的使用jdk代理</p>
+<p>@Test</p>
+<pre><code>public void interfaceProxy(){
+</code></pre><p>ProxyFactory factory=new ProxyFactory();</p>
+<pre><code>    factory.setInterfaces(new Class[]{PeopleService.class});
+
+    factory.addAdvice(new AroundInteceptor());
+
+    factory.setTarget(new EnglishService());
+
+    PeopleService peopleProxy = (PeopleService) factory.getProxy();
+
+    peopleProxy.sayHello();
+
+    peopleProxy.printName(&quot;cyy&quot;);
+
+    System.out.println(peopleProxy.getClass().getName());
+
+}
+</code></pre><p>}<br>测试结果：</p>
+<pre><code>从运行结果的代理类的class name ,以及前两节中讲的，很清晰的看到Spring中对于指定接口的代理类，Spring中使用的是JDK的Proxy，对于不指定接口的使用CGLIB的方式。对于上面的测试方法interfaceProxy，我们只注释掉 
+</code></pre><p>//factory.setInterfaces(new Class[] { PeopleService.class }) 这行代码，在次运行，结果为：</p>
+<p>使用的是CGLIB处理，从而验证我们的猜想。 </p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>python 时间序列处理</title>
+    <url>/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</url>
+    <content><![CDATA[<p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
+<p>要求：</p>
+<p>1.利用已有的记录数据进行建模，将缺失值填充完整，评估指标采用RMSE、MAE和；</p>
+<p>2.尝试多种方法进行建模，对比各种模型的性能;</p>
+<p>3.希望你不要直接用中值、均值、前一时刻、后一时刻等常数填充法进行填充（方法对比中可用做简单对比，如表 2所示）；</p>
+<p>4.将数据填充完整后保存至’pm25_predicted.csv’文件（只保存缺失时刻的数据，不按要求则作废），数据格式如表 3所示（列名、文件名不按要求则作废）。</p>
+<p>题解：</p>
+<p>（1）完成时间序列缺失数据填充，一般来说有如下几种方式：常数填充有均值填充，中位数填充，众数填充，前一时刻和后一时刻填充，传统回归模型方式有自回归模型，移动平均模型，自回归移动平均模型和差分自回归移动平均模型，一般采用插值法填充数据，插值办法一般有滑动平均插值，线性插值，拉格朗日多项式插值；</p>
+<p>（2）每个函数对应一种办法，先将数据用pandas从csv文件中读取为df,然后进行数据插值的算法操作，最后将插值后的数据集用matplotlib呈现出来，最后将插值的数据转化为df，用pandas重新写回csv之中；</p>
+<p>代码：</p>
+<p>1.time_series_fill.py</p>
+<h1 id="coding-utf-8"><a href="#coding-utf-8" class="headerlink" title="-- coding:utf-8 --"></a>-<em>- coding:utf-8 -</em>-</h1><p>from pandas.compat import reduce</p>
+<p><strong>author</strong> = ‘gin.chen’</p>
+<p>import pandas as pd</p>
+<p>import numpy as np</p>
+<p>import matplotlib.pyplot as plt</p>
+<p>from scipy.interpolate import lagrange</p>
+<h1 id="from-fbprophet-import-Prophet"><a href="#from-fbprophet-import-Prophet" class="headerlink" title="from fbprophet import Prophet"></a>from fbprophet import Prophet</h1><p>#</p>
+<h1 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h1><p>def load_data():</p>
+<pre><code>df = pd.read_csv(&apos;F:/muke/super_mali/data/raw/pm25.csv&apos;)
+
+# return df.head(100)
+
+return df
+</code></pre><h1 id="画散点图"><a href="#画散点图" class="headerlink" title="画散点图"></a>画散点图</h1><p>def draw_scatte_diagram(df):</p>
+<pre><code>plt.plot(df[&apos;index&apos;].to_list(), df[&apos;PM2.5&apos;].to_list())
+
+plt.show()
+</code></pre><h1 id="均值填充"><a href="#均值填充" class="headerlink" title="均值填充"></a>均值填充</h1><p>def mean_method():</p>
+<pre><code>df = load_data()
+
+df.fillna(df[&apos;PM2.5&apos;].mean(), inplace=True)
+
+draw_scatte_diagram(df)
+</code></pre><h1 id="中位数填充"><a href="#中位数填充" class="headerlink" title="中位数填充"></a>中位数填充</h1><p>def median_method():</p>
+<pre><code>df = load_data()
+
+df.fillna(df[&apos;PM2.5&apos;].median(), inplace=True)
+
+draw_scatte_diagram(df)
+</code></pre><h1 id="众数填充"><a href="#众数填充" class="headerlink" title="众数填充"></a>众数填充</h1><p>def mode_method():</p>
+<pre><code>df = load_data()
+
+df.fillna(df[&apos;PM2.5&apos;].mode(), inplace=True)
+
+draw_scatte_diagram(df)
+</code></pre><h1 id="前一时刻填充"><a href="#前一时刻填充" class="headerlink" title="前一时刻填充"></a>前一时刻填充</h1><p>def ffill_method():</p>
+<pre><code>df = load_data()
+
+df[&apos;PM2.5&apos;].fillna(method=&apos;ffill&apos;, inplace=True)
+
+draw_scatte_diagram(df)
+</code></pre><h1 id="后一时刻填充"><a href="#后一时刻填充" class="headerlink" title="后一时刻填充"></a>后一时刻填充</h1><p>def bfill_method():</p>
+<pre><code>df = load_data()
+
+df[&apos;PM2.5&apos;].fillna(method=&apos;bfill&apos;, inplace=True)
+
+draw_scatte_diagram(df)
+</code></pre><h1 id="前后时刻平均值插值"><a href="#前后时刻平均值插值" class="headerlink" title="前后时刻平均值插值"></a>前后时刻平均值插值</h1><p>def mean_by_before_after_method():</p>
+<pre><code>df = load_data()
+
+# data_index = df[&apos;index&apos;].to_list()
+
+# data_value = df[&apos;PM2.5&apos;].to_list()
+
+fill = []
+
+for i in range(len(df)):
+
+    if np.math.isnan(df.iloc[i - 1][1]):
+
+        left = df.iloc[i - 2][1]
+
+        for j in range(i, len(df)):
+
+            if np.math.isnan(df.iloc[j][1]):
+
+                continue
+
+            else:
+
+                right = df.iloc[j][1]
+
+                break
+
+        df.iloc[i - 1, 1] = (left + right) / 2
+
+        fill_tuple = i, df.iloc[i - 1][1]
+
+        fill.append(fill_tuple)
+
+draw_scatte_diagram(df)
+
+df = pd.DataFrame(fill, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+
+df.to_csv(&apos;pm25_predicted_mean.csv&apos;, index=False)
+</code></pre><h1 id="线性插值详细"><a href="#线性插值详细" class="headerlink" title="线性插值详细"></a>线性插值详细</h1><p>def linear_detail(x1, y1, x2, y2):</p>
+<pre><code>k = (y2 - y1) / (x2 - x1)
+
+b = y1 - k * x1
+
+return lambda x: b + k * x
+</code></pre><h1 id="线性插值"><a href="#线性插值" class="headerlink" title="线性插值"></a>线性插值</h1><p>def linear_method():</p>
+<pre><code># global j
+
+df = load_data()
+
+fill = []
+
+for i in range(len(df)):
+
+    if np.isnan(df.iloc[i][1]):
+
+        for j in range(i, len(df)):
+
+            if np.isnan(df.iloc[j][1]):
+
+                continue
+
+            else:
+
+                break
+
+        df.iloc[i, 1] = (linear_detail(i, df.iloc[i - 1][1], j + 1, df.iloc[j][1]))(i + 1)
+
+        fill_tuple = i + 1, df.iloc[i][1]
+
+        fill.append(fill_tuple)
+
+draw_scatte_diagram(df)
+
+df = pd.DataFrame(fill, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+
+df.to_csv(&apos;pm25_predicted_linear.csv&apos;, index=False)
+</code></pre><h1 id="平滑插值详细"><a href="#平滑插值详细" class="headerlink" title="平滑插值详细"></a>平滑插值详细</h1><p>def smooth_detail(series, pos, window=5):</p>
+<pre><code>&quot;&quot;&quot;
+
+:param series: 列向量
+
+:param pos: 被插值的位置
+
+:param window: 为取前后的数据个数
+
+:return:
+
+&quot;&quot;&quot;
+
+y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数
+
+y = y[y.notnull()]
+
+return reduce(lambda a, b: a + b, y) / len(y)
+</code></pre><h1 id="平滑插值"><a href="#平滑插值" class="headerlink" title="平滑插值"></a>平滑插值</h1><p>def smooth_method(show=1):</p>
+<pre><code>df_raw = load_data()
+
+df = df_raw[&apos;PM2.5&apos;].copy()
+
+full = []
+
+for j in range(len(df)):
+
+    if (df.isnull())[j]:  # 如果为空即插值。
+
+        df[j] = smooth_detail(df, j)
+
+        df_raw.loc[j, &apos;PM2.5&apos;] = df[j]
+
+        # print(j, df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;])
+
+        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
+
+        full.append(full_tuple)
+
+if show:
+
+    draw_scatte_diagram(df_raw)
+
+    df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+
+    df.to_csv(&apos;pm25_predicted_smooth.csv&apos;, index=False)
+
+return df_raw
+</code></pre><h1 id="拉格朗日插值详细"><a href="#拉格朗日插值详细" class="headerlink" title="拉格朗日插值详细"></a>拉格朗日插值详细</h1><p>def lagrange_detail(series, pos, window=5):</p>
+<pre><code>&quot;&quot;&quot;
+
+:param series: 列向量
+
+:param pos: 被插值的位置
+
+:param window: 为取前后的数据个数
+
+:return:
+
+&quot;&quot;&quot;
+
+y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数
+
+y = y[y.notnull()]  # 剔除空值
+
+return lagrange(y.index, list(y))(pos)  # 插值并返回插值结果
+</code></pre><h1 id="拉格朗日插值"><a href="#拉格朗日插值" class="headerlink" title="拉格朗日插值"></a>拉格朗日插值</h1><p>def lagrange_method():</p>
+<pre><code>df_raw = load_data()
+
+df = df_raw[&apos;PM2.5&apos;].copy()
+
+full = []
+
+for j in range(len(df)):
+
+    if (df.isnull())[j]:  # 如果为空即插值。
+
+        df[j] = lagrange_detail(df, j)
+
+        df_raw.loc[j, &apos;PM2.5&apos;] = df[j]
+
+        # print(j, df.loc[j, &apos;index&apos;], df[j])
+
+        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
+
+        full.append(full_tuple)
+
+draw_scatte_diagram(df_raw)
+
+df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+
+df.to_csv(&apos;pm25_predicted_lagrange.csv&apos;, index=False)
+</code></pre><h1 id="计算RMSE"><a href="#计算RMSE" class="headerlink" title="计算RMSE"></a>计算RMSE</h1><p>def calculate_RMSE(target, prediction):</p>
+<pre><code>error = []
+
+for i in range(len(target)):
+
+    error.append(target[i] - prediction[i])
+
+return (sum([n * n for n in error]) / len(error)) ** 0.5
+</code></pre><h1 id="计算MAE"><a href="#计算MAE" class="headerlink" title="计算MAE"></a>计算MAE</h1><p>def calculate_MAE(target, prediction):</p>
+<pre><code>error = []
+
+for i in range(len(target)):
+
+    error.append(target[i] - prediction[i])
+
+return sum([abs(n) for n in error]) / len(error)
+</code></pre><h1 id="计算R-square"><a href="#计算R-square" class="headerlink" title="计算R-square"></a>计算R-square</h1><p>def calculate_R_Square(target, prediction):</p>
+<pre><code>error = []
+
+a = calculate_MAE(target, prediction) * len(error)
+
+mean = np.mean(np.array(target))
+
+for i in range(len(target)):
+
+    error.append(prediction[i] - mean)
+
+b = sum([n * n for n in error])
+
+return 1 - a / b
+</code></pre><p>if <strong>name</strong> == ‘<strong>main</strong>‘:</p>
+<pre><code># mean_method()
+
+# median_method()
+
+# mode_method()
+
+# ffill_method()
+
+# bfill_method()
+
+# mean_by_before_after_method()
+
+# linear_method()
+
+# lagrange_method()
+
+smooth_method()
+</code></pre><p>2.fbprophet_fill.py</p>
+<h1 id="coding-utf-8-1"><a href="#coding-utf-8-1" class="headerlink" title="-- coding:utf-8 --"></a>-<em>- coding:utf-8 -</em>-</h1><p>from pandas.io.sas.sas7bdat import _column</p>
+<p>from time_series_fill import smooth_method</p>
+<p><strong>author</strong> = ‘gin.chen’</p>
+<p>import pandas as pd</p>
+<p>import numpy as np</p>
+<p>import matplotlib.pyplot as plt</p>
+<p>import datetime</p>
+<p>from fbprophet import Prophet</p>
+<p>if <strong>name</strong> == ‘<strong>main</strong>‘:</p>
+<pre><code>def load_data():
+
+    # df = pd.read_csv(&apos;F:/muke/super_mali/data/raw/pm25.csv&apos;)
+
+    # return df.head(100)
+
+    df = smooth_method(0)
+
+    return df.head(3129)
+
+df = load_data()
+
+first_value = datetime.datetime.strptime(&apos;2017-01-01 00:00:00&apos;, &apos;%Y-%m-%d %H:%M:%S&apos;)
+
+for i in range(len(df)):
+
+    df.iloc[i, 0] = (first_value + datetime.timedelta(hours=i)).strftime(&quot;%Y-%m-%d %H:%M:%S&quot;)
+
+# df = pd.DataFrame(, columns=[&apos;ds&apos;, &apos;y&apos;])
+
+# df.to_csv(&apos;pm25_predicted_mean.csv&apos;, index=False)
+
+# print(df.iloc[1,0])
+
+df.rename(columns={&apos;index&apos;: &apos;ds&apos;, &apos;PM2.5&apos;: &apos;y&apos;}, inplace=True)
+
+m = Prophet()
+
+# df[&apos;y&apos;] = np.log(df[&apos;y&apos;])
+
+df = m.fit(df)
+
+future = m.make_future_dataframe(freq=&apos;H&apos;, periods=5428)
+
+future.tail()
+
+forecast = m.predict(future)
+
+forecast[[&apos;ds&apos;, &apos;yhat&apos;, &apos;yhat_lower&apos;, &apos;yhat_upper&apos;]].tail()
+
+fig1 = m.plot(forecast)
+
+fig2 = m.plot_components(forecast)
+
+plt.show()
+</code></pre><p>运行结果图：</p>
+<p>Mean</p>
+<p>Median</p>
+<p>Ffill_method </p>
+<p>Bfill_method </p>
+<p>Linear_method </p>
+<p>lagrange_method</p>
+<p>smooth_method</p>
+<p>Fbprophet实现 </p>
+<p>日，周，月的趋势<br>未完待续。。。</p>
+]]></content>
+      <categories>
+        <category>数据分析</category>
+      </categories>
+      <tags>
+        <tag>python</tag>
+        <tag>时间序列处理</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>spring 事务理解</title>
+    <url>/2021/06/17/spring-%E4%BA%8B%E5%8A%A1%E7%90%86%E8%A7%A3/</url>
+    <content><![CDATA[<h3 id="1-事务的概念"><a href="#1-事务的概念" class="headerlink" title="1.事务的概念"></a>1.事务的概念</h3><p> 通俗的讲，事务指的是一组业务操作ABCD，要么全部成功，要么全部不成功。</p>
+<h3 id="2-关系数据库的事务的特性-ACID"><a href="#2-关系数据库的事务的特性-ACID" class="headerlink" title="2.关系数据库的事务的特性(ACID)"></a>2.关系数据库的事务的特性(ACID)</h3><ul>
+<li>原子性(Atomicity)：事务是数据库的逻辑工作单位，而且是必须是原子工作单位，对于修改，要么全部执行，要么全部不执行。</li>
+<li>一致性(Consistency)：事务在完成时，必须是所有的数据都保持一致状态。在相关数据库中，所有规则都必须应用于事务的修改，以保持所有数据的完整性。</li>
+<li>隔离性(Isolation)：一个事务的执行不能被其他事务所影响。事务必须是互相隔离的，防止并发读写同一个数据的情况发生 。</li>
+<li><p>持久性(Durability) : 一个事务一旦提交，事物的操作便永久性的保存在DB中。即使此时再执行回滚操作也不能撤消所做的更改。</p>
+<h3 id="3-spring事务的隔离级别"><a href="#3-spring事务的隔离级别" class="headerlink" title="3.spring事务的隔离级别"></a>3.spring事务的隔离级别</h3></li>
+<li><p>ISOLATION_DEFAULT  –使用数据库默认的事务隔离级别。</p>
+<ul>
+<li><p>ISOLATION_READ_UNCOMMITTED  –这是事务最低的隔离级别，它充许令外一个事务可以看到这个事务未提交的数据(<strong>读未提交</strong>)。</p>
+</li>
+<li><p>ISOLATION_READ_COMMITTED  –保证一个事务修改的数据提交后才能被另外一个事务读取。另外一个事务不能读取该事务未提交的数据(<strong>读已提交</strong>)。</p>
+</li>
+<li><p>ISOLATION_REPEATABLE_READ  –这种事务隔离级别可以防止脏读，不可重复读。但是可能出现幻像读(<strong>虚读</strong>)。</p>
+</li>
+<li><p>ISOLATION_SERIALIZABLE  –这是花费最高代价但是最可靠的事务隔离级别。事务被处理为顺序执行。除了防止脏读，不可重复读外，还避免了幻像读(<strong>序列化</strong>)。</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>理解Spring事务的隔离级别，需要明白的几个概念：</p>
+<ul>
+<li>脏读（脏数据）: 指当一个事务正在访问数据，并且对数据进行了修改，而这种修改还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。因为这个数据是还没有提交的数据， 那么另外一个事务读到的这个数据是脏数据，依据脏数据所做的操作可能是不正确的。</li>
+<li>不可重复读: 指在一个事务内，多次读同一数据。在这个事务还没有结束时，另外一个事务也访问该同一数据。那么，在第一个事务中的两次读数据之间，由于第二个事务的修改，那么第一个事务两次读到的数据可能是不一样的。这样就发生了在一个事务内两次读到的数据是不一样的，因此称为是不可重复读。</li>
+<li>幻觉读: 指当事务不是独立执行时发生的一种现象，例如第一个事务对一个表中的数据进行了修改，这种修改涉及到表中的全部数据行。同时，第二个事务也修改这个表中的数据，这种修改是向表中插入一行新数据。那么，以后就会发生操作第一个事务的用户发现表中还有没有修改的数据行，就好象发生了幻觉一样。<h3 id="4-Spring事务的传播属性（Propagation）"><a href="#4-Spring事务的传播属性（Propagation）" class="headerlink" title="4.Spring事务的传播属性（Propagation）"></a>4.Spring事务的传播属性（Propagation）</h3></li>
+<li><p>PROPAGATION_REQUIRED  –支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置。</p>
+</li>
+<li><p>PROPAGATION_SUPPORTS  –支持当前事务，如果当前没有事务，就以非事务方式执行。</p>
+</li>
+<li><p>PROPAGATION_MANDATORY  –支持当前事务，如果当前没有事务，就抛出异常。</p>
+</li>
+<li><p>PROPAGATION_REQUIRES_NEW  –新建事务，如果当前存在事务，把当前事务挂起。</p>
+</li>
+<li><p>PROPAGATION_NOT_SUPPORTED  –以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。</p>
+</li>
+<li><p>PROPAGATION_NEVER  –以非事务方式执行，如果当前存在事务，则抛出异常。</p>
+<h3 id="5-JDBC事务的隔离级别"><a href="#5-JDBC事务的隔离级别" class="headerlink" title="5.JDBC事务的隔离级别"></a>5.JDBC事务的隔离级别</h3></li>
+<li><p>TRANSACTION_NONE  –不支持事务，实际项目中很少使用。</p>
+</li>
+<li><p>TRANSACTION_READ_UNCOMMITTED  –在提交前一个事务可以看到另一个事务的变化。脏读、不可重复的读和幻觉读都是允许的。</p>
+</li>
+<li><p>TRANSACTION_READ_COMMITTED  –读取未提交的数据是不允许的。这个级别仍然允许不可重复的读和虚读产生。</p>
+</li>
+<li><p>TRANSACTION_REPEATABLE_READ  –事务保证能够再次读取相同的数据而不会失败，但虚读仍然会出现。</p>
+</li>
+<li><p>TRANSACTION_SERIALIZABLE  –最高的事务级别，它防止脏读、不可重复的读和虚读。</p>
+</li>
+</ul>
+<p><img src="https://upload-images.jianshu.io/upload_images/10224563-5d3e594331d0c758.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="$LBPYPLJ89T4Z~VED9O)9@E.png"></p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>事务</tag>
+        <tag>spring</tag>
       </tags>
   </entry>
   <entry>
@@ -1659,67 +2071,6 @@ public void demo02(){
       </tags>
   </entry>
   <entry>
-    <title>spring 事务理解</title>
-    <url>/2021/06/17/spring-%E4%BA%8B%E5%8A%A1%E7%90%86%E8%A7%A3/</url>
-    <content><![CDATA[<h3 id="1-事务的概念"><a href="#1-事务的概念" class="headerlink" title="1.事务的概念"></a>1.事务的概念</h3><p> 通俗的讲，事务指的是一组业务操作ABCD，要么全部成功，要么全部不成功。</p>
-<h3 id="2-关系数据库的事务的特性-ACID"><a href="#2-关系数据库的事务的特性-ACID" class="headerlink" title="2.关系数据库的事务的特性(ACID)"></a>2.关系数据库的事务的特性(ACID)</h3><ul>
-<li>原子性(Atomicity)：事务是数据库的逻辑工作单位，而且是必须是原子工作单位，对于修改，要么全部执行，要么全部不执行。</li>
-<li>一致性(Consistency)：事务在完成时，必须是所有的数据都保持一致状态。在相关数据库中，所有规则都必须应用于事务的修改，以保持所有数据的完整性。</li>
-<li>隔离性(Isolation)：一个事务的执行不能被其他事务所影响。事务必须是互相隔离的，防止并发读写同一个数据的情况发生 。</li>
-<li><p>持久性(Durability) : 一个事务一旦提交，事物的操作便永久性的保存在DB中。即使此时再执行回滚操作也不能撤消所做的更改。</p>
-<h3 id="3-spring事务的隔离级别"><a href="#3-spring事务的隔离级别" class="headerlink" title="3.spring事务的隔离级别"></a>3.spring事务的隔离级别</h3></li>
-<li><p>ISOLATION_DEFAULT  –使用数据库默认的事务隔离级别。</p>
-<ul>
-<li><p>ISOLATION_READ_UNCOMMITTED  –这是事务最低的隔离级别，它充许令外一个事务可以看到这个事务未提交的数据(<strong>读未提交</strong>)。</p>
-</li>
-<li><p>ISOLATION_READ_COMMITTED  –保证一个事务修改的数据提交后才能被另外一个事务读取。另外一个事务不能读取该事务未提交的数据(<strong>读已提交</strong>)。</p>
-</li>
-<li><p>ISOLATION_REPEATABLE_READ  –这种事务隔离级别可以防止脏读，不可重复读。但是可能出现幻像读(<strong>虚读</strong>)。</p>
-</li>
-<li><p>ISOLATION_SERIALIZABLE  –这是花费最高代价但是最可靠的事务隔离级别。事务被处理为顺序执行。除了防止脏读，不可重复读外，还避免了幻像读(<strong>序列化</strong>)。</p>
-</li>
-</ul>
-</li>
-</ul>
-<p>理解Spring事务的隔离级别，需要明白的几个概念：</p>
-<ul>
-<li>脏读（脏数据）: 指当一个事务正在访问数据，并且对数据进行了修改，而这种修改还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。因为这个数据是还没有提交的数据， 那么另外一个事务读到的这个数据是脏数据，依据脏数据所做的操作可能是不正确的。</li>
-<li>不可重复读: 指在一个事务内，多次读同一数据。在这个事务还没有结束时，另外一个事务也访问该同一数据。那么，在第一个事务中的两次读数据之间，由于第二个事务的修改，那么第一个事务两次读到的数据可能是不一样的。这样就发生了在一个事务内两次读到的数据是不一样的，因此称为是不可重复读。</li>
-<li>幻觉读: 指当事务不是独立执行时发生的一种现象，例如第一个事务对一个表中的数据进行了修改，这种修改涉及到表中的全部数据行。同时，第二个事务也修改这个表中的数据，这种修改是向表中插入一行新数据。那么，以后就会发生操作第一个事务的用户发现表中还有没有修改的数据行，就好象发生了幻觉一样。<h3 id="4-Spring事务的传播属性（Propagation）"><a href="#4-Spring事务的传播属性（Propagation）" class="headerlink" title="4.Spring事务的传播属性（Propagation）"></a>4.Spring事务的传播属性（Propagation）</h3></li>
-<li><p>PROPAGATION_REQUIRED  –支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置。</p>
-</li>
-<li><p>PROPAGATION_SUPPORTS  –支持当前事务，如果当前没有事务，就以非事务方式执行。</p>
-</li>
-<li><p>PROPAGATION_MANDATORY  –支持当前事务，如果当前没有事务，就抛出异常。</p>
-</li>
-<li><p>PROPAGATION_REQUIRES_NEW  –新建事务，如果当前存在事务，把当前事务挂起。</p>
-</li>
-<li><p>PROPAGATION_NOT_SUPPORTED  –以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。</p>
-</li>
-<li><p>PROPAGATION_NEVER  –以非事务方式执行，如果当前存在事务，则抛出异常。</p>
-<h3 id="5-JDBC事务的隔离级别"><a href="#5-JDBC事务的隔离级别" class="headerlink" title="5.JDBC事务的隔离级别"></a>5.JDBC事务的隔离级别</h3></li>
-<li><p>TRANSACTION_NONE  –不支持事务，实际项目中很少使用。</p>
-</li>
-<li><p>TRANSACTION_READ_UNCOMMITTED  –在提交前一个事务可以看到另一个事务的变化。脏读、不可重复的读和幻觉读都是允许的。</p>
-</li>
-<li><p>TRANSACTION_READ_COMMITTED  –读取未提交的数据是不允许的。这个级别仍然允许不可重复的读和虚读产生。</p>
-</li>
-<li><p>TRANSACTION_REPEATABLE_READ  –事务保证能够再次读取相同的数据而不会失败，但虚读仍然会出现。</p>
-</li>
-<li><p>TRANSACTION_SERIALIZABLE  –最高的事务级别，它防止脏读、不可重复的读和虚读。</p>
-</li>
-</ul>
-<p><img src="https://upload-images.jianshu.io/upload_images/10224563-5d3e594331d0c758.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="$LBPYPLJ89T4Z~VED9O)9@E.png"></p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>spring</tag>
-        <tag>事务</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>spring之aop配置与springboot aop配置</title>
     <url>/2021/06/17/spring%E4%B9%8Baop%E9%85%8D%E7%BD%AE%E4%B8%8Espringboot-aop%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<p>spring的面向切面编程，即aop编程是有3种作用的：</p>
@@ -2024,354 +2375,16 @@ try {
       </tags>
   </entry>
   <entry>
-    <title>python 时间序列处理</title>
-    <url>/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</url>
-    <content><![CDATA[<p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
-<p>要求：</p>
-<p>1.利用已有的记录数据进行建模，将缺失值填充完整，评估指标采用RMSE、MAE和；</p>
-<p>2.尝试多种方法进行建模，对比各种模型的性能;</p>
-<p>3.希望你不要直接用中值、均值、前一时刻、后一时刻等常数填充法进行填充（方法对比中可用做简单对比，如表 2所示）；</p>
-<p>4.将数据填充完整后保存至’pm25_predicted.csv’文件（只保存缺失时刻的数据，不按要求则作废），数据格式如表 3所示（列名、文件名不按要求则作废）。</p>
-<p>题解：</p>
-<p>（1）完成时间序列缺失数据填充，一般来说有如下几种方式：常数填充有均值填充，中位数填充，众数填充，前一时刻和后一时刻填充，传统回归模型方式有自回归模型，移动平均模型，自回归移动平均模型和差分自回归移动平均模型，一般采用插值法填充数据，插值办法一般有滑动平均插值，线性插值，拉格朗日多项式插值；</p>
-<p>（2）每个函数对应一种办法，先将数据用pandas从csv文件中读取为df,然后进行数据插值的算法操作，最后将插值后的数据集用matplotlib呈现出来，最后将插值的数据转化为df，用pandas重新写回csv之中；</p>
-<p>代码：</p>
-<p>1.time_series_fill.py</p>
-<h1 id="coding-utf-8"><a href="#coding-utf-8" class="headerlink" title="-- coding:utf-8 --"></a>-<em>- coding:utf-8 -</em>-</h1><p>from pandas.compat import reduce</p>
-<p><strong>author</strong> = ‘gin.chen’</p>
-<p>import pandas as pd</p>
-<p>import numpy as np</p>
-<p>import matplotlib.pyplot as plt</p>
-<p>from scipy.interpolate import lagrange</p>
-<h1 id="from-fbprophet-import-Prophet"><a href="#from-fbprophet-import-Prophet" class="headerlink" title="from fbprophet import Prophet"></a>from fbprophet import Prophet</h1><p>#</p>
-<h1 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h1><p>def load_data():</p>
-<pre><code>df = pd.read_csv(&apos;F:/muke/super_mali/data/raw/pm25.csv&apos;)
-
-# return df.head(100)
-
-return df
-</code></pre><h1 id="画散点图"><a href="#画散点图" class="headerlink" title="画散点图"></a>画散点图</h1><p>def draw_scatte_diagram(df):</p>
-<pre><code>plt.plot(df[&apos;index&apos;].to_list(), df[&apos;PM2.5&apos;].to_list())
-
-plt.show()
-</code></pre><h1 id="均值填充"><a href="#均值填充" class="headerlink" title="均值填充"></a>均值填充</h1><p>def mean_method():</p>
-<pre><code>df = load_data()
-
-df.fillna(df[&apos;PM2.5&apos;].mean(), inplace=True)
-
-draw_scatte_diagram(df)
-</code></pre><h1 id="中位数填充"><a href="#中位数填充" class="headerlink" title="中位数填充"></a>中位数填充</h1><p>def median_method():</p>
-<pre><code>df = load_data()
-
-df.fillna(df[&apos;PM2.5&apos;].median(), inplace=True)
-
-draw_scatte_diagram(df)
-</code></pre><h1 id="众数填充"><a href="#众数填充" class="headerlink" title="众数填充"></a>众数填充</h1><p>def mode_method():</p>
-<pre><code>df = load_data()
-
-df.fillna(df[&apos;PM2.5&apos;].mode(), inplace=True)
-
-draw_scatte_diagram(df)
-</code></pre><h1 id="前一时刻填充"><a href="#前一时刻填充" class="headerlink" title="前一时刻填充"></a>前一时刻填充</h1><p>def ffill_method():</p>
-<pre><code>df = load_data()
-
-df[&apos;PM2.5&apos;].fillna(method=&apos;ffill&apos;, inplace=True)
-
-draw_scatte_diagram(df)
-</code></pre><h1 id="后一时刻填充"><a href="#后一时刻填充" class="headerlink" title="后一时刻填充"></a>后一时刻填充</h1><p>def bfill_method():</p>
-<pre><code>df = load_data()
-
-df[&apos;PM2.5&apos;].fillna(method=&apos;bfill&apos;, inplace=True)
-
-draw_scatte_diagram(df)
-</code></pre><h1 id="前后时刻平均值插值"><a href="#前后时刻平均值插值" class="headerlink" title="前后时刻平均值插值"></a>前后时刻平均值插值</h1><p>def mean_by_before_after_method():</p>
-<pre><code>df = load_data()
-
-# data_index = df[&apos;index&apos;].to_list()
-
-# data_value = df[&apos;PM2.5&apos;].to_list()
-
-fill = []
-
-for i in range(len(df)):
-
-    if np.math.isnan(df.iloc[i - 1][1]):
-
-        left = df.iloc[i - 2][1]
-
-        for j in range(i, len(df)):
-
-            if np.math.isnan(df.iloc[j][1]):
-
-                continue
-
-            else:
-
-                right = df.iloc[j][1]
-
-                break
-
-        df.iloc[i - 1, 1] = (left + right) / 2
-
-        fill_tuple = i, df.iloc[i - 1][1]
-
-        fill.append(fill_tuple)
-
-draw_scatte_diagram(df)
-
-df = pd.DataFrame(fill, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-
-df.to_csv(&apos;pm25_predicted_mean.csv&apos;, index=False)
-</code></pre><h1 id="线性插值详细"><a href="#线性插值详细" class="headerlink" title="线性插值详细"></a>线性插值详细</h1><p>def linear_detail(x1, y1, x2, y2):</p>
-<pre><code>k = (y2 - y1) / (x2 - x1)
-
-b = y1 - k * x1
-
-return lambda x: b + k * x
-</code></pre><h1 id="线性插值"><a href="#线性插值" class="headerlink" title="线性插值"></a>线性插值</h1><p>def linear_method():</p>
-<pre><code># global j
-
-df = load_data()
-
-fill = []
-
-for i in range(len(df)):
-
-    if np.isnan(df.iloc[i][1]):
-
-        for j in range(i, len(df)):
-
-            if np.isnan(df.iloc[j][1]):
-
-                continue
-
-            else:
-
-                break
-
-        df.iloc[i, 1] = (linear_detail(i, df.iloc[i - 1][1], j + 1, df.iloc[j][1]))(i + 1)
-
-        fill_tuple = i + 1, df.iloc[i][1]
-
-        fill.append(fill_tuple)
-
-draw_scatte_diagram(df)
-
-df = pd.DataFrame(fill, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-
-df.to_csv(&apos;pm25_predicted_linear.csv&apos;, index=False)
-</code></pre><h1 id="平滑插值详细"><a href="#平滑插值详细" class="headerlink" title="平滑插值详细"></a>平滑插值详细</h1><p>def smooth_detail(series, pos, window=5):</p>
-<pre><code>&quot;&quot;&quot;
-
-:param series: 列向量
-
-:param pos: 被插值的位置
-
-:param window: 为取前后的数据个数
-
-:return:
-
-&quot;&quot;&quot;
-
-y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数
-
-y = y[y.notnull()]
-
-return reduce(lambda a, b: a + b, y) / len(y)
-</code></pre><h1 id="平滑插值"><a href="#平滑插值" class="headerlink" title="平滑插值"></a>平滑插值</h1><p>def smooth_method(show=1):</p>
-<pre><code>df_raw = load_data()
-
-df = df_raw[&apos;PM2.5&apos;].copy()
-
-full = []
-
-for j in range(len(df)):
-
-    if (df.isnull())[j]:  # 如果为空即插值。
-
-        df[j] = smooth_detail(df, j)
-
-        df_raw.loc[j, &apos;PM2.5&apos;] = df[j]
-
-        # print(j, df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;])
-
-        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
-
-        full.append(full_tuple)
-
-if show:
-
-    draw_scatte_diagram(df_raw)
-
-    df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-
-    df.to_csv(&apos;pm25_predicted_smooth.csv&apos;, index=False)
-
-return df_raw
-</code></pre><h1 id="拉格朗日插值详细"><a href="#拉格朗日插值详细" class="headerlink" title="拉格朗日插值详细"></a>拉格朗日插值详细</h1><p>def lagrange_detail(series, pos, window=5):</p>
-<pre><code>&quot;&quot;&quot;
-
-:param series: 列向量
-
-:param pos: 被插值的位置
-
-:param window: 为取前后的数据个数
-
-:return:
-
-&quot;&quot;&quot;
-
-y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数
-
-y = y[y.notnull()]  # 剔除空值
-
-return lagrange(y.index, list(y))(pos)  # 插值并返回插值结果
-</code></pre><h1 id="拉格朗日插值"><a href="#拉格朗日插值" class="headerlink" title="拉格朗日插值"></a>拉格朗日插值</h1><p>def lagrange_method():</p>
-<pre><code>df_raw = load_data()
-
-df = df_raw[&apos;PM2.5&apos;].copy()
-
-full = []
-
-for j in range(len(df)):
-
-    if (df.isnull())[j]:  # 如果为空即插值。
-
-        df[j] = lagrange_detail(df, j)
-
-        df_raw.loc[j, &apos;PM2.5&apos;] = df[j]
-
-        # print(j, df.loc[j, &apos;index&apos;], df[j])
-
-        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
-
-        full.append(full_tuple)
-
-draw_scatte_diagram(df_raw)
-
-df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-
-df.to_csv(&apos;pm25_predicted_lagrange.csv&apos;, index=False)
-</code></pre><h1 id="计算RMSE"><a href="#计算RMSE" class="headerlink" title="计算RMSE"></a>计算RMSE</h1><p>def calculate_RMSE(target, prediction):</p>
-<pre><code>error = []
-
-for i in range(len(target)):
-
-    error.append(target[i] - prediction[i])
-
-return (sum([n * n for n in error]) / len(error)) ** 0.5
-</code></pre><h1 id="计算MAE"><a href="#计算MAE" class="headerlink" title="计算MAE"></a>计算MAE</h1><p>def calculate_MAE(target, prediction):</p>
-<pre><code>error = []
-
-for i in range(len(target)):
-
-    error.append(target[i] - prediction[i])
-
-return sum([abs(n) for n in error]) / len(error)
-</code></pre><h1 id="计算R-square"><a href="#计算R-square" class="headerlink" title="计算R-square"></a>计算R-square</h1><p>def calculate_R_Square(target, prediction):</p>
-<pre><code>error = []
-
-a = calculate_MAE(target, prediction) * len(error)
-
-mean = np.mean(np.array(target))
-
-for i in range(len(target)):
-
-    error.append(prediction[i] - mean)
-
-b = sum([n * n for n in error])
-
-return 1 - a / b
-</code></pre><p>if <strong>name</strong> == ‘<strong>main</strong>‘:</p>
-<pre><code># mean_method()
-
-# median_method()
-
-# mode_method()
-
-# ffill_method()
-
-# bfill_method()
-
-# mean_by_before_after_method()
-
-# linear_method()
-
-# lagrange_method()
-
-smooth_method()
-</code></pre><p>2.fbprophet_fill.py</p>
-<h1 id="coding-utf-8-1"><a href="#coding-utf-8-1" class="headerlink" title="-- coding:utf-8 --"></a>-<em>- coding:utf-8 -</em>-</h1><p>from pandas.io.sas.sas7bdat import _column</p>
-<p>from time_series_fill import smooth_method</p>
-<p><strong>author</strong> = ‘gin.chen’</p>
-<p>import pandas as pd</p>
-<p>import numpy as np</p>
-<p>import matplotlib.pyplot as plt</p>
-<p>import datetime</p>
-<p>from fbprophet import Prophet</p>
-<p>if <strong>name</strong> == ‘<strong>main</strong>‘:</p>
-<pre><code>def load_data():
-
-    # df = pd.read_csv(&apos;F:/muke/super_mali/data/raw/pm25.csv&apos;)
-
-    # return df.head(100)
-
-    df = smooth_method(0)
-
-    return df.head(3129)
-
-df = load_data()
-
-first_value = datetime.datetime.strptime(&apos;2017-01-01 00:00:00&apos;, &apos;%Y-%m-%d %H:%M:%S&apos;)
-
-for i in range(len(df)):
-
-    df.iloc[i, 0] = (first_value + datetime.timedelta(hours=i)).strftime(&quot;%Y-%m-%d %H:%M:%S&quot;)
-
-# df = pd.DataFrame(, columns=[&apos;ds&apos;, &apos;y&apos;])
-
-# df.to_csv(&apos;pm25_predicted_mean.csv&apos;, index=False)
-
-# print(df.iloc[1,0])
-
-df.rename(columns={&apos;index&apos;: &apos;ds&apos;, &apos;PM2.5&apos;: &apos;y&apos;}, inplace=True)
-
-m = Prophet()
-
-# df[&apos;y&apos;] = np.log(df[&apos;y&apos;])
-
-df = m.fit(df)
-
-future = m.make_future_dataframe(freq=&apos;H&apos;, periods=5428)
-
-future.tail()
-
-forecast = m.predict(future)
-
-forecast[[&apos;ds&apos;, &apos;yhat&apos;, &apos;yhat_lower&apos;, &apos;yhat_upper&apos;]].tail()
-
-fig1 = m.plot(forecast)
-
-fig2 = m.plot_components(forecast)
-
-plt.show()
-</code></pre><p>运行结果图：</p>
-<p>Mean</p>
-<p>Median</p>
-<p>Ffill_method </p>
-<p>Bfill_method </p>
-<p>Linear_method </p>
-<p>lagrange_method</p>
-<p>smooth_method</p>
-<p>Fbprophet实现 </p>
-<p>日，周，月的趋势<br>未完待续。。。</p>
+    <title>新辞</title>
+    <url>/2021/06/17/%E6%96%B0%E8%BE%9E/</url>
+    <content><![CDATA[<p>歌管楼台声细细，秋千院落夜沉沉。</p>
+<p>徒有斜阳与人语，不念故乡念旧人。</p>
 ]]></content>
       <categories>
-        <category>数据分析</category>
+        <category>古风拾迹</category>
       </categories>
       <tags>
-        <tag>python</tag>
-        <tag>时间序列处理</tag>
+        <tag>诗歌</tag>
       </tags>
   </entry>
   <entry>
@@ -2396,13 +2409,34 @@ plt.show()
       </tags>
   </entry>
   <entry>
-    <title>新辞</title>
-    <url>/2021/06/17/%E6%96%B0%E8%BE%9E/</url>
-    <content><![CDATA[<p>歌管楼台声细细，秋千院落夜沉沉。</p>
-<p>徒有斜阳与人语，不念故乡念旧人。</p>
+    <title>無題</title>
+    <url>/2021/06/17/%E7%84%A1%E9%A1%8C/</url>
+    <content><![CDATA[<p>就像没说完的一段故事</p>
+<p>就像断了的弦</p>
+<p>孤寂在夜空盘旋</p>
+<p>旅人在灯下行走</p>
+<p>车辆穿梭于漆黑的夜</p>
+<p>喧嚣隐去于沉睡的异世界</p>
+<p>圆月下的立交桥路面</p>
+<p>水银镜一般映射光华</p>
+<p>深夜的路灯</p>
+<p>独自闷不吭声</p>
+<p>光线四处逃窜</p>
+<p>疲惫不堪的倒在地上</p>
+<p>摸索着所有能触及的黑暗</p>
+<p>潮水在离森林不远处翻滚声息</p>
+<p>萤火虫于溪岸跃动身影</p>
+<p>追寻</p>
+<p>自黄昏到黑夜</p>
+<p>流动的城市灯火</p>
+<p>停留于指尖瞬间</p>
+<p>抑或</p>
+<p>雨中潮湿的羽翼</p>
+<p>在遥远的空中挥动</p>
+<p>在视野中渐行渐远</p>
 ]]></content>
       <categories>
-        <category>古风拾迹</category>
+        <category>现代诗</category>
       </categories>
       <tags>
         <tag>诗歌</tag>
@@ -2529,67 +2563,6 @@ plt.show()
       </tags>
   </entry>
   <entry>
-    <title>無題</title>
-    <url>/2021/06/17/%E7%84%A1%E9%A1%8C/</url>
-    <content><![CDATA[<p>就像没说完的一段故事</p>
-<p>就像断了的弦</p>
-<p>孤寂在夜空盘旋</p>
-<p>旅人在灯下行走</p>
-<p>车辆穿梭于漆黑的夜</p>
-<p>喧嚣隐去于沉睡的异世界</p>
-<p>圆月下的立交桥路面</p>
-<p>水银镜一般映射光华</p>
-<p>深夜的路灯</p>
-<p>独自闷不吭声</p>
-<p>光线四处逃窜</p>
-<p>疲惫不堪的倒在地上</p>
-<p>摸索着所有能触及的黑暗</p>
-<p>潮水在离森林不远处翻滚声息</p>
-<p>萤火虫于溪岸跃动身影</p>
-<p>追寻</p>
-<p>自黄昏到黑夜</p>
-<p>流动的城市灯火</p>
-<p>停留于指尖瞬间</p>
-<p>抑或</p>
-<p>雨中潮湿的羽翼</p>
-<p>在遥远的空中挥动</p>
-<p>在视野中渐行渐远</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>鄉愁</title>
-    <url>/2021/06/17/%E9%84%89%E6%84%81/</url>
-    <content><![CDATA[<p>芦苇飘荡的季节﻿</p>
-<p>少年将沉沉的离别披在肩上﻿</p>
-<p>乡愁像芦苇荡里的水一样柔﻿</p>
-<p>遗忘的日子里﻿</p>
-<p>心中总是若有所思﻿</p>
-<p>乡愁像渔家的灯火一样引人入眠﻿</p>
-<p>岁月像车轮一般轧过如路面荒芜的日子﻿</p>
-<p>远处月台橘黄色的站台灯碰弯了旅人的思绪﻿</p>
-<p>恍惚流失的光阴迷失在记忆的岔道口﻿</p>
-<p>春日大海的阳光照耀着北回归线﻿</p>
-<p>视野里的芦苇叶子眯成一线﻿</p>
-<p>蓝的海黑的海 逐渐缩成点的海鸥﻿</p>
-<p>露水闪透着晶莹的清晨﻿</p>
-<p>列车经过铁轨吸进一个个影子后逝去﻿</p>
-<p>乡愁像一曲永不停息的曲子﻿</p>
-<p>在风尘苦旅的夜里奏起</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>记一次阿里巴巴电面经历</title>
     <url>/2021/06/17/%E8%AE%B0%E4%B8%80%E6%AC%A1%E9%98%BF%E9%87%8C%E5%B7%B4%E5%B7%B4%E7%94%B5%E9%9D%A2%E7%BB%8F%E5%8E%86/</url>
     <content><![CDATA[<p><strong>前言</strong>：本人有幸在boss直聘上获得一次阿里巴巴国际技术事业部的电话面试机会，由于太突然，大部分问题都没有发挥原来的水平，诶，决定痛下决心好好总结，还有就是坚定下自己的目标=_=。<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上来先做了个自我介绍，由于要找个信号好的地方，爬到了楼顶，结果气喘吁吁的=_=，下面就开始提问一些专业的问题。</p>
@@ -2709,6 +2682,33 @@ plt.show()
       </categories>
       <tags>
         <tag>面试</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>鄉愁</title>
+    <url>/2021/06/17/%E9%84%89%E6%84%81/</url>
+    <content><![CDATA[<p>芦苇飘荡的季节﻿</p>
+<p>少年将沉沉的离别披在肩上﻿</p>
+<p>乡愁像芦苇荡里的水一样柔﻿</p>
+<p>遗忘的日子里﻿</p>
+<p>心中总是若有所思﻿</p>
+<p>乡愁像渔家的灯火一样引人入眠﻿</p>
+<p>岁月像车轮一般轧过如路面荒芜的日子﻿</p>
+<p>远处月台橘黄色的站台灯碰弯了旅人的思绪﻿</p>
+<p>恍惚流失的光阴迷失在记忆的岔道口﻿</p>
+<p>春日大海的阳光照耀着北回归线﻿</p>
+<p>视野里的芦苇叶子眯成一线﻿</p>
+<p>蓝的海黑的海 逐渐缩成点的海鸥﻿</p>
+<p>露水闪透着晶莹的清晨﻿</p>
+<p>列车经过铁轨吸进一个个影子后逝去﻿</p>
+<p>乡愁像一曲永不停息的曲子﻿</p>
+<p>在风尘苦旅的夜里奏起</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
       </tags>
   </entry>
 </search>
