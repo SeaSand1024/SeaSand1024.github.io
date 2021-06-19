@@ -901,6 +901,7 @@
           
             <p>歌管楼台声细细，秋千院落夜沉沉。</p>
 <p>徒有斜阳与人语，不念故乡念旧人。</p>
+<p><img src="../../../../images/post-images/10224563-bb430fb614396c21.jpg" alt="img.jpg"></p>
 
           
         
@@ -1048,9 +1049,8 @@
         
           
             <p><strong>前言</strong>：Mysql索引的底层实现原理包括数据结构和不同的mysql引擎下索引的实现方式会在另一篇文章中详细描写，这里主要讨论的是具体优化策略体现。</p>
-<p>####1. 导入<br>这里的数据库示例用mysql的官方数据库<a href="https://dev.mysql.com/doc/employee/en/employees-installation.html" target="_blank" rel="noopener">employees</a>做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下：<br><img src="../../../../images/post-images/10224563-45e4cc03129ed99b.png" alt="image.png"></p>
-<p>####2. 最左前缀原理和相关优化</p>
-<ul>
+<h4 id="1-导入"><a href="#1-导入" class="headerlink" title="1. 导入"></a>1. 导入</h4><p>这里的数据库示例用mysql的官方数据库<a href="https://dev.mysql.com/doc/employee/en/employees-installation.html" target="_blank" rel="noopener">employees</a>做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下：<br><img src="../../../../images/post-images/10224563-45e4cc03129ed99b.png" alt="image.png"></p>
+<h4 id="2-最左前缀原理和相关优化"><a href="#2-最左前缀原理和相关优化" class="headerlink" title="2. 最左前缀原理和相关优化"></a>2. 最左前缀原理和相关优化</h4><ul>
 <li>首先可以查看employees数据库titles都有哪些索引<blockquote>
 <p>SHOW INDEX FROM employees.titles;<br><img src="../../../../images/post-images/10224563-cc44fd8c9f7b2653.png" alt="image.png"></p>
 </blockquote>
@@ -1132,9 +1132,9 @@
 <p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no - 1=’10000’;<br><img src="../../../../images/post-images/10224563-241d6ebae51777f1.png" alt="image.png"></p>
 </blockquote>
 <p>显然这个查询等价于查询emp_no为10001的函数，但是由于查询条件是一个表达式，MySQL无法为其使用索引。看来MySQL还没有智能到自动优化常量表达式的程度，因此在写查询语句时尽量避免表达式出现在查询中，而是先手工私下代数运算，转换为无表达式的查询语句。</p>
-<p>####3.如何选择索引和使用前缀索引<br>&nbsp;&nbsp;&nbsp;&nbsp;如何建立索引可以根据一条公式决定：</p>
+<h4 id="3-如何选择索引和使用前缀索引"><a href="#3-如何选择索引和使用前缀索引" class="headerlink" title="3.如何选择索引和使用前缀索引"></a>3.如何选择索引和使用前缀索引</h4><p>&nbsp;&nbsp;&nbsp;&nbsp;如何建立索引可以根据一条公式决定：</p>
 <blockquote>
-<p>######Index Selectivity = Cardinality / #T<br>其中Selectivity是索引的选择性指数，显然范围在（0,1]之间，Cardinality是指不重复的数据，也叫基数，#T是表的记录数，选择性指数越高建立索引的价值就越高（由B+Tree的性质决定的）；可以验证上面employees.titles表的title字段选择性指数数值：<br><img src="../../../../images/post-images/10224563-e9090f77202275e6.png" alt="image.png"></p>
+<h6 id="Index-Selectivity-Cardinality-T"><a href="#Index-Selectivity-Cardinality-T" class="headerlink" title="Index Selectivity = Cardinality / #T"></a>Index Selectivity = Cardinality / #T</h6><p>其中Selectivity是索引的选择性指数，显然范围在（0,1]之间，Cardinality是指不重复的数据，也叫基数，#T是表的记录数，选择性指数越高建立索引的价值就越高（由B+Tree的性质决定的）；可以验证上面employees.titles表的title字段选择性指数数值：<br><img src="../../../../images/post-images/10224563-e9090f77202275e6.png" alt="image.png"></p>
 </blockquote>
 <p>title的选择性不足0.0001（精确值为0.00001579），所以实在没有什么必要为其单独建索引。<br>可以多试几个数据，比如employees.salaries表的salary字段：<br><img src="../../../../images/post-images/10224563-b7b0ab46eca3cfb4.png" alt="image.png"></p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;有一种与索引选择性有关的索引优化策略叫做前缀索引，就是用列的前缀代替整个列作为索引key，当前缀长度合适时，可以做到既使得前缀索引的选择性接近全列索引，同时因为索引key变短而减少了索引文件的大小和维护开销。下面以employees.employees表为例介绍前缀索引的选择和使用。</p>
@@ -1376,6 +1376,276 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://seasand1024.github.io/2021/06/17/python-时间序列处理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Gin">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/head.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mr_Chen">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2021/06/17/python-时间序列处理/" itemprop="url">python-时间序列处理</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-06-17T21:55:56+08:00">
+                2021-06-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据分析/" itemprop="url" rel="index">
+                    <span itemprop="name">数据分析</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
+<p>要求：</p>
+<p>1.利用已有的记录数据进行建模，将缺失值填充完整，评估指标采用RMSE、MAE和；</p>
+<p>2.尝试多种方法进行建模，对比各种模型的性能;</p>
+<p>3.希望你不要直接用中值、均值、前一时刻、后一时刻等常数填充法进行填充（方法对比中可用做简单对比，如表 2所示）；</p>
+<p>4.将数据填充完整后保存至’pm25_predicted.csv’文件（只保存缺失时刻的数据，不按要求则作废），数据格式如表 3所示（列名、文件名不按要求则作废）。</p>
+<p>题解：</p>
+<p>（1）完成时间序列缺失数据填充，一般来说有如下几种方式：常数填充有均值填充，中位数填充，众数填充，前一时刻和后一时刻填充，传统回归模型方式有自回归模型，移动平均模型，自回归移动平均模型和差分自回归移动平均模型，一般采用插值法填充数据，插值办法一般有滑动平均插值，线性插值，拉格朗日多项式插值；</p>
+<p>（2）每个函数对应一种办法，先将数据用pandas从csv文件中读取为df,然后进行数据插值的算法操作，最后将插值后的数据集用matplotlib呈现出来，最后将插值的数据转化为df，用pandas重新写回csv之中；</p>
+<p>代码：</p>
+<p>1.time_series_fill.py</p>
+<blockquote>
+<p># -<em>- coding:utf-8 -</em>-<br>from pandas.compat import reduce<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>from scipy.interpolate import lagrange<br># from fbprophet import Prophet<br>#</p>
+</blockquote>
+<h1 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h1><blockquote>
+<p>def load_data():<br>df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)</p>
+<h1 id="return-df-head-100"><a href="#return-df-head-100" class="headerlink" title="return df.head(100)"></a>return df.head(100)</h1><p>return df</p>
+</blockquote>
+<h1 id="画散点图"><a href="#画散点图" class="headerlink" title="画散点图"></a>画散点图</h1><blockquote>
+<p>def draw_scatte_diagram(df):<br>plt.plot(df[‘index’].to_list(), df[‘PM2.5’].to_list())<br>plt.show()</p>
+</blockquote>
+<h1 id="均值填充"><a href="#均值填充" class="headerlink" title="均值填充"></a>均值填充</h1><blockquote>
+<p>def mean_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mean(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="中位数填充"><a href="#中位数填充" class="headerlink" title="中位数填充"></a>中位数填充</h1><blockquote>
+<p>def median_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].median(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="众数填充"><a href="#众数填充" class="headerlink" title="众数填充"></a>众数填充</h1><blockquote>
+<p>def mode_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mode(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="前一时刻填充"><a href="#前一时刻填充" class="headerlink" title="前一时刻填充"></a>前一时刻填充</h1><blockquote>
+<p>def ffill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’ffill’, inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="后一时刻填充"><a href="#后一时刻填充" class="headerlink" title="后一时刻填充"></a>后一时刻填充</h1><blockquote>
+<p>def bfill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’bfill’, inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="前后时刻平均值插值"><a href="#前后时刻平均值插值" class="headerlink" title="前后时刻平均值插值"></a>前后时刻平均值插值</h1><blockquote>
+<p>def mean_by_before_after_method():<br>df = load_data()</p>
+<h1 id="data-index-df-‘index’-to-list"><a href="#data-index-df-‘index’-to-list" class="headerlink" title="data_index = df[‘index’].to_list()"></a>data_index = df[‘index’].to_list()</h1><h1 id="data-value-df-‘PM2-5’-to-list"><a href="#data-value-df-‘PM2-5’-to-list" class="headerlink" title="data_value = df[‘PM2.5’].to_list()"></a>data_value = df[‘PM2.5’].to_list()</h1><p>fill = []<br>for i in range(len(df)):<br>if np.math.isnan(df.iloc[i - 1][1]):<br>left = df.iloc[i - 2][1]<br>for j in range(i, len(df)):<br>if np.math.isnan(df.iloc[j][1]):<br>continue<br>else:<br>right = df.iloc[j][1]<br>break<br>df.iloc[i - 1, 1] = (left + right) / 2<br>fill_tuple = i, df.iloc[i - 1][1]<br>fill.append(fill_tuple)<br>draw_scatte_diagram(df)<br>    df = pd.DataFrame(fill, columns=[‘index’, ‘PM2.5’])<br>    df.to_csv(‘pm25_predicted_mean.csv’, index=False)</p>
+</blockquote>
+<h1 id="线性插值详细"><a href="#线性插值详细" class="headerlink" title="线性插值详细"></a>线性插值详细</h1><blockquote>
+<p>def linear_detail(x1, y1, x2, y2):<br>    k = (y2 - y1) / (x2 - x1)<br>    b = y1 - k <em> x1<br>    return lambda x: b + k </em> x</p>
+</blockquote>
+<h1 id="线性插值"><a href="#线性插值" class="headerlink" title="线性插值"></a>线性插值</h1><blockquote>
+<p>def linear_method():</p>
+</blockquote>
+<pre><code># global j
+df = load_data()
+fill = []
+for i in range(len(df)):
+    if np.isnan(df.iloc[i][1]):
+        for j in range(i, len(df)):
+            if np.isnan(df.iloc[j][1]):
+                continue
+            else:
+                break
+        df.iloc[i, 1] = (linear_detail(i, df.iloc[i - 1][1], j + 1, df.iloc[j][1]))(i + 1)
+        fill_tuple = i + 1, df.iloc[i][1]
+        fill.append(fill_tuple)
+draw_scatte_diagram(df)
+df = pd.DataFrame(fill, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+df.to_csv(&apos;pm25_predicted_linear.csv&apos;, index=False)
+</code></pre><h1 id="平滑插值详细"><a href="#平滑插值详细" class="headerlink" title="平滑插值详细"></a>平滑插值详细</h1><blockquote>
+<p>def smooth_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]<br>    return reduce(lambda a, b: a + b, y) / len(y)</p>
+</blockquote>
+<h1 id="平滑插值"><a href="#平滑插值" class="headerlink" title="平滑插值"></a>平滑插值</h1><blockquote>
+<p>def smooth_method(show=1):<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = smooth_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
+</blockquote>
+<pre><code>        # print(j, df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;])
+        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
+        full.append(full_tuple)
+if show:
+    draw_scatte_diagram(df_raw)
+    df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+    df.to_csv(&apos;pm25_predicted_smooth.csv&apos;, index=False)
+return df_raw
+</code></pre><h1 id="拉格朗日插值详细"><a href="#拉格朗日插值详细" class="headerlink" title="拉格朗日插值详细"></a>拉格朗日插值详细</h1><blockquote>
+<p>def lagrange_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]  # 剔除空值<br>    return lagrange(y.index, list(y))(pos)  # 插值并返回插值结果</p>
+</blockquote>
+<h1 id="拉格朗日插值"><a href="#拉格朗日插值" class="headerlink" title="拉格朗日插值"></a>拉格朗日插值</h1><blockquote>
+<p>def lagrange_method():<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = lagrange_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
+</blockquote>
+<pre><code>        # print(j, df.loc[j, &apos;index&apos;], df[j])
+        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
+        full.append(full_tuple)
+draw_scatte_diagram(df_raw)
+df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+df.to_csv(&apos;pm25_predicted_lagrange.csv&apos;, index=False)
+</code></pre><h1 id="计算RMSE"><a href="#计算RMSE" class="headerlink" title="计算RMSE"></a>计算RMSE</h1><blockquote>
+<p>def calculate_RMSE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return (sum([n * n for n in error]) / len(error)) ** 0.5</p>
+</blockquote>
+<h1 id="计算MAE"><a href="#计算MAE" class="headerlink" title="计算MAE"></a>计算MAE</h1><blockquote>
+<p>def calculate_MAE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return sum([abs(n) for n in error]) / len(error)</p>
+</blockquote>
+<h1 id="计算R-square"><a href="#计算R-square" class="headerlink" title="计算R-square"></a>计算R-square</h1><blockquote>
+<p>def calculate_R_Square(target, prediction):<br>    error = []<br>    a = calculate_MAE(target, prediction) <em> len(error)<br>    mean = np.mean(np.array(target))<br>    for i in range(len(target)):<br>        error.append(prediction[i] - mean)<br>    b = sum([n </em> n for n in error])<br>    return 1 - a / b</p>
+</blockquote>
+<blockquote>
+<p>if <strong>name</strong> == ‘<strong>main</strong>‘:</p>
+</blockquote>
+<pre><code># mean_method()
+# median_method()
+# mode_method()
+# ffill_method()
+# bfill_method()
+# mean_by_before_after_method()
+# linear_method()
+# lagrange_method()
+smooth_method()
+</code></pre><p>2.fbprophet_fill.py</p>
+<blockquote>
+<p># -<em>- coding:utf-8 -</em>-<br>from pandas.io.sas.sas7bdat import _column<br>from time_series_fill import smooth_method<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>import datetime<br>from fbprophet import Prophet<br>if <strong>name</strong> == ‘<strong>main</strong>‘:<br>    def load_data():<br>        # df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)<br>        # return df.head(100)<br>        df = smooth_method(0)<br>        return df.head(3129)<br>    df = load_data()<br>    first_value = datetime.datetime.strptime(‘2017-01-01 00:00:00’, ‘%Y-%m-%d %H:%M:%S’)<br>    for i in range(len(df)):<br>        df.iloc[i, 0] = (first_value + datetime.timedelta(hours=i)).strftime(“%Y-%m-%d %H:%M:%S”)<br>    # df = pd.DataFrame(, columns=[‘ds’, ‘y’])<br>    # df.to_csv(‘pm25_predicted_mean.csv’, index=False)<br>    # print(df.iloc[1,0])<br>    df.rename(columns={‘index’: ‘ds’, ‘PM2.5’: ‘y’}, inplace=True)<br>    m = Prophet()<br>    # df[‘y’] = np.log(df[‘y’])<br>    df = m.fit(df)<br>    future = m.make_future_dataframe(freq=’H’, periods=5428)<br>    future.tail()<br>    forecast = m.predict(future)<br>    forecast[[‘ds’, ‘yhat’, ‘yhat_lower’, ‘yhat_upper’]].tail()<br>    fig1 = m.plot(forecast)<br>    fig2 = m.plot_components(forecast)<br>    plt.show()</p>
+</blockquote>
+<p>运行结果图：<br><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
+<p><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
+<p>Mean</p>
+<p>Median</p>
+<p>Ffill_method</p>
+<p>Bfill_method</p>
+<p>Linear_method</p>
+<p>lagrange_method</p>
+<p>smooth_method</p>
+<p>Fbprophet实现</p>
+<p>日，周，月的趋势<br>未完待续。。。</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    <div>
+          
+    </div>
+
+    
+
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://seasand1024.github.io/2021/06/17/浅谈java基础之JVM/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1469,13 +1739,12 @@
       
         
           
-            <p>####1.java实现跨平台的原理。</p>
-<ul>
-<li>java实现跨平台的原理是基于JVM实现的，即Java Virtual Machine,对于不同机器平台有不同的JVM版本（JVM本身是用C/C++实现的），通过模拟一台计算机来达到一个计算机所具有的计算功能，底层都是运行编译器生成的java字节码文件，实现了 “一次编译，到处运行” 的目的。<br>总结： JVM 屏蔽了与各个计算机平台相关的软件或者硬件之间的差异，使得与平台相关的耦合统一由 JVM 提供者来实现<br>####2.JVM的组成以及各部分详解<br>JVM的基本结构是由4部分组成的：</li>
+            <h4 id="java实现跨平台的原理"><a href="#java实现跨平台的原理" class="headerlink" title="java实现跨平台的原理"></a>java实现跨平台的原理</h4><ul>
+<li>java实现跨平台的原理是基于JVM实现的，即Java Virtual Machine,对于不同机器平台有不同的JVM版本（JVM本身是用C/C++实现的），通过模拟一台计算机来达到一个计算机所具有的计算功能，底层都是运行编译器生成的java字节码文件，实现了 “一次编译，到处运行” 的目的。<br>总结： JVM 屏蔽了与各个计算机平台相关的软件或者硬件之间的差异，使得与平台相关的耦合统一由 JVM 提供者来实现<h4 id="JVM的组成以及各部分详解"><a href="#JVM的组成以及各部分详解" class="headerlink" title="JVM的组成以及各部分详解"></a>JVM的组成以及各部分详解</h4>JVM的基本结构是由4部分组成的：</li>
 <li>类加载器，在 JVM 启动时或者类运行时将需要的 class 加载到 JVM 中；</li>
 <li>执行引擎，执行引擎负责执行class文件包含的字节码指令，相当于机器的CPU；</li>
 <li>内存区，将内存划分成若干个区域，模拟机器上上的存储，记录和调度功能模块，比如各种功能的寄存器和PC指针记录器；</li>
-<li>本地方法调用，调用C/C++实现的本地代码的返回结果；<br><img src="https://upload-images.jianshu.io/upload_images/10224563-59034e35b9037bf9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>####3.类加载器基本原理<br>类加载器（class loader），用来加载java类到虚拟机中。一般来说，java虚拟机使用java的过程如下：java源程序经过java编译器转化之后变化成java字节码文件。类加载器负责读取java字节码文件，并转化成java.lang.Class的一个实例，每个实例就是一个java类,通过实例的newInstance()方法生成该类的一个对象，或者使用java动态代理生成的会有更复杂的过程，或者通过网络下载的。<br>####补充：java判断2个对象的过程<br>第一步查看类名是否相同，第二步查看类加载器是否相同，只有2者都是相同的情况下才会被认为2者是相同的。具体来说，可以在不同包里面新建2个相同类名的类，进行编译运行测试，判断2者是否属于相同，判断对象是否相同可以用.equal()方法；<br>####4.类加载器加载class文件的详细过程<br><img src="https://upload-images.jianshu.io/upload_images/10224563-b8cb7ca912749afc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></li>
+<li>本地方法调用，调用C/C++实现的本地代码的返回结果；<br><img src="../../../../images/post-images/10224563-59034e35b9037bf9.png" alt="image.png"><h4 id="类加载器基本原理"><a href="#类加载器基本原理" class="headerlink" title="类加载器基本原理"></a>类加载器基本原理</h4>类加载器（class loader），用来加载java类到虚拟机中。一般来说，java虚拟机使用java的过程如下：java源程序经过java编译器转化之后变化成java字节码文件。类加载器负责读取java字节码文件，并转化成java.lang.Class的一个实例，每个实例就是一个java类,通过实例的newInstance()方法生成该类的一个对象，或者使用java动态代理生成的会有更复杂的过程，或者通过网络下载的。<h4 id="补充：java判断2个对象的过程"><a href="#补充：java判断2个对象的过程" class="headerlink" title="补充：java判断2个对象的过程"></a>补充：java判断2个对象的过程</h4>第一步查看类名是否相同，第二步查看类加载器是否相同，只有2者都是相同的情况下才会被认为2者是相同的。具体来说，可以在不同包里面新建2个相同类名的类，进行编译运行测试，判断2者是否属于相同，判断对象是否相同可以用.equal()方法；<h4 id="类加载器加载class文件的详细过程"><a href="#类加载器加载class文件的详细过程" class="headerlink" title="类加载器加载class文件的详细过程"></a>类加载器加载class文件的详细过程</h4><img src="../../../../images/post-images/10224563-b8cb7ca912749afc.png" alt="image.png"></li>
 <li>第一阶段找到这个class文件，并且 把它加载到内存中；</li>
 <li>第二阶段分为3个小步骤，即<ul>
 <li>字节码验证；</li>
@@ -1483,7 +1752,7 @@
 <li>相应的内存分配与符号链接；</li>
 </ul>
 </li>
-<li>第三个阶段是静态属性和初始化赋值，静态代码块的执行；<h5 id="（1）-加载阶段的详细分析"><a href="#（1）-加载阶段的详细分析" class="headerlink" title="（1） 加载阶段的详细分析"></a>（1） 加载阶段的详细分析</h5>查找并加载类的二进制数据时的类加载的第一个阶段，即加载阶段需要执行3个操作：</li>
+<li>第三个阶段是静态属性和初始化赋值，静态代码块的执行；<br>#####（1）加载阶段的详细分析<br>查找并加载类的二进制数据时的类加载的第一个阶段，即加载阶段需要执行3个操作：</li>
 <li>通过一个类的全限定名称来获取其定义的二进制流；</li>
 <li>将二进制的静态存储结构转化为方法区的运行时数据结构；</li>
 <li>在java堆中生成一个这个类的java.lang.Class对象，作为对方法区中的这些数据的访问入口。</li>
@@ -1491,8 +1760,7 @@
 <p>相对于类加载的其他阶段而言，加载阶段（准确地说，是加载阶段获取类的二进制字节流的动作）是可控性最强的阶段，因为开发人员既可以使用系统提供的类加载器来完成加载，也可以自定义自己的类加载器来完成加载。</p>
 <p>加载阶段完成后，虚拟机外部的二进制字节流就按照虚拟机所需的格式存储在方法区之中，而且在Java堆中也创建一个 java.lang.Class类的对象，这样便可以通过该对象访问方法区中的这些数据。</p>
 <p>#####（2）连接阶段详细分析</p>
-<p> ######验证：确保被加载的类的正确性</p>
-<p>验证是连接阶段的第一步，这一阶段的目的是为了确保Class文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机自身的安全。验证阶段大致会完成4个阶段的检验动作：</p>
+<h6 id="验证：确保被加载的类的正确性"><a href="#验证：确保被加载的类的正确性" class="headerlink" title="验证：确保被加载的类的正确性"></a>验证：确保被加载的类的正确性</h6><p>验证是连接阶段的第一步，这一阶段的目的是为了确保Class文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机自身的安全。验证阶段大致会完成4个阶段的检验动作：</p>
 <ul>
 <li>文件格式验证：验证字节流是否符合Class文件格式的规范；例如：是否以 0xCAFEBABE开头、主次版本号是否在当前虚拟机的处理范围之内、常量池中的常量是否有不被支持的类型。</li>
 <li>元数据验证：对字节码描述的信息进行语义分析（注意：对比javac编译阶段的语义分析），以保证其描述的信息符合Java语言规范的要求；例如：这个类是否有父类，除了 java.lang.Object之外。</li>
@@ -1500,7 +1768,7 @@
 <li>符号引用验证：确保解析动作能正确执行。</li>
 </ul>
 <p>验证阶段是非常重要的，但不是必须的，它对程序运行期没有影响，如果所引用的类经过反复验证，那么可以考虑采用 -Xverifynone 参数来关闭大部分的类验证措施，以缩短虚拟机类加载的时间。</p>
-<p>######准备：为类的静态变量分配内存，并将其初始化为默认值<br>准备阶段是正式为类变量分配内存并设置类变量初始值的阶段，这些内存都将在方法区中分配。对于该阶段有以下几点需要注意：</p>
+<h6 id="准备：为类的静态变量分配内存，并将其初始化为默认值"><a href="#准备：为类的静态变量分配内存，并将其初始化为默认值" class="headerlink" title="准备：为类的静态变量分配内存，并将其初始化为默认值"></a>准备：为类的静态变量分配内存，并将其初始化为默认值</h6><p>准备阶段是正式为类变量分配内存并设置类变量初始值的阶段，这些内存都将在方法区中分配。对于该阶段有以下几点需要注意：</p>
 <ul>
 <li>这时候进行内存分配的仅包括类变量（static），而不包括实例变量，实例变量会在对象实例化时随着对象一块分配在Java堆中。</li>
 <li>这里所设置的初始值通常情况下是数据类型默认的零值（如0、0L、null、false等），而不是被在Java代码中被显式地赋予的值。</li>
@@ -1519,8 +1787,7 @@
 </blockquote>
 <p>假设上面的类变量 value 被定义为： public static final int value = 3;</p>
 <p>编译时 Javac 将会为 value 生成 ConstantValue 属性，在准备阶段虚拟机就会根据 ConstantValue 的设置将 value 赋值为 3。我们可以理解为 static final 常量在编译期就将其结果放入了调用它的类的常量池中。</p>
-<p>######解析：把类中的符号引用转换为直接引用</p>
-<p>#####（3）初始化阶段详细分析<br>初始化，为类的静态变量赋予正确的初始值，JVM负责对类进行初始化，主要对类变量进行初始化。在Java中对类变量进行初始值设定有两种方式：</p>
+<h6 id="解析：把类中的符号引用转换为直接引用"><a href="#解析：把类中的符号引用转换为直接引用" class="headerlink" title="解析：把类中的符号引用转换为直接引用"></a>解析：把类中的符号引用转换为直接引用</h6><p>#####（3）初始化阶段详细分析<br>初始化，为类的静态变量赋予正确的初始值，JVM负责对类进行初始化，主要对类变量进行初始化。在Java中对类变量进行初始值设定有两种方式：</p>
 <ul>
 <li>声明类变量是指定初始值</li>
 <li>使用静态代码块为类变量指定初始值</li>
@@ -1540,14 +1807,14 @@
 <li>初始化某个类的子类，则其父类也会被初始化</li>
 <li>Java虚拟机启动时被标明为启动类的类（ JavaTest），直接使用 java.exe命令来运行某个主类</li>
 </ul>
-<p>######结束生命周期<br>在如下几种情况下，Java虚拟机将结束生命周期</p>
+<h6 id="结束生命周期"><a href="#结束生命周期" class="headerlink" title="结束生命周期"></a>结束生命周期</h6><p>在如下几种情况下，Java虚拟机将结束生命周期</p>
 <ul>
 <li>执行了 System.exit()方法</li>
 <li>程序正常执行结束</li>
 <li>程序在执行过程中遇到了异常或错误而异常终止</li>
 <li>由于操作系统出现错误而导致Java虚拟机进程终止</li>
 </ul>
-<p>####5.双亲委派模型（Parent Delegation Model）<br>类的加载过程采用双亲委派机制，这种机制能更好的保证 Java 平台的安全性。<br>类加载器 ClassLoader 是具有层次结构的，也就是父子关系，其中，Bootstrap 是所有类加载器的父亲，如下图所示：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-247d5c507d8494e3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h4 id="双亲委派模型（Parent-Delegation-Model）"><a href="#双亲委派模型（Parent-Delegation-Model）" class="headerlink" title="双亲委派模型（Parent Delegation Model）"></a>双亲委派模型（Parent Delegation Model）</h4><p>类的加载过程采用双亲委派机制，这种机制能更好的保证 Java 平台的安全性。<br>类加载器 ClassLoader 是具有层次结构的，也就是父子关系，其中，Bootstrap 是所有类加载器的父亲，如下图所示：<br><img src="../../../../images/post-images/10224563-247d5c507d8494e3.png" alt="image.png"></p>
 <blockquote>
 <p>该模型要求除了顶层的 Bootstrap class loader 启动类加载器外，其余的类加载器都应当有自己的父类加载器。子类加载器和父类加载器不是以继承（Inheritance）的关系来实现，而是通过组合（Composition）关系来复用父加载器的代码。每个类加载器都有自己的命名空间（由该加载器及所有父类加载器所加载的类组成，在同一个命名空间中，不会出现类的完整名字（包括类的包名）相同的两个类；在不同的命名空间中，有可能会出现类的完整名字（包括类的包名）相同的两个类）。</p>
 </blockquote>
@@ -1566,8 +1833,7 @@
 <blockquote>
 <p>这是对于使用这种模型来组织累加器的好处；主要是为了安全性，避免用户自己编写的类动态替换 Java 的一些核心类，比如 String，同时也避免了重复加载，因为 JVM 中区分不同类，不仅仅是根据类名，相同的 class 文件被不同的 ClassLoader 加载就是不同的两个类，如果相互转型的话会抛java.lang.ClassCaseException。</p>
 </blockquote>
-<p>####6.JVM内存管理</p>
-<p>#####（1）内存划分<br><img src="https://upload-images.jianshu.io/upload_images/10224563-2b40e6da3a433ed9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<h4 id="JVM内存管理"><a href="#JVM内存管理" class="headerlink" title="JVM内存管理"></a>JVM内存管理</h4><h5 id="（1）内存划分"><a href="#（1）内存划分" class="headerlink" title="（1）内存划分"></a>（1）内存划分</h5><p><img src="../../../../images/post-images/10224563-2b40e6da3a433ed9.png" alt="image.png"></p>
 <p>1.方法区（线程共享）：各个线程共享的一个区域，用于存储虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码等数据。虽然 Java 虚拟机规范把方法区描述为堆的一个逻辑部分，但是它却又一个别名叫做 Non-Heap（非堆），目的应该是与 Java 堆区分开来。</p>
 <ul>
 <li>运行时常量池：是方法区的一部分，用于存放编译器生成的各种字面量和符号引用。</li>
@@ -1777,7 +2043,7 @@ public class B extends A {
     }
 }
 </code></pre></blockquote>
-<p>我们尝试运行，看看结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-039c5928d44ca760.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>结果是12#a*b#a*b,来分析下整个流程：</p>
+<p>我们尝试运行，看看结果：<br><img src="../../../../images/post-images/10224563-039c5928d44ca760.png" alt="image.png"><br>结果是12#a*b#a*b,来分析下整个流程：</p>
 <ul>
 <li>第一步按顺序加载2个类的静态代码块，程序载入时，只会执行一次，输出12；</li>
 <li>第二步按顺序分别加载A类和B类的非静态代码块以及构造方法，输出#a*b;</li>
@@ -1977,596 +2243,7 @@ public class B extends A {
 <li><p>TRANSACTION_SERIALIZABLE  –最高的事务级别，它防止脏读、不可重复的读和虚读。</p>
 </li>
 </ul>
-<p><img src="https://upload-images.jianshu.io/upload_images/10224563-5d3e594331d0c758.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="$LBPYPLJ89T4Z~VED9O)9@E.png"></p>
-
-          
-        
-      
-    </div>
-    
-    
-    
-
-    <div>
-          
-    </div>
-
-    
-
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://seasand1024.github.io/2021/06/17/spring-aop模式管理数据库事务/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Gin">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/head.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Mr_Chen">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2021/06/17/spring-aop模式管理数据库事务/" itemprop="url">spring aop模式管理数据库事务</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-06-17T21:52:12+08:00">
-                2021-06-17
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/后端/" itemprop="url" rel="index">
-                    <span itemprop="name">后端</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>####1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：</p>
-<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-
-&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
-  xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
-  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
-
-  &lt;groupId&gt;com.cyy&lt;/groupId&gt;
-  &lt;artifactId&gt;spring_aop&lt;/artifactId&gt;
-  &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
-
-  &lt;name&gt;spring_aop&lt;/name&gt;
-  &lt;!-- FIXME change it to the project&apos;s website --&gt;
-  &lt;url&gt;http://www.example.com&lt;/url&gt;
-
-  &lt;properties&gt;
-    &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
-    &lt;maven.compiler.source&gt;1.8&lt;/maven.compiler.source&gt;
-    &lt;maven.compiler.target&gt;1.8&lt;/maven.compiler.target&gt;
-    &lt;spring.version&gt;4.3.12.RELEASE&lt;/spring.version&gt;
-  &lt;/properties&gt;
-
-  &lt;dependencies&gt;
-    &lt;dependency&gt;
-      &lt;groupId&gt;junit&lt;/groupId&gt;
-      &lt;artifactId&gt;junit&lt;/artifactId&gt;
-      &lt;version&gt;4.11&lt;/version&gt;
-      &lt;scope&gt;test&lt;/scope&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
-      &lt;artifactId&gt;spring-aop&lt;/artifactId&gt;
-      &lt;version&gt;${spring.version}&lt;/version&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;aopalliance&lt;/groupId&gt;
-      &lt;artifactId&gt;aopalliance&lt;/artifactId&gt;
-      &lt;version&gt;1.0&lt;/version&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.aspectj&lt;/groupId&gt;
-      &lt;artifactId&gt;aspectjrt&lt;/artifactId&gt;
-      &lt;version&gt;1.8.11&lt;/version&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
-      &lt;artifactId&gt;spring-aspects&lt;/artifactId&gt;
-      &lt;version&gt;${spring.version}&lt;/version&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
-      &lt;artifactId&gt;spring-tx&lt;/artifactId&gt;
-      &lt;version&gt;${spring.version}&lt;/version&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
-      &lt;artifactId&gt;spring-jdbc&lt;/artifactId&gt;
-      &lt;version&gt;${spring.version}&lt;/version&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;mysql&lt;/groupId&gt;
-      &lt;artifactId&gt;mysql-connector-java&lt;/artifactId&gt;
-      &lt;version&gt;5.1.42&lt;/version&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;c3p0&lt;/groupId&gt;
-      &lt;artifactId&gt;c3p0&lt;/artifactId&gt;
-      &lt;version&gt;0.9.1.2&lt;/version&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
-      &lt;artifactId&gt;spring-beans&lt;/artifactId&gt;
-      &lt;version&gt;${spring.version}&lt;/version&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
-      &lt;artifactId&gt;spring-core&lt;/artifactId&gt;
-      &lt;version&gt;${spring.version}&lt;/version&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
-      &lt;artifactId&gt;spring-context&lt;/artifactId&gt;
-      &lt;version&gt;${spring.version}&lt;/version&gt;
-    &lt;/dependency&gt;
-
-    &lt;dependency&gt;
-      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
-      &lt;artifactId&gt;spring-expression&lt;/artifactId&gt;
-      &lt;version&gt;${spring.version}&lt;/version&gt;
-    &lt;/dependency&gt;
-
-
-  &lt;/dependencies&gt;
-
-  &lt;build&gt;
-    &lt;pluginManagement&gt;&lt;!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) --&gt;
-      &lt;plugins&gt;
-        &lt;plugin&gt;
-          &lt;artifactId&gt;maven-clean-plugin&lt;/artifactId&gt;
-          &lt;version&gt;3.0.0&lt;/version&gt;
-        &lt;/plugin&gt;
-        &lt;!-- see http://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging --&gt;
-        &lt;plugin&gt;
-          &lt;artifactId&gt;maven-resources-plugin&lt;/artifactId&gt;
-          &lt;version&gt;3.0.2&lt;/version&gt;
-        &lt;/plugin&gt;
-        &lt;plugin&gt;
-          &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
-          &lt;version&gt;3.7.0&lt;/version&gt;
-        &lt;/plugin&gt;
-        &lt;plugin&gt;
-          &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
-          &lt;version&gt;2.20.1&lt;/version&gt;
-        &lt;/plugin&gt;
-        &lt;plugin&gt;
-          &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
-          &lt;version&gt;3.0.2&lt;/version&gt;
-        &lt;/plugin&gt;
-        &lt;plugin&gt;
-          &lt;artifactId&gt;maven-install-plugin&lt;/artifactId&gt;
-          &lt;version&gt;2.5.2&lt;/version&gt;
-        &lt;/plugin&gt;
-        &lt;plugin&gt;
-          &lt;artifactId&gt;maven-deploy-plugin&lt;/artifactId&gt;
-          &lt;version&gt;2.8.2&lt;/version&gt;
-        &lt;/plugin&gt;
-      &lt;/plugins&gt;
-    &lt;/pluginManagement&gt;
-  &lt;/build&gt;
-&lt;/project&gt;
-</code></pre><p>具体的搭建项目步骤，自行百度解决。</p>
-<p>####2.转账事务环境搭建：<br>1）创建表和各个类与接口：</p>
-<pre><code>create database ee19_spring_day03;
-use ee19_spring_day03;
-create table account(
-  id int primary key auto_increment,
-  username varchar(50),
-  money int
-);
-insert into account(username,money) values(&apos;jack&apos;,&apos;10000&apos;);
-insert into account(username,money) values(&apos;rose&apos;,&apos;10000&apos;);
-</code></pre><ul>
-<li>新建service层和dao层以及各自下面的impl层</li>
-<li><p>在dao下面新建AccountDao接口，代码如下：</p>
-<pre><code>package com.cyy.dao;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 22:37 2018/8/1
- */
-public interface AccountDao {
-
-    public void out(String outer, Integer money) ;
-    public void in(String inner, Integer money) ;
-
-}
-</code></pre></li>
-<li><p>在dao下的impl下新建实现类AccountDaoImpl，继承自JdbcDaoSupport，实现其中的方法：</p>
-<pre><code>package com.cyy.dao.impl;
-
-import com.cyy.dao.AccountDao;
-import org.springframework.jdbc.core.support.JdbcDaoSupport;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 22:37 2018/8/1
- */
-public class AccountDaoImpl extends JdbcDaoSupport implements AccountDao {
-    @Override
-    public void out(String outer, Integer money) {
-
-        this.getJdbcTemplate().update(&quot;update account set money = money - ? where username = ?&quot;, money,outer);
-    }
-
-    @Override
-    public void in(String inner, Integer money) {
-        this.getJdbcTemplate().update(&quot;update account set money = money + ? where username = ?&quot;, money,inner);
-    }
-}
-</code></pre></li>
-<li><p>新建service下AccountService接口：</p>
-<pre><code>package com.cyy.service;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 22:40 2018/8/1
- */
-public interface AccountService {
-
-    public void transfer(String outer, String inner, Integer money);
-}
-</code></pre></li>
-<li><p>新建service.impl下AccountServiceImpl实现类：</p>
-<pre><code>package com.cyy.service.impl;
-
-import com.cyy.dao.AccountDao;
-import com.cyy.service.AccountService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 22:40 2018/8/1
- */
-public class AccountServiceImpl  implements AccountService{
-</code></pre></li>
-</ul>
-<pre><code>    public void setAccountDao(AccountDao accountDao) {
-        this.accountDao = accountDao;
-    }
-
-    private AccountDao accountDao;
-
-
-    @Override
-    public void transfer(String outer, String inner, Integer money) {
-        // TODO Auto-generated method stub
-        accountDao.out(outer, money);
-        //断电
-//        int i = 1 / 0;
-        accountDao.in(inner, money);
-    }
-}
-</code></pre><p>2）完善配置文件</p>
-<ul>
-<li>在main下新建与java的同级目录resources，并且标记为Resources Root;</li>
-<li>在resources下新建spring上下文文件applicationContext.xml，配置初始配置内容如下：</li>
-</ul>
-<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;beans xmlns=&quot;http://www.springframework.org/schema/beans&quot;
-       xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
-       xmlns:aop=&quot;http://www.springframework.org/schema/aop&quot;
-       xmlns:context=&quot;http://www.springframework.org/schema/context&quot;
-       xmlns:tx=&quot;http://www.springframework.org/schema/tx&quot;
-       xsi:schemaLocation=&quot;http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
-        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd
-        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
-       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd&quot;&gt;
-    &lt;context:property-placeholder location=&quot;classpath:jdbc.properties&quot;/&gt;
-
-    &lt;bean id=&quot;dataSource&quot; class=&quot;com.mchange.v2.c3p0.ComboPooledDataSource&quot;&gt;
-        &lt;property name=&quot;driverClass&quot; value=&quot;${jdbc.driver}&quot;/&gt;
-        &lt;property name=&quot;jdbcUrl&quot; value=&quot;${jdbc.url}&quot;/&gt;
-        &lt;property name=&quot;user&quot; value=&quot;${jdbc.username}&quot;/&gt;
-        &lt;property name=&quot;password&quot; value=&quot;${jdbc.password}&quot;/&gt;
-    &lt;/bean&gt;
-
-    &lt;bean id=&quot;accountDao&quot; class=&quot;com.cyy.dao.impl.AccountDaoImpl&quot;&gt;
-        &lt;property name=&quot;dataSource&quot; ref=&quot;dataSource&quot;/&gt;
-    &lt;/bean&gt;
-
-    &lt;bean id=&quot;accountService&quot; class=&quot;com.cyy.service.impl.AccountServiceImpl&quot;&gt;
-        &lt;property name=&quot;accountDao&quot; ref=&quot;accountDao&quot;/&gt;
-    &lt;/bean&gt;
-
-&lt;/beans&gt;
-</code></pre><ul>
-<li>在resources下新建jdbc.properties配置文件：</li>
-</ul>
-<pre><code>jdbc.driver=com.mysql.jdbc.Driver
-jdbc.url=jdbc:mysql://localhost:3306/ee19_spring_day03
-jdbc.username=root
-jdbc.password=
-</code></pre><p>3）测试文件的配置</p>
-<ul>
-<li>在main同级的test文件下的java下新建test文件（其实已经maven自动生成了），如图：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-f0a8e95d111c2c32.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></li>
-</ul>
-<p>配置代码：</p>
-<pre><code>package com.cyy;
-
-
-import com.cyy.service.AccountService;
-import org.junit.Test;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-/**
- * Unit test for simple App.
- */
-public class AppTest 
-{
-    /**
-     * Rigorous Test :-)
-     */
-    @Test
-    public void demo01(){
-        String xmlPath = &quot;applicationContext.xml&quot;;
-        ApplicationContext applicationContext = new ClassPathXmlApplicationContext(xmlPath);
-        AccountService accountService =  (AccountService) applicationContext.getBean(&quot;accountService&quot;);
-        accountService.transfer(&quot;rose&quot;, &quot;jack&quot;, 1000);
-    }
-
-}
-</code></pre><p>####3.测试运行<br>原本数据库jack和rose的money都是10000的：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-ac72d8c125bc3062.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>此处在AccountServiceImpl暂时注销掉了<br>  //        int i = 1 / 0;<br>先保证事务的正确运行查看效果，点击运行AppTest类：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-ab28af911bfe3aac.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>测试通过，再来查看数据库：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-749472f82639c604.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>已经成功实现了转账1000块的功能，这次把  //        int i = 1 / 0;注释去掉，<br>并且恢复数据库原本数值，再次点击AppTest类运行：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-9fe139292e669e3f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>异常报错，再去查看数据库：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-5a2104cf2c23e421.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>事务没有正确回滚，导致事务的ACID特性被破坏，所以接下来，我们将通过几种方式实现事务的管理。</p>
-<p>####4.手动事务管理</p>
-<ul>
-<li>修改AccountService接口：</li>
-</ul>
-<pre><code>package com.cyy.service;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 22:40 2018/8/1
- */
-public interface AccountService {
-
-//    public void transfer(String outer, String inner, Integer money);
-    public void transfer(final String outer,final String inner,final Integer money);
-}
-</code></pre><ul>
-<li>将AccountServiceImpl中原来的transfer注释掉，添加以下代码：</li>
-</ul>
-<pre><code>private TransactionTemplate transactionTemplate;
-public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
-    this.transactionTemplate = transactionTemplate;
-}
-@Override
-public void transfer(final String outer,final String inner,final Integer money) {
-    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
-
-        @Override
-        protected void doInTransactionWithoutResult(TransactionStatus arg0) {
-            accountDao.out(outer, money);
-            //断电
-              int i = 1/0;
-            accountDao.in(inner, money);
-        }
-    });
-
-}
-</code></pre><ul>
-<li>修改applicationContext.xml配置文件：</li>
-</ul>
-<pre><code>&lt;bean id=&quot;accountService&quot; class=&quot;com.cyy.service.impl.AccountServiceImpl&quot;&gt;
-    &lt;property name=&quot;accountDao&quot; ref=&quot;accountDao&quot;/&gt;
-    &lt;property name=&quot;transactionTemplate&quot; ref=&quot;transactionTemplate&quot;/&gt;
-&lt;/bean&gt;
-&lt;!-- 手动模式，使用TransactionTemplate --&gt;
- &lt;bean id=&quot;txManager&quot; class=&quot;org.springframework.jdbc.datasource.DataSourceTransactionManager&quot;&gt;
-    &lt;property name=&quot;dataSource&quot; ref=&quot;dataSource&quot;/&gt;
-&lt;/bean&gt;
-
-&lt;bean id=&quot;transactionTemplate&quot; class=&quot;org.springframework.transaction.support.TransactionTemplate&quot;&gt;
-    &lt;property name=&quot;transactionManager&quot; ref=&quot;txManager&quot;/&gt;
-&lt;/bean&gt;
-</code></pre><ul>
-<li>再次点击AppTest类运行测试，运行结果：</li>
-</ul>
-<p><img src="https://upload-images.jianshu.io/upload_images/10224563-48ab6b16ab8d2df0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>如期报错,再去查看数据库：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-dcdf6ad87573eace.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>如期实现了手动的事务管理，通过spring底层使用 TransactionTemplate 事务模板进行操作。</p>
-<p>####5.代理工厂实现的事务管理</p>
-<ul>
-<li>修改AccountService接口和AccountServiceImpl类以及applicationContext.xml为原本的配置；</li>
-</ul>
-<p>然后新增如下配置：</p>
-<pre><code> &lt;bean id=&quot;txManager&quot; class=&quot;org.springframework.jdbc.datasource.DataSourceTransactionManager&quot;&gt;
-   &lt;property name=&quot;dataSource&quot; ref=&quot;dataSource&quot;/&gt;
- &lt;/bean&gt;
-    &lt;bean id=&quot;proxyAccountService&quot; class=&quot;org.springframework.transaction.interceptor.TransactionProxyFactoryBean&quot;&gt;
-    &lt;property name=&quot;proxyInterfaces&quot; value=&quot;com.cyy.service.AccountService&quot;/&gt;
-    &lt;property name=&quot;target&quot; ref=&quot;accountService&quot;/&gt;
-    &lt;property name=&quot;transactionManager&quot; ref=&quot;txManager&quot;/&gt;
-    &lt;property name=&quot;transactionAttributes&quot;&gt;
-        &lt;props&gt;
-            &lt;prop key=&quot;transfer&quot;&gt;PROPAGATION_REQUIRED,ISOLATION_DEFAULT&lt;/prop&gt;
-        &lt;/props&gt;
-    &lt;/property&gt;
-&lt;/bean&gt;    
-</code></pre><ul>
-<li><p>在AppTest中新建demo2方法：</p>
-<pre><code>@Test
-public void demo02(){
-    String xmlPath = &quot;applicationContext.xml&quot;;
-    ApplicationContext applicationContext = new ClassPathXmlApplicationContext(xmlPath);
-    AccountService accountService =  (AccountService) applicationContext.getBean(&quot;proxyAccountService&quot;);
-    accountService.transfer(&quot;jack&quot;, &quot;rose&quot;, 1000);
-}
-</code></pre></li>
-<li><p>测试结果：</p>
-</li>
-</ul>
-<p><img src="https://upload-images.jianshu.io/upload_images/10224563-6f94344b6dcf4d61.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>一样报错，但是数据库没有实现错误转账，如图：</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/10224563-ba3ab6d571d669c7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>####6.基于xml的aop事务配置</p>
-<ul>
-<li><p>修改applicationContext.xml配置文件：</p>
-<pre><code> &lt;!--事务管理器的配置--&gt;
-  &lt;bean id=&quot;txManager&quot; class=&quot;org.springframework.jdbc.datasource.DataSourceTransactionManager&quot;&gt;
-    &lt;property name=&quot;dataSource&quot; ref=&quot;dataSource&quot;/&gt;
-&lt;/bean&gt;
- &lt;!-- 基于xml的aop事务配置 --&gt;
- &lt;tx:advice id=&quot;txAdvice&quot; transaction-manager=&quot;txManager&quot;&gt;
-     &lt;tx:attributes&gt;
-         &lt;tx:method name=&quot;transfer&quot; propagation=&quot;REQUIRED&quot; isolation=&quot;DEFAULT&quot;/&gt;
-     &lt;/tx:attributes&gt;
- &lt;/tx:advice&gt;
-
- &lt;aop:config&gt;
-     &lt;aop:advisor advice-ref=&quot;txAdvice&quot; pointcut=&quot;execution(* com.cyy.service.impl.*.*(..))&quot;/&gt;
- &lt;/aop:config&gt;
-</code></pre></li>
-<li><p>运行测试AppTest类的demo1()方法：</p>
-</li>
-</ul>
-<p><img src="https://upload-images.jianshu.io/upload_images/10224563-218e84e6ecb0e0a9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>数据库：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-9640bee658b2336a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>####7.基于注解的aop事务配置</p>
-<ul>
-<li><p>在applicationContext.xml中将以上代理类的配置替换成</p>
-<pre><code>&lt;tx:annotation-driven transaction-manager=&quot;txManager&quot;/&gt;
-</code></pre></li>
-<li><p>在需要进行事务操作的类或者方法上进行加上注解 @Transactional，同时可以配置事务传播级别和事务隔离级别，例如：</p>
-<pre><code>@Transactional(propagation = Propagation.REQUIRED,isolation = Isolation.DEFAULT)
-</code></pre></li>
-</ul>
-<p>简单解释一下，这里的传播级别设置的是REQUIRED,即支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置;隔离级别DEFAULT，使用数据库默认的事务隔离级别（MySQL 事务默认隔离级别是可重复读）。</p>
-<ul>
-<li>再次查看测试结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-fea1db5aaed45a0d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></li>
-</ul>
-<p>报错，数据库：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-c891d9eec4750387.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p><img src="../../../../images/post-images/10224563-5d3e594331d0c758.png" alt="$LBPYPLJ89T4Z~VED9O)9@E.png"></p>
 
           
         
@@ -2681,7 +2358,7 @@ public void demo02(){
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">18</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

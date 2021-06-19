@@ -96,10 +96,17 @@
 <meta property="og:site_name" content="Mr_Chen">
 <meta property="og:description" content="Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。 Apache Griffin填补了开源世界里在大数据质量领域的空白。就像空气质量，水和食品安全等无时不刻地在影响人类的生命一样，数据质量在数据科学领域是至关重要的。在大数据时代，企业决策调整，商机发">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2021-06-17T13:25:06.152Z">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-4cdc01da7a0a285c.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-b1e4fcbdee632715.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-a7e84c6a56d5f3a4.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-aa9b60841926f0a0.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-cd9a5aaafb910e22.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-577da07c46b740dd.png">
+<meta property="og:updated_time" content="2021-06-19T09:13:27.874Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Griffin POC">
 <meta name="twitter:description" content="Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。 Apache Griffin填补了开源世界里在大数据质量领域的空白。就像空气质量，水和食品安全等无时不刻地在影响人类的生命一样，数据质量在数据科学领域是至关重要的。在大数据时代，企业决策调整，商机发">
+<meta name="twitter:image" content="https://seasand1024.github.io/images/post-images/10224563-4cdc01da7a0a285c.png">
 
 
 
@@ -405,8 +412,9 @@
       
         <pre><code>Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。
 </code></pre><p>Apache Griffin填补了开源世界里在大数据质量领域的空白。就像空气质量，水和食品安全等无时不刻地在影响人类的生命一样，数据质量在数据科学领域是至关重要的。在大数据时代，企业决策调整，商机发现等越来越依赖于大数据的数据分析和数据挖掘，而数据质量的保证是所有一切数据分析和数据挖掘的基础。</p>
-<p>系统架构：</p>
-<p>Griffin架构图<br>1.apache griffin  安装配置；</p>
+<h6 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h6><p><img src="../../../../images/post-images/10224563-4cdc01da7a0a285c.png" alt="img.png"></p>
+<p>Griffin架构图</p>
+<p>1.apache griffin  安装配置；</p>
 <p>从官网下载最新版本<a href="http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；" target="_blank" rel="noopener">http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；</a></p>
 <p>2.(1)配置measure组件；</p>
 <pre><code>配置env-batch.json中hdfs和es的path,分别为&quot;hdfs://10.2.29.101:8020/griffin/batch/persist&quot;,&quot;http://10.2.29.102:9200/griffin/accuracy&quot;,env-streaming.json类似，env-streaming.json还要配置zk的host为“10.2.29.101:2181“，其他默认；
@@ -449,7 +457,8 @@
 cd ui/angular 
 
 ../angular/node_modules/.bin/ng serve --port 9280
-</code></pre><p>griffin运行界面<br>4.建立数据质量检测方案poc；</p>
+</code></pre><p><img src="../../../../images/post-images/10224563-b1e4fcbdee632715.png" alt="img.png"><br>griffin运行界面</p>
+<p>4.建立数据质量检测方案poc；</p>
 <pre><code>（1）建立accuracy类型检测，点击create measure 按钮，按照操作步骤进行设置，注意设置分区要相对应或者不设置；
 
 （2）建立data profiling类型检测，同样按照步骤操作；
@@ -457,10 +466,10 @@ cd ui/angular
 （3）点击create job根据提示创建job;
 
  结果如图：
-</code></pre><p>job界面</p>
-<p>job详解界面</p>
-<p>job4</p>
-<p>mea-job1</p>
+</code></pre><h6 id="job界面"><a href="#job界面" class="headerlink" title="job界面"></a>job界面</h6><p><img src="../../../../images/post-images/10224563-a7e84c6a56d5f3a4.png" alt="img.png"></p>
+<h6 id="job详解界面"><a href="#job详解界面" class="headerlink" title="job详解界面"></a>job详解界面</h6><p><img src="../../../../images/post-images/10224563-aa9b60841926f0a0.png" alt="img.png"></p>
+<h6 id="job4"><a href="#job4" class="headerlink" title="job4"></a>job4</h6><p><img src="../../../../images/post-images/10224563-cd9a5aaafb910e22.png" alt="img.png"></p>
+<h6 id="mea-job1"><a href="#mea-job1" class="headerlink" title="mea-job1"></a>mea-job1</h6><p><img src="../../../../images/post-images/10224563-577da07c46b740dd.png" alt="img.png"></p>
 
       
     </div>
@@ -471,38 +480,6 @@ cd ui/angular
     <div>
           
             
-<div class="my_post_copyright">
-  <script src="//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js"></script>
-
-  <!-- JS库 sweetalert 可修改路径 -->
-  <script type="text/javascript" src="http://jslibs.wuxubj.cn/sweetalert_mini/jquery-1.7.1.min.js"></script>
-  <script src="http://jslibs.wuxubj.cn/sweetalert_mini/sweetalert.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="http://jslibs.wuxubj.cn/sweetalert_mini/sweetalert.mini.css">
-
-  <p><span>本文标题:</span>Griffin POC</p>
-  <p><span>文章作者:</span>Gin</p>
-  <p><span>发布时间:</span>2021年06月17日 - 21:18:00</p>
-  <p><span>最后更新:</span>2021年06月17日 - 21:25:06</p>
-  <p><span>原始链接:</span><a href="/2021/06/17/Griffin-POC/" title="Griffin POC">https://seasand1024.github.io/2021/06/17/Griffin-POC/</a>
-    <span class="copy-path" title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://seasand1024.github.io/2021/06/17/Griffin-POC/" aria-label="复制成功！"></i></span>
-  </p>
-  <p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p>
-</div>
-<script>
-    var clipboard = new Clipboard('.fa-clipboard');
-    clipboard.on('success', $(function(){
-      $(".fa-clipboard").click(function(){
-        swal({
-          title: "",
-          text: '复制成功',
-          html: false,
-          timer: 500,
-          showConfirmButton: false
-        });
-      });
-    }));
-</script>
-
           
     </div>
 
@@ -612,8 +589,17 @@ cd ui/angular
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -652,7 +638,7 @@ cd ui/angular
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">18</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -721,6 +707,22 @@ cd ui/angular
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-6"><a class="nav-link" href="#系统架构"><span class="nav-number">1.</span> <span class="nav-text">系统架构</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#job界面"><span class="nav-number">2.</span> <span class="nav-text">job界面</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#job详解界面"><span class="nav-number">3.</span> <span class="nav-text">job详解界面</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#job4"><span class="nav-number">4.</span> <span class="nav-text">job4</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#mea-job1"><span class="nav-number">5.</span> <span class="nav-text">mea-job1</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       

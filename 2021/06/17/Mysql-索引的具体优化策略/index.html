@@ -88,13 +88,13 @@
 
 
 
-<meta name="description" content="前言：Mysql索引的底层实现原理包括数据结构和不同的mysql引擎下索引的实现方式会在另一篇文章中详细描写，这里主要讨论的是具体优化策略体现。 ####1. 导入这里的数据库示例用mysql的官方数据库employees做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下： ####2. 最左前缀原理和相关优化  首先可">
+<meta name="description" content="前言：Mysql索引的底层实现原理包括数据结构和不同的mysql引擎下索引的实现方式会在另一篇文章中详细描写，这里主要讨论的是具体优化策略体现。 1. 导入这里的数据库示例用mysql的官方数据库employees做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下： 2. 最左前缀原理和相关优化 首先可以查看employ">
 <meta name="keywords" content="mysql,索引">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Mysql 索引的具体优化策略">
 <meta property="og:url" content="https://seasand1024.github.io/2021/06/17/Mysql-索引的具体优化策略/index.html">
 <meta property="og:site_name" content="Mr_Chen">
-<meta property="og:description" content="前言：Mysql索引的底层实现原理包括数据结构和不同的mysql引擎下索引的实现方式会在另一篇文章中详细描写，这里主要讨论的是具体优化策略体现。 ####1. 导入这里的数据库示例用mysql的官方数据库employees做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下： ####2. 最左前缀原理和相关优化  首先可">
+<meta property="og:description" content="前言：Mysql索引的底层实现原理包括数据结构和不同的mysql引擎下索引的实现方式会在另一篇文章中详细描写，这里主要讨论的是具体优化策略体现。 1. 导入这里的数据库示例用mysql的官方数据库employees做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下： 2. 最左前缀原理和相关优化 首先可以查看employ">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-45e4cc03129ed99b.png">
 <meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-cc44fd8c9f7b2653.png">
@@ -122,10 +122,10 @@
 <meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-92a51386d3355253.png">
 <meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-0aed7b6b0101e3d1.png">
 <meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-229aa6a225ecdd9c.png">
-<meta property="og:updated_time" content="2021-06-18T17:06:27.197Z">
+<meta property="og:updated_time" content="2021-06-19T07:38:31.564Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Mysql 索引的具体优化策略">
-<meta name="twitter:description" content="前言：Mysql索引的底层实现原理包括数据结构和不同的mysql引擎下索引的实现方式会在另一篇文章中详细描写，这里主要讨论的是具体优化策略体现。 ####1. 导入这里的数据库示例用mysql的官方数据库employees做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下： ####2. 最左前缀原理和相关优化  首先可">
+<meta name="twitter:description" content="前言：Mysql索引的底层实现原理包括数据结构和不同的mysql引擎下索引的实现方式会在另一篇文章中详细描写，这里主要讨论的是具体优化策略体现。 1. 导入这里的数据库示例用mysql的官方数据库employees做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下： 2. 最左前缀原理和相关优化 首先可以查看employ">
 <meta name="twitter:image" content="https://seasand1024.github.io/images/post-images/10224563-45e4cc03129ed99b.png">
 
 
@@ -431,9 +431,8 @@
 
       
         <p><strong>前言</strong>：Mysql索引的底层实现原理包括数据结构和不同的mysql引擎下索引的实现方式会在另一篇文章中详细描写，这里主要讨论的是具体优化策略体现。</p>
-<p>####1. 导入<br>这里的数据库示例用mysql的官方数据库<a href="https://dev.mysql.com/doc/employee/en/employees-installation.html" target="_blank" rel="noopener">employees</a>做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下：<br><img src="../../../../images/post-images/10224563-45e4cc03129ed99b.png" alt="image.png"></p>
-<p>####2. 最左前缀原理和相关优化</p>
-<ul>
+<h4 id="1-导入"><a href="#1-导入" class="headerlink" title="1. 导入"></a>1. 导入</h4><p>这里的数据库示例用mysql的官方数据库<a href="https://dev.mysql.com/doc/employee/en/employees-installation.html" target="_blank" rel="noopener">employees</a>做演示，现在git上把项目clone到本地，按照mysql的官方文档进行导入（这里不做具体解释）。导入完后的数据库ER图具体如下：<br><img src="../../../../images/post-images/10224563-45e4cc03129ed99b.png" alt="image.png"></p>
+<h4 id="2-最左前缀原理和相关优化"><a href="#2-最左前缀原理和相关优化" class="headerlink" title="2. 最左前缀原理和相关优化"></a>2. 最左前缀原理和相关优化</h4><ul>
 <li>首先可以查看employees数据库titles都有哪些索引<blockquote>
 <p>SHOW INDEX FROM employees.titles;<br><img src="../../../../images/post-images/10224563-cc44fd8c9f7b2653.png" alt="image.png"></p>
 </blockquote>
@@ -515,9 +514,9 @@
 <p>EXPLAIN SELECT * FROM employees.titles WHERE emp_no - 1=’10000’;<br><img src="../../../../images/post-images/10224563-241d6ebae51777f1.png" alt="image.png"></p>
 </blockquote>
 <p>显然这个查询等价于查询emp_no为10001的函数，但是由于查询条件是一个表达式，MySQL无法为其使用索引。看来MySQL还没有智能到自动优化常量表达式的程度，因此在写查询语句时尽量避免表达式出现在查询中，而是先手工私下代数运算，转换为无表达式的查询语句。</p>
-<p>####3.如何选择索引和使用前缀索引<br>&nbsp;&nbsp;&nbsp;&nbsp;如何建立索引可以根据一条公式决定：</p>
+<h4 id="3-如何选择索引和使用前缀索引"><a href="#3-如何选择索引和使用前缀索引" class="headerlink" title="3.如何选择索引和使用前缀索引"></a>3.如何选择索引和使用前缀索引</h4><p>&nbsp;&nbsp;&nbsp;&nbsp;如何建立索引可以根据一条公式决定：</p>
 <blockquote>
-<p>######Index Selectivity = Cardinality / #T<br>其中Selectivity是索引的选择性指数，显然范围在（0,1]之间，Cardinality是指不重复的数据，也叫基数，#T是表的记录数，选择性指数越高建立索引的价值就越高（由B+Tree的性质决定的）；可以验证上面employees.titles表的title字段选择性指数数值：<br><img src="../../../../images/post-images/10224563-e9090f77202275e6.png" alt="image.png"></p>
+<h6 id="Index-Selectivity-Cardinality-T"><a href="#Index-Selectivity-Cardinality-T" class="headerlink" title="Index Selectivity = Cardinality / #T"></a>Index Selectivity = Cardinality / #T</h6><p>其中Selectivity是索引的选择性指数，显然范围在（0,1]之间，Cardinality是指不重复的数据，也叫基数，#T是表的记录数，选择性指数越高建立索引的价值就越高（由B+Tree的性质决定的）；可以验证上面employees.titles表的title字段选择性指数数值：<br><img src="../../../../images/post-images/10224563-e9090f77202275e6.png" alt="image.png"></p>
 </blockquote>
 <p>title的选择性不足0.0001（精确值为0.00001579），所以实在没有什么必要为其单独建索引。<br>可以多试几个数据，比如employees.salaries表的salary字段：<br><img src="../../../../images/post-images/10224563-b7b0ab46eca3cfb4.png" alt="image.png"></p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;有一种与索引选择性有关的索引优化策略叫做前缀索引，就是用列的前缀代替整个列作为索引key，当前缀长度合适时，可以做到既使得前缀索引的选择性接近全列索引，同时因为索引key变短而减少了索引文件的大小和维护开销。下面以employees.employees表为例介绍前缀索引的选择和使用。</p>
@@ -673,8 +672,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -713,7 +721,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">18</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -782,6 +790,22 @@
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-导入"><span class="nav-number">1.</span> <span class="nav-text">1. 导入</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-最左前缀原理和相关优化"><span class="nav-number">2.</span> <span class="nav-text">2. 最左前缀原理和相关优化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-如何选择索引和使用前缀索引"><span class="nav-number">3.</span> <span class="nav-text">3.如何选择索引和使用前缀索引</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#Index-Selectivity-Cardinality-T"><span class="nav-number">3.0.1.</span> <span class="nav-text">Index Selectivity = Cardinality / #T</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       

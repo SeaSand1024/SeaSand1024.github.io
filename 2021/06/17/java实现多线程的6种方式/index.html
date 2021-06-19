@@ -88,27 +88,27 @@
 
 
 
-<meta name="description" content="java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。 ####1.基于继承Thread类的实现  /** * @Author: Cyy * @Descripti">
+<meta name="description" content="java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。 1.基于继承Thread类的实现 /** * @Author: Cyy * @Description: 使">
 <meta name="keywords" content="java">
 <meta property="og:type" content="article">
 <meta property="og:title" content="java实现多线程的6种方式">
 <meta property="og:url" content="https://seasand1024.github.io/2021/06/17/java实现多线程的6种方式/index.html">
 <meta property="og:site_name" content="Mr_Chen">
-<meta property="og:description" content="java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。 ####1.基于继承Thread类的实现  /** * @Author: Cyy * @Descripti">
+<meta property="og:description" content="java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。 1.基于继承Thread类的实现 /** * @Author: Cyy * @Description: 使">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-88d736905e9966c0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-f166fcf2937e4e63.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-4551d8c4def647f6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-61a1e5b9bb26d736.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-13077b7fb6481123.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-2133e7d7e0cd6a0e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-77c92e58f3e72d7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-a872cc0e4d4c4047.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2021-06-17T09:50:17.894Z">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-88d736905e9966c0.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-f166fcf2937e4e63.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-4551d8c4def647f6.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-61a1e5b9bb26d736.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-13077b7fb6481123.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-2133e7d7e0cd6a0e.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-77c92e58f3e72d7b.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-a872cc0e4d4c4047.png">
+<meta property="og:updated_time" content="2021-06-19T08:13:07.882Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java实现多线程的6种方式">
-<meta name="twitter:description" content="java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。 ####1.基于继承Thread类的实现  /** * @Author: Cyy * @Descripti">
-<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/10224563-88d736905e9966c0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta name="twitter:description" content="java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。 1.基于继承Thread类的实现 /** * @Author: Cyy * @Description: 使">
+<meta name="twitter:image" content="https://seasand1024.github.io/images/post-images/10224563-88d736905e9966c0.png">
 
 
 
@@ -413,8 +413,7 @@
 
       
         <p>java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。</p>
-<p>####1.基于继承Thread类的实现</p>
-<blockquote>
+<h4 id="1-基于继承Thread类的实现"><a href="#1-基于继承Thread类的实现" class="headerlink" title="1.基于继承Thread类的实现"></a>1.基于继承Thread类的实现</h4><blockquote>
 <pre><code>/**
 * @Author: Cyy
 * @Description: 使用继承Thread实现线程的方式
@@ -456,10 +455,9 @@ public static void main(String[] args) {
     }
  }
 }
-</code></pre><p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-88d736905e9966c0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-88d736905e9966c0.png" alt="image.png"></p>
 </blockquote>
-<p>####2.基于实现Runnable接口的实现</p>
-<blockquote>
+<h4 id="2-基于实现Runnable接口的实现"><a href="#2-基于实现Runnable接口的实现" class="headerlink" title="2.基于实现Runnable接口的实现"></a>2.基于实现Runnable接口的实现</h4><blockquote>
 <pre><code>/**
 * @Author: Cyy
 * @Description:基于实现Runnable接口的实现
@@ -495,10 +493,9 @@ public static void main(String[] args) {
     }
   }
  }
-</code></pre><p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-f166fcf2937e4e63.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-f166fcf2937e4e63.png" alt="image.png"></p>
 </blockquote>
-<p>####3.基于内部类的实现</p>
-<blockquote>
+<h4 id="3-基于内部类的实现"><a href="#3-基于内部类的实现" class="headerlink" title="3.基于内部类的实现"></a>3.基于内部类的实现</h4><blockquote>
 <pre><code>public class Thread00 {
 
     public static void main(String[] args) {
@@ -545,7 +542,7 @@ public static void main(String[] args) {
     }
 }
 </code></pre></blockquote>
-<p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-4551d8c4def647f6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>另外，还有同时实现基于子类和接口的实现的情况：</p>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-4551d8c4def647f6.png" alt="image.png"><br>另外，还有同时实现基于子类和接口的实现的情况：</p>
 <blockquote>
 <pre><code>/**
  * @Author: Cyy
@@ -585,9 +582,8 @@ public class Thread03 {
     }
 }
 </code></pre></blockquote>
-<p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-61a1e5b9bb26d736.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>这里运行结果只有子类线程的打印，原因是虽然实现了Thread类构造办法里Runnable接口的实例，但是子类已经将父类的run方法进行重写了，所以只会执行子类的办法。</p>
-<p>####4.基于带返回值的线程实现方式</p>
-<blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-61a1e5b9bb26d736.png" alt="image.png"><br>这里运行结果只有子类线程的打印，原因是虽然实现了Thread类构造办法里Runnable接口的实例，但是子类已经将父类的run方法进行重写了，所以只会执行子类的办法。</p>
+<h4 id="4-基于带返回值的线程实现方式"><a href="#4-基于带返回值的线程实现方式" class="headerlink" title="4.基于带返回值的线程实现方式"></a>4.基于带返回值的线程实现方式</h4><blockquote>
 <pre><code>import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -617,9 +613,8 @@ public class Thread04 {
     }
 }
 </code></pre></blockquote>
-<p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-13077b7fb6481123.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>####5.基于线程池的方式。</p>
-<blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-13077b7fb6481123.png" alt="image.png"></p>
+<h4 id="5-基于线程池的方式。"><a href="#5-基于线程池的方式。" class="headerlink" title="5.基于线程池的方式。"></a>5.基于线程池的方式。</h4><blockquote>
 <pre><code>import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -651,7 +646,7 @@ public class Thread05 {
     }
 }
 </code></pre></blockquote>
-<p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-2133e7d7e0cd6a0e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-2133e7d7e0cd6a0e.png" alt="image.png"></p>
 <ul>
 <li>可以基于ExecutorService、Callable、Future实现有返回结果的多线程。</li>
 </ul>
@@ -699,9 +694,8 @@ public class Thread06 {
     }
 }
 </code></pre></blockquote>
-<p>运行结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-77c92e58f3e72d7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>####6.基于定时任务实现的多线程</p>
-<blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-77c92e58f3e72d7b.png" alt="image.png"></p>
+<h4 id="6-基于定时任务实现的多线程"><a href="#6-基于定时任务实现的多线程" class="headerlink" title="6.基于定时任务实现的多线程"></a>6.基于定时任务实现的多线程</h4><blockquote>
 <pre><code>import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -751,7 +745,7 @@ public class Thread07 {
 }
 </code></pre></blockquote>
 <p>运行结果：</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/10224563-a872cc0e4d4c4047.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p><img src="../../../../images/post-images/10224563-a872cc0e4d4c4047.png" alt="image.png"></p>
 
       
     </div>
@@ -773,7 +767,7 @@ public class Thread07 {
   <p><span>本文标题:</span>java实现多线程的6种方式</p>
   <p><span>文章作者:</span>Gin</p>
   <p><span>发布时间:</span>2021年06月17日 - 17:49:37</p>
-  <p><span>最后更新:</span>2021年06月17日 - 17:50:17</p>
+  <p><span>最后更新:</span>2021年06月19日 - 16:13:07</p>
   <p><span>原始链接:</span><a href="/2021/06/17/java实现多线程的6种方式/" title="java实现多线程的6种方式">https://seasand1024.github.io/2021/06/17/java实现多线程的6种方式/</a>
     <span class="copy-path" title="点击复制文章链接"><i class="fa fa-clipboard" data-clipboard-text="https://seasand1024.github.io/2021/06/17/java实现多线程的6种方式/" aria-label="复制成功！"></i></span>
   </p>
@@ -903,8 +897,17 @@ public class Thread07 {
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -943,7 +946,7 @@ public class Thread07 {
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">18</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1012,6 +1015,22 @@ public class Thread07 {
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-基于继承Thread类的实现"><span class="nav-number">1.</span> <span class="nav-text">1.基于继承Thread类的实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-基于实现Runnable接口的实现"><span class="nav-number">2.</span> <span class="nav-text">2.基于实现Runnable接口的实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-基于内部类的实现"><span class="nav-number">3.</span> <span class="nav-text">3.基于内部类的实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-基于带返回值的线程实现方式"><span class="nav-number">4.</span> <span class="nav-text">4.基于带返回值的线程实现方式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-基于线程池的方式。"><span class="nav-number">5.</span> <span class="nav-text">5.基于线程池的方式。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-基于定时任务实现的多线程"><span class="nav-number">6.</span> <span class="nav-text">6.基于定时任务实现的多线程</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       

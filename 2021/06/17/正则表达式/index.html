@@ -88,18 +88,18 @@
 
 
 
-<meta name="description" content="? 通配符匹配文件名中的 0 个或 1 个字符  通配符匹配零个或多个字符  ^ 为匹配输入字符串的开始位置。 [0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。 abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。 runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次">
+<meta name="description" content="? 通配符匹配文件名中的 0 个或 1 个字符 * 通配符匹配零个或多个字符 ^ 为匹配输入字符串的开始位置。 [0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。 abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。 runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次">
 <meta name="keywords" content="正则匹配">
 <meta property="og:type" content="article">
 <meta property="og:title" content="正则表达式">
 <meta property="og:url" content="https://seasand1024.github.io/2021/06/17/正则表达式/index.html">
 <meta property="og:site_name" content="Mr_Chen">
-<meta property="og:description" content="? 通配符匹配文件名中的 0 个或 1 个字符  通配符匹配零个或多个字符  ^ 为匹配输入字符串的开始位置。 [0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。 abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。 runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次">
+<meta property="og:description" content="? 通配符匹配文件名中的 0 个或 1 个字符 * 通配符匹配零个或多个字符 ^ 为匹配输入字符串的开始位置。 [0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。 abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。 runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2021-06-17T13:35:06.373Z">
+<meta property="og:updated_time" content="2021-06-19T08:07:23.159Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="正则表达式">
-<meta name="twitter:description" content="? 通配符匹配文件名中的 0 个或 1 个字符  通配符匹配零个或多个字符  ^ 为匹配输入字符串的开始位置。 [0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。 abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。 runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次">
+<meta name="twitter:description" content="? 通配符匹配文件名中的 0 个或 1 个字符 * 通配符匹配零个或多个字符 ^ 为匹配输入字符串的开始位置。 [0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。 abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。 runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次">
 
 
 
@@ -404,14 +404,12 @@
 
       
         <p>? 通配符匹配文件名中的 0 个或 1 个字符</p>
-<ul>
-<li>通配符匹配零个或多个字符</li>
-</ul>
+<p>* 通配符匹配零个或多个字符</p>
 <p>^ 为匹配输入字符串的开始位置。</p>
 <p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p>
 <p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p>
 <p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p>
-<p>runoo<em>b，可以匹配 runob、runoob、runoooooob 等，</em> 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
+<p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
 <p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>
 
       
@@ -468,8 +466,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2021/06/17/python-时间序列处理/" rel="next" title="python 时间序列处理">
-                <i class="fa fa-chevron-left"></i> python 时间序列处理
+              <a href="/2021/06/17/flink-理解/" rel="next" title="flink 理解">
+                <i class="fa fa-chevron-left"></i> flink 理解
               </a>
             
           </div>
@@ -572,7 +570,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">18</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

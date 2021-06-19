@@ -88,18 +88,18 @@
 
 
 
-<meta name="description" content="环境： idea 2017.2.5  jdk1.8  maven 3.5.0  新建一个Maven webapp项目  配置项目groupid,artifactid,version 2.搭建项目基本架构 注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。 3.配置项目项目配置文件，包括mvc配置文件spring-co">
+<meta name="description" content="环境： idea 2017.2.5  jdk1.8  maven 3.5.0 1. 新建一个Maven webapp项目配置项目groupid,artifactid,version 2.搭建项目基本架构注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。 3.配置项目项目配置文件，包括mvc配置文件spring-con">
 <meta name="keywords" content="idea,ssm">
 <meta property="og:type" content="article">
 <meta property="og:title" content="idea2017 搭建ssm框架过程">
 <meta property="og:url" content="https://seasand1024.github.io/2021/06/17/idea2017-搭建ssm框架过程/index.html">
 <meta property="og:site_name" content="Mr_Chen">
-<meta property="og:description" content="环境： idea 2017.2.5  jdk1.8  maven 3.5.0  新建一个Maven webapp项目  配置项目groupid,artifactid,version 2.搭建项目基本架构 注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。 3.配置项目项目配置文件，包括mvc配置文件spring-co">
+<meta property="og:description" content="环境： idea 2017.2.5  jdk1.8  maven 3.5.0 1. 新建一个Maven webapp项目配置项目groupid,artifactid,version 2.搭建项目基本架构注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。 3.配置项目项目配置文件，包括mvc配置文件spring-con">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2021-06-17T13:48:00.128Z">
+<meta property="og:updated_time" content="2021-06-19T08:00:17.386Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="idea2017 搭建ssm框架过程">
-<meta name="twitter:description" content="环境： idea 2017.2.5  jdk1.8  maven 3.5.0  新建一个Maven webapp项目  配置项目groupid,artifactid,version 2.搭建项目基本架构 注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。 3.配置项目项目配置文件，包括mvc配置文件spring-co">
+<meta name="twitter:description" content="环境： idea 2017.2.5  jdk1.8  maven 3.5.0 1. 新建一个Maven webapp项目配置项目groupid,artifactid,version 2.搭建项目基本架构注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。 3.配置项目项目配置文件，包括mvc配置文件spring-con">
 
 
 
@@ -409,24 +409,15 @@
 jdk1.8
 
 maven 3.5.0
-</code></pre><ol>
-<li>新建一个Maven webapp项目</li>
-</ol>
-<p>配置项目groupid,artifactid,version</p>
-<p>2.搭建项目基本架构</p>
-<pre><code>注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。
-</code></pre><p>3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。</p>
-<p>4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下：</p>
-<p>5.配置web.xml</p>
-<p>6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。</p>
-<pre><code>测试类，测试结果：
+</code></pre><h4 id="1-新建一个Maven-webapp项目"><a href="#1-新建一个Maven-webapp项目" class="headerlink" title="1. 新建一个Maven webapp项目"></a>1. 新建一个Maven webapp项目</h4><p>配置项目groupid,artifactid,version</p>
+<h4 id="2-搭建项目基本架构"><a href="#2-搭建项目基本架构" class="headerlink" title="2.搭建项目基本架构"></a>2.搭建项目基本架构</h4><pre><code>注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。
+</code></pre><h4 id="3-配置项目项目配置文件，包括mvc配置文件spring-context-mvc-xml，spring-Context上下文文件spring-context-xml-mybatis-config-xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback-lombok-所以有logback配置文件。"><a href="#3-配置项目项目配置文件，包括mvc配置文件spring-context-mvc-xml，spring-Context上下文文件spring-context-xml-mybatis-config-xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback-lombok-所以有logback配置文件。" class="headerlink" title="3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。"></a>3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。</h4><h4 id="4-接下来配置mybatis动态接口代理，在dao包下新建SysUserDao-entity下新建SysUser，mapper下新建SysUserMapper-xml，在spring-context配置文件里配置如下："><a href="#4-接下来配置mybatis动态接口代理，在dao包下新建SysUserDao-entity下新建SysUser，mapper下新建SysUserMapper-xml，在spring-context配置文件里配置如下：" class="headerlink" title="4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下："></a>4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下：</h4><h4 id="5-配置web-xml"><a href="#5-配置web-xml" class="headerlink" title="5.配置web.xml"></a>5.配置web.xml</h4><h4 id="6-完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。"><a href="#6-完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。" class="headerlink" title="6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。"></a>6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。</h4><pre><code>测试类，测试结果：
 
 dao层 
 </code></pre><p>service层：</p>
 <p>service和dao层基本测试完毕，controller在这里直接启动项目测试，为了方便，直接新建一个json类统一返回；</p>
 <p>返回值为true,并且将用户类返回，说明测试成功。</p>
-<p>7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：<a href="https://gitee.com/cyy2csy/ssm。" target="_blank" rel="noopener">https://gitee.com/cyy2csy/ssm。</a></p>
-
+<h4 id="7-至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https-gitee-com-lonelygin-ssm。"><a href="#7-至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https-gitee-com-lonelygin-ssm。" class="headerlink" title="7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https://gitee.com/lonelygin/ssm。"></a>7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：<a href="https://gitee.com/lonelygin/ssm。" target="_blank" rel="noopener">https://gitee.com/lonelygin/ssm。</a></h4>
       
     </div>
     
@@ -547,8 +538,17 @@ dao层
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -587,7 +587,7 @@ dao层
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">18</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -656,6 +656,22 @@ dao层
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-新建一个Maven-webapp项目"><span class="nav-number">1.</span> <span class="nav-text">1. 新建一个Maven webapp项目</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-搭建项目基本架构"><span class="nav-number">2.</span> <span class="nav-text">2.搭建项目基本架构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-配置项目项目配置文件，包括mvc配置文件spring-context-mvc-xml，spring-Context上下文文件spring-context-xml-mybatis-config-xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback-lombok-所以有logback配置文件。"><span class="nav-number">3.</span> <span class="nav-text">3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-接下来配置mybatis动态接口代理，在dao包下新建SysUserDao-entity下新建SysUser，mapper下新建SysUserMapper-xml，在spring-context配置文件里配置如下："><span class="nav-number">4.</span> <span class="nav-text">4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-配置web-xml"><span class="nav-number">5.</span> <span class="nav-text">5.配置web.xml</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。"><span class="nav-number">6.</span> <span class="nav-text">6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https-gitee-com-lonelygin-ssm。"><span class="nav-number">7.</span> <span class="nav-text">7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https://gitee.com/lonelygin/ssm。</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       

@@ -88,18 +88,18 @@
 
 
 
-<meta name="description" content="1.静态代理 静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。 IUserDao接口： package com.cyy.i.dao; /**  @Author: Cyy  @Description:接口  @Date:Created in 17:">
+<meta name="description" content="1.静态代理静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。 IUserDao接口： package com.cyy.i.dao; /**  @Author: Cyy  @Description:接口  @Date:Created in 17:0">
 <meta name="keywords" content="java">
 <meta property="og:type" content="article">
 <meta property="og:title" content="java的3种代理模式">
 <meta property="og:url" content="https://seasand1024.github.io/2021/06/17/java的3种代理模式/index.html">
 <meta property="og:site_name" content="Mr_Chen">
-<meta property="og:description" content="1.静态代理 静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。 IUserDao接口： package com.cyy.i.dao; /**  @Author: Cyy  @Description:接口  @Date:Created in 17:">
+<meta property="og:description" content="1.静态代理静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。 IUserDao接口： package com.cyy.i.dao; /**  @Author: Cyy  @Description:接口  @Date:Created in 17:0">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2021-06-17T13:50:25.339Z">
+<meta property="og:updated_time" content="2021-06-19T07:58:37.172Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java的3种代理模式">
-<meta name="twitter:description" content="1.静态代理 静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。 IUserDao接口： package com.cyy.i.dao; /**  @Author: Cyy  @Description:接口  @Date:Created in 17:">
+<meta name="twitter:description" content="1.静态代理静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。 IUserDao接口： package com.cyy.i.dao; /**  @Author: Cyy  @Description:接口  @Date:Created in 17:0">
 
 
 
@@ -403,8 +403,7 @@
       
 
       
-        <p>1.静态代理</p>
-<pre><code>静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。
+        <h4 id="1-静态代理"><a href="#1-静态代理" class="headerlink" title="1.静态代理"></a>1.静态代理</h4><pre><code>静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。
 </code></pre><p>IUserDao接口：</p>
 <p>package com.cyy.i.dao;</p>
 <p>/**</p>
@@ -479,8 +478,8 @@ daoProxy.save();
 <p>public static void main(String[] args) {</p>
 <pre><code>staticProxy();
 </code></pre><p>}<br>测试结果：</p>
-<p>静态代理<br>2.jdk动态代理模式</p>
-<pre><code>jdk动态代理模式是通过java的反射机制实现的，避免静态代理下多个接口多种事务需求而需要多写冗余的代码，而且不需要实现目标接口，同上使用相同的目标接口和实现类，只是代理类变成了DynamicUserDaoProxy。
+<p>静态代理</p>
+<h4 id="2-jdk动态代理模式"><a href="#2-jdk动态代理模式" class="headerlink" title="2.jdk动态代理模式"></a>2.jdk动态代理模式</h4><pre><code>jdk动态代理模式是通过java的反射机制实现的，避免静态代理下多个接口多种事务需求而需要多写冗余的代码，而且不需要实现目标接口，同上使用相同的目标接口和实现类，只是代理类变成了DynamicUserDaoProxy。
 </code></pre><p>动态代理类DynamicUserDaoProxy：</p>
 <p>package com.cyy.i.proxy;</p>
 <p>import java.lang.reflect.InvocationHandler;</p>
@@ -539,8 +538,8 @@ daoProxy.save();
 
 dynamicProxy();
 </code></pre><p>}<br>测试结果:</p>
-<p>jdk动态代理<br>3.基于cglib的动态代理</p>
-<pre><code>基于jdk的动态代理是需要一个实现接口的目标对象，实现单独对象的话要使用cglib的代理。新建一个CUserDao目标类，以及一个代理工厂类ProxyFactory，spring的核心包已经包括cglib的包，这里导入spring-core-4.0.0.RELEASE.jar的版本。
+<p>jdk动态代理</p>
+<h4 id="3-基于cglib的动态代理"><a href="#3-基于cglib的动态代理" class="headerlink" title="3.基于cglib的动态代理"></a>3.基于cglib的动态代理</h4><pre><code>基于jdk的动态代理是需要一个实现接口的目标对象，实现单独对象的话要使用cglib的代理。新建一个CUserDao目标类，以及一个代理工厂类ProxyFactory，spring的核心包已经包括cglib的包，这里导入spring-core-4.0.0.RELEASE.jar的版本。
 </code></pre><p>CUserDao目标类：</p>
 <p>package com.cyy.ni.dao;</p>
 <p>/**</p>
@@ -614,8 +613,8 @@ proxy.save();
 
 }
 </code></pre><p>测试结果：</p>
-<p>cglib代理<br>4.spring中的代理</p>
-<pre><code>Spring中代理对象可通过xml配置方式获得，也可通过ProxyFactory手动编程方式创建对象。先讲手动编程的方式。Spring中的代理对象其实是JDK Proxy和CGLIB Proxy 的结合。 下面我们新建spring包，新建目标类MyTarget，目标接口PeopleService，它的实现类EnglishService，织入类AroundInteceptor实现aop包下MethodInterceptor的接口，测试类ProxyFactoryTest，这里要导入的几个jar包有spring-aop-4.0.0.RELEASE.jar，aopalliance-1.0.jar，aspectjweaver-1.8.1.jar，commons-logging-1.0.4.jar。
+<p>cglib代理</p>
+<h4 id="4-spring中的代理"><a href="#4-spring中的代理" class="headerlink" title="4.spring中的代理"></a>4.spring中的代理</h4><pre><code>Spring中代理对象可通过xml配置方式获得，也可通过ProxyFactory手动编程方式创建对象。先讲手动编程的方式。Spring中的代理对象其实是JDK Proxy和CGLIB Proxy 的结合。 下面我们新建spring包，新建目标类MyTarget，目标接口PeopleService，它的实现类EnglishService，织入类AroundInteceptor实现aop包下MethodInterceptor的接口，测试类ProxyFactoryTest，这里要导入的几个jar包有spring-aop-4.0.0.RELEASE.jar，aopalliance-1.0.jar，aspectjweaver-1.8.1.jar，commons-logging-1.0.4.jar。
 </code></pre><p>目标类MyTarget：</p>
 <p>package com.cyy.spring;</p>
 <p>/**</p>
@@ -867,8 +866,17 @@ proxy.save();
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -907,7 +915,7 @@ proxy.save();
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">18</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -976,6 +984,22 @@ proxy.save();
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-静态代理"><span class="nav-number">1.</span> <span class="nav-text">1.静态代理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-jdk动态代理模式"><span class="nav-number">2.</span> <span class="nav-text">2.jdk动态代理模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-基于cglib的动态代理"><span class="nav-number">3.</span> <span class="nav-text">3.基于cglib的动态代理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-spring中的代理"><span class="nav-number">4.</span> <span class="nav-text">4.spring中的代理</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       

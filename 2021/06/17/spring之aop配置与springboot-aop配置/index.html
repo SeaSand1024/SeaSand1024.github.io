@@ -88,18 +88,18 @@
 
 
 
-<meta name="description" content="spring的面向切面编程，即aop编程是有3种作用的：  日志记录  安全验证  数据库事务管理   这里简单的先讲述下日志的记录体现。 1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/cyy2csy/ssm。 （1）基于xml的spring aop配置 新建包Aspect，在下面新建织入类Loggin">
+<meta name="description" content="spring的面向切面编程，即aop编程是有3种作用的：  日志记录  安全验证  数据库事务管理   这里简单的先讲述下日志的记录体现。 1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/lonelygin/ssm（1）基于xml的spring aop配置 新建包Aspect，在下面新建织入类Loggin">
 <meta name="keywords" content="java,spring">
 <meta property="og:type" content="article">
 <meta property="og:title" content="spring之aop配置与springboot aop配置">
 <meta property="og:url" content="https://seasand1024.github.io/2021/06/17/spring之aop配置与springboot-aop配置/index.html">
 <meta property="og:site_name" content="Mr_Chen">
-<meta property="og:description" content="spring的面向切面编程，即aop编程是有3种作用的：  日志记录  安全验证  数据库事务管理   这里简单的先讲述下日志的记录体现。 1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/cyy2csy/ssm。 （1）基于xml的spring aop配置 新建包Aspect，在下面新建织入类Loggin">
+<meta property="og:description" content="spring的面向切面编程，即aop编程是有3种作用的：  日志记录  安全验证  数据库事务管理   这里简单的先讲述下日志的记录体现。 1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/lonelygin/ssm（1）基于xml的spring aop配置 新建包Aspect，在下面新建织入类Loggin">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2021-06-17T13:51:50.367Z">
+<meta property="og:updated_time" content="2021-06-19T07:56:50.933Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="spring之aop配置与springboot aop配置">
-<meta name="twitter:description" content="spring的面向切面编程，即aop编程是有3种作用的：  日志记录  安全验证  数据库事务管理   这里简单的先讲述下日志的记录体现。 1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/cyy2csy/ssm。 （1）基于xml的spring aop配置 新建包Aspect，在下面新建织入类Loggin">
+<meta name="twitter:description" content="spring的面向切面编程，即aop编程是有3种作用的：  日志记录  安全验证  数据库事务管理   这里简单的先讲述下日志的记录体现。 1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/lonelygin/ssm（1）基于xml的spring aop配置 新建包Aspect，在下面新建织入类Loggin">
 
 
 
@@ -413,8 +413,7 @@
 </li>
 </ul>
 <p>这里简单的先讲述下日志的记录体现。</p>
-<p>1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址<a href="https://gitee.com/cyy2csy/ssm。" target="_blank" rel="noopener">https://gitee.com/cyy2csy/ssm。</a></p>
-<p>（1）基于xml的spring aop配置</p>
+<h4 id="1-spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https-gitee-com-lonelygin-ssm"><a href="#1-spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https-gitee-com-lonelygin-ssm" class="headerlink" title="1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/lonelygin/ssm"></a>1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址<a href="https://gitee.com/lonelygin/ssm" target="_blank" rel="noopener">https://gitee.com/lonelygin/ssm</a></h4><p>（1）基于xml的spring aop配置</p>
 <pre><code>新建包Aspect，在下面新建织入类LoggingAspect：
 </code></pre><p>package com.cyy.maven.core.Aspect;</p>
 <p>import org.aspectj.lang.JoinPoint;</p>
@@ -600,7 +599,7 @@ try {
 <p>beforeMethod</p>
 <p>afterMethod&amp;afterReturning<br>在aroundMethod加上@Around(“log()”)，注释掉其他的注解，可以实现相同的功能。</p>
 <p>2.springboot的aop配置不用基于xml，是完全基于注解的配置，和spring的注解配置很相似。</p>
-<p>这里也直接用以前搭建的springboot框架来测试，码云地址为<a href="https://gitee.com/cyy2csy/girl.git。" target="_blank" rel="noopener">https://gitee.com/cyy2csy/girl.git。</a></p>
+<p>这里也直接用以前搭建的springboot框架来测试，码云地址为<a href="https://gitee.com/lonelygin/girl.git。" target="_blank" rel="noopener">https://gitee.com/lonelygin/girl.git。</a></p>
 <p>新建Aspect包，下面新建HttpAspect织入类：</p>
 <p>package com.cyy.Aspect;</p>
 <p>import lombok.extern.slf4j.Slf4j;</p>
@@ -816,8 +815,17 @@ try {
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -856,7 +864,7 @@ try {
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">18</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -925,6 +933,22 @@ try {
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https-gitee-com-lonelygin-ssm"><span class="nav-number">1.</span> <span class="nav-text">1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/lonelygin/ssm</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       

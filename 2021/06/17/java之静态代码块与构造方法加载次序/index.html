@@ -96,12 +96,12 @@
 <meta property="og:site_name" content="Mr_Chen">
 <meta property="og:description" content="java中的静态代码块，非静态块，构造办法的加载顺序是这样的：静态代码块 （程序加载时一次）—&amp;gt;非静态块（每次实例化一次）—&amp;gt; 构造方法（每次实例化一次），废话不多说，上代码。  #####A类：  public class A {      static {         System.out.print(&amp;quot;1&amp;quot;);     }      {">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-039c5928d44ca760.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2021-06-17T13:54:35.753Z">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-039c5928d44ca760.png">
+<meta property="og:updated_time" content="2021-06-19T07:36:25.105Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java之静态代码块与构造方法加载次序">
 <meta name="twitter:description" content="java中的静态代码块，非静态块，构造办法的加载顺序是这样的：静态代码块 （程序加载时一次）—&amp;gt;非静态块（每次实例化一次）—&amp;gt; 构造方法（每次实例化一次），废话不多说，上代码。  #####A类：  public class A {      static {         System.out.print(&amp;quot;1&amp;quot;);     }      {">
-<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/10224563-039c5928d44ca760.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta name="twitter:image" content="https://seasand1024.github.io/images/post-images/10224563-039c5928d44ca760.png">
 
 
 
@@ -459,7 +459,7 @@ public class B extends A {
     }
 }
 </code></pre></blockquote>
-<p>我们尝试运行，看看结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-039c5928d44ca760.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"><br>结果是12#a*b#a*b,来分析下整个流程：</p>
+<p>我们尝试运行，看看结果：<br><img src="../../../../images/post-images/10224563-039c5928d44ca760.png" alt="image.png"><br>结果是12#a*b#a*b,来分析下整个流程：</p>
 <ul>
 <li>第一步按顺序加载2个类的静态代码块，程序载入时，只会执行一次，输出12；</li>
 <li>第二步按顺序分别加载A类和B类的非静态代码块以及构造方法，输出#a*b;</li>
@@ -624,7 +624,7 @@ public class B extends A {
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">18</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

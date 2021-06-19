@@ -88,33 +88,33 @@
 
 
 
-<meta name="description" content="####1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖： &amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;  &amp;lt;project xmlns=&amp;quot;http://maven.apache.org/POM/4.0.0&amp;quot; xmlns:xsi=&amp;quot;http:">
+<meta name="description" content="1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;  &amp;lt;project xmlns=&amp;quot;http://maven.apache.org/POM/4.0.0&amp;quot; xmlns:xsi=&amp;quot;http://www">
 <meta name="keywords" content="java,spring">
 <meta property="og:type" content="article">
 <meta property="og:title" content="spring aop模式管理数据库事务">
 <meta property="og:url" content="https://seasand1024.github.io/2021/06/17/spring-aop模式管理数据库事务/index.html">
 <meta property="og:site_name" content="Mr_Chen">
-<meta property="og:description" content="####1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖： &amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;  &amp;lt;project xmlns=&amp;quot;http://maven.apache.org/POM/4.0.0&amp;quot; xmlns:xsi=&amp;quot;http:">
+<meta property="og:description" content="1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;  &amp;lt;project xmlns=&amp;quot;http://maven.apache.org/POM/4.0.0&amp;quot; xmlns:xsi=&amp;quot;http://www">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-f0a8e95d111c2c32.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-ac72d8c125bc3062.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-ab28af911bfe3aac.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-749472f82639c604.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-9fe139292e669e3f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-5a2104cf2c23e421.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-48ab6b16ab8d2df0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-dcdf6ad87573eace.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-6f94344b6dcf4d61.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-ba3ab6d571d669c7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-218e84e6ecb0e0a9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-9640bee658b2336a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-fea1db5aaed45a0d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/10224563-c891d9eec4750387.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2021-06-17T13:52:29.654Z">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-f0a8e95d111c2c32.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-ac72d8c125bc3062.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-ab28af911bfe3aac.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-749472f82639c604.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-9fe139292e669e3f.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-5a2104cf2c23e421.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-48ab6b16ab8d2df0.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-dcdf6ad87573eace.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-6f94344b6dcf4d61.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-ba3ab6d571d669c7.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-218e84e6ecb0e0a9.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-9640bee658b2336a.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-fea1db5aaed45a0d.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-c891d9eec4750387.png">
+<meta property="og:updated_time" content="2021-06-19T07:53:18.938Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="spring aop模式管理数据库事务">
-<meta name="twitter:description" content="####1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖： &amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;  &amp;lt;project xmlns=&amp;quot;http://maven.apache.org/POM/4.0.0&amp;quot; xmlns:xsi=&amp;quot;http:">
-<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/10224563-f0a8e95d111c2c32.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta name="twitter:description" content="1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;  &amp;lt;project xmlns=&amp;quot;http://maven.apache.org/POM/4.0.0&amp;quot; xmlns:xsi=&amp;quot;http://www">
+<meta name="twitter:image" content="https://seasand1024.github.io/images/post-images/10224563-f0a8e95d111c2c32.png">
 
 
 
@@ -418,8 +418,7 @@
       
 
       
-        <p>####1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：</p>
-<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+        <h4 id="1-搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖："><a href="#1-搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：" class="headerlink" title="1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖："></a>1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：</h4><pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
 
 &lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
   xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
@@ -560,7 +559,7 @@
   &lt;/build&gt;
 &lt;/project&gt;
 </code></pre><p>具体的搭建项目步骤，自行百度解决。</p>
-<p>####2.转账事务环境搭建：<br>1）创建表和各个类与接口：</p>
+<h4 id="2-转账事务环境搭建："><a href="#2-转账事务环境搭建：" class="headerlink" title="2.转账事务环境搭建："></a>2.转账事务环境搭建：</h4><p>1）创建表和各个类与接口：</p>
 <pre><code>create database ee19_spring_day03;
 use ee19_spring_day03;
 create table account(
@@ -698,7 +697,7 @@ jdbc.username=root
 jdbc.password=
 </code></pre><p>3）测试文件的配置</p>
 <ul>
-<li>在main同级的test文件下的java下新建test文件（其实已经maven自动生成了），如图：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-f0a8e95d111c2c32.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></li>
+<li>在main同级的test文件下的java下新建test文件（其实已经maven自动生成了），如图：<br><img src="../../../../images/post-images/10224563-f0a8e95d111c2c32.png" alt="image.png"></li>
 </ul>
 <p>配置代码：</p>
 <pre><code>package com.cyy;
@@ -726,14 +725,13 @@ public class AppTest
     }
 
 }
-</code></pre><p>####3.测试运行<br>原本数据库jack和rose的money都是10000的：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-ac72d8c125bc3062.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>此处在AccountServiceImpl暂时注销掉了<br>  //        int i = 1 / 0;<br>先保证事务的正确运行查看效果，点击运行AppTest类：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-ab28af911bfe3aac.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>测试通过，再来查看数据库：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-749472f82639c604.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>已经成功实现了转账1000块的功能，这次把  //        int i = 1 / 0;注释去掉，<br>并且恢复数据库原本数值，再次点击AppTest类运行：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-9fe139292e669e3f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>异常报错，再去查看数据库：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-5a2104cf2c23e421.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+</code></pre><h4 id="3-测试运行"><a href="#3-测试运行" class="headerlink" title="3.测试运行"></a>3.测试运行</h4><p>原本数据库jack和rose的money都是10000的：<br><img src="../../../../images/post-images/10224563-ac72d8c125bc3062.png" alt="image.png"></p>
+<p>此处在AccountServiceImpl暂时注销掉了<br>  //        int i = 1 / 0;<br>先保证事务的正确运行查看效果，点击运行AppTest类：<br><img src="../../../../images/post-images/10224563-ab28af911bfe3aac.png" alt="image.png"></p>
+<p>测试通过，再来查看数据库：<br><img src="../../../../images/post-images/10224563-749472f82639c604.png" alt="image.png"></p>
+<p>已经成功实现了转账1000块的功能，这次把  //        int i = 1 / 0;注释去掉，<br>并且恢复数据库原本数值，再次点击AppTest类运行：<br><img src="../../../../images/post-images/10224563-9fe139292e669e3f.png" alt="image.png"></p>
+<p>异常报错，再去查看数据库：<br><img src="../../../../images/post-images/10224563-5a2104cf2c23e421.png" alt="image.png"></p>
 <p>事务没有正确回滚，导致事务的ACID特性被破坏，所以接下来，我们将通过几种方式实现事务的管理。</p>
-<p>####4.手动事务管理</p>
-<ul>
+<h4 id="4-手动事务管理"><a href="#4-手动事务管理" class="headerlink" title="4.手动事务管理"></a>4.手动事务管理</h4><ul>
 <li>修改AccountService接口：</li>
 </ul>
 <pre><code>package com.cyy.service;
@@ -787,8 +785,8 @@ public void transfer(final String outer,final String inner,final Integer money) 
 </code></pre><ul>
 <li>再次点击AppTest类运行测试，运行结果：</li>
 </ul>
-<p><img src="https://upload-images.jianshu.io/upload_images/10224563-48ab6b16ab8d2df0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>如期报错,再去查看数据库：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-dcdf6ad87573eace.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p><img src="../../../../images/post-images/10224563-48ab6b16ab8d2df0.png" alt="image.png"></p>
+<p>如期报错,再去查看数据库：<br><img src="../../../../images/post-images/10224563-dcdf6ad87573eace.png" alt="image.png"></p>
 <p>如期实现了手动的事务管理，通过spring底层使用 TransactionTemplate 事务模板进行操作。</p>
 <p>####5.代理工厂实现的事务管理</p>
 <ul>
@@ -821,9 +819,9 @@ public void demo02(){
 <li><p>测试结果：</p>
 </li>
 </ul>
-<p><img src="https://upload-images.jianshu.io/upload_images/10224563-6f94344b6dcf4d61.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p><img src="../../../../images/post-images/10224563-6f94344b6dcf4d61.png" alt="image.png"></p>
 <p>一样报错，但是数据库没有实现错误转账，如图：</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/10224563-ba3ab6d571d669c7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p><img src="../../../../images/post-images/10224563-ba3ab6d571d669c7.png" alt="image.png"></p>
 <p>####6.基于xml的aop事务配置</p>
 <ul>
 <li><p>修改applicationContext.xml配置文件：</p>
@@ -845,8 +843,8 @@ public void demo02(){
 <li><p>运行测试AppTest类的demo1()方法：</p>
 </li>
 </ul>
-<p><img src="https://upload-images.jianshu.io/upload_images/10224563-218e84e6ecb0e0a9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
-<p>数据库：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-9640bee658b2336a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p><img src="../../../../images/post-images/10224563-218e84e6ecb0e0a9.png" alt="image.png"></p>
+<p>数据库：<br><img src="../../../../images/post-images/10224563-9640bee658b2336a.png" alt="image.png"></p>
 <p>####7.基于注解的aop事务配置</p>
 <ul>
 <li><p>在applicationContext.xml中将以上代理类的配置替换成</p>
@@ -858,9 +856,9 @@ public void demo02(){
 </ul>
 <p>简单解释一下，这里的传播级别设置的是REQUIRED,即支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置;隔离级别DEFAULT，使用数据库默认的事务隔离级别（MySQL 事务默认隔离级别是可重复读）。</p>
 <ul>
-<li>再次查看测试结果：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-fea1db5aaed45a0d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></li>
+<li>再次查看测试结果：<br><img src="../../../../images/post-images/10224563-fea1db5aaed45a0d.png" alt="image.png"></li>
 </ul>
-<p>报错，数据库：<br><img src="https://upload-images.jianshu.io/upload_images/10224563-c891d9eec4750387.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="image.png"></p>
+<p>报错，数据库：<br><img src="../../../../images/post-images/10224563-c891d9eec4750387.png" alt="image.png"></p>
 
       
     </div>
@@ -982,8 +980,17 @@ public void demo02(){
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -1022,7 +1029,7 @@ public void demo02(){
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-count">18</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -1091,6 +1098,22 @@ public void demo02(){
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖："><span class="nav-number">1.</span> <span class="nav-text">1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-转账事务环境搭建："><span class="nav-number">2.</span> <span class="nav-text">2.转账事务环境搭建：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-测试运行"><span class="nav-number">3.</span> <span class="nav-text">3.测试运行</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-手动事务管理"><span class="nav-number">4.</span> <span class="nav-text">4.手动事务管理</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
