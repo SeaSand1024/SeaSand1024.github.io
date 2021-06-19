@@ -49,4 +49,4 @@ categories: 后端
 
 - TRANSACTION_SERIALIZABLE  --最高的事务级别，它防止脏读、不可重复的读和虚读。
 
-![$LBPYPLJ89T4Z~VED9O)9@E.png](https://upload-images.jianshu.io/upload_images/10224563-5d3e594331d0c758.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![$LBPYPLJ89T4Z~VED9O)9@E.png](../../../../images/post-images/10224563-5d3e594331d0c758.png)

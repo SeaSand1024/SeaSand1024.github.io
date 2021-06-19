@@ -14,7 +14,7 @@ spring的面向切面编程，即aop编程是有3种作用的：
 
 这里简单的先讲述下日志的记录体现。
 
-1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/cyy2csy/ssm。
+#### 1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/lonelygin/ssm
 
 （1）基于xml的spring aop配置
 
@@ -294,7 +294,7 @@ afterMethod&afterReturning
 
 2.springboot的aop配置不用基于xml，是完全基于注解的配置，和spring的注解配置很相似。
 
-这里也直接用以前搭建的springboot框架来测试，码云地址为https://gitee.com/cyy2csy/girl.git。
+这里也直接用以前搭建的springboot框架来测试，码云地址为https://gitee.com/lonelygin/girl.git。
 
 新建Aspect包，下面新建HttpAspect织入类：
 

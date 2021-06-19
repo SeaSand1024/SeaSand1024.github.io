@@ -8,7 +8,7 @@ categories: 后端
 ---
 
 java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。
-####1.基于继承Thread类的实现
+#### 1.基于继承Thread类的实现
 >     /**
 >     * @Author: Cyy
 >     * @Description: 使用继承Thread实现线程的方式
@@ -51,8 +51,8 @@ java实现多线程基本上有5种办法，第一继承Thread类，重写run方
 >      }
 >     }
 运行结果：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-88d736905e9966c0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-####2.基于实现Runnable接口的实现
+![image.png](../../../../images/post-images/10224563-88d736905e9966c0.png)
+#### 2.基于实现Runnable接口的实现
 >
 >     /**
 >     * @Author: Cyy
@@ -90,8 +90,8 @@ java实现多线程基本上有5种办法，第一继承Thread类，重写run方
 >       }
 >      }
 运行结果：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-f166fcf2937e4e63.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-####3.基于内部类的实现
+![image.png](../../../../images/post-images/10224563-f166fcf2937e4e63.png)
+#### 3.基于内部类的实现
 >     public class Thread00 {
 >     
 >         public static void main(String[] args) {
@@ -139,7 +139,7 @@ java实现多线程基本上有5种办法，第一继承Thread类，重写run方
 >     }
 >
 运行结果：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-4551d8c4def647f6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-4551d8c4def647f6.png)
 另外，还有同时实现基于子类和接口的实现的情况：
 >     /**
 >      * @Author: Cyy
@@ -180,9 +180,9 @@ java实现多线程基本上有5种办法，第一继承Thread类，重写run方
 >     }
 >
 运行结果：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-61a1e5b9bb26d736.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-61a1e5b9bb26d736.png)
 这里运行结果只有子类线程的打印，原因是虽然实现了Thread类构造办法里Runnable接口的实例，但是子类已经将父类的run方法进行重写了，所以只会执行子类的办法。
-####4.基于带返回值的线程实现方式
+#### 4.基于带返回值的线程实现方式
 >     import java.util.concurrent.Callable;
 >     import java.util.concurrent.ExecutionException;
 >     import java.util.concurrent.FutureTask;
@@ -213,9 +213,9 @@ java实现多线程基本上有5种办法，第一继承Thread类，重写run方
 >     }
 >
 运行结果：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-13077b7fb6481123.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-13077b7fb6481123.png)
 
-####5.基于线程池的方式。
+#### 5.基于线程池的方式。
 >     import java.util.concurrent.Executor;
 >     import java.util.concurrent.ExecutorService;
 >     import java.util.concurrent.Executors;
@@ -248,7 +248,7 @@ java实现多线程基本上有5种办法，第一继承Thread类，重写run方
 >     }
 >
 运行结果：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-2133e7d7e0cd6a0e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-2133e7d7e0cd6a0e.png)
 
 - 可以基于ExecutorService、Callable、Future实现有返回结果的多线程。
 
@@ -296,8 +296,8 @@ java实现多线程基本上有5种办法，第一继承Thread类，重写run方
 >     }
 >
 运行结果：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-77c92e58f3e72d7b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-####6.基于定时任务实现的多线程
+![image.png](../../../../images/post-images/10224563-77c92e58f3e72d7b.png)
+#### 6.基于定时任务实现的多线程
 >     import java.text.ParseException;
 >     import java.text.SimpleDateFormat;
 >     import java.util.Date;
@@ -349,5 +349,5 @@ java实现多线程基本上有5种办法，第一继承Thread类，重写run方
 
 运行结果：
 
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-a872cc0e4d4c4047.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-a872cc0e4d4c4047.png)
 

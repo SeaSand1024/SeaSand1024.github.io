@@ -1,6 +1,5 @@
 title: Griffin POC
 type: categories
-copyright: true
 tags: [数据质量监控]
 categories: [数据开发]
 date: 2021-06-17 21:18:00
@@ -9,12 +8,12 @@ date: 2021-06-17 21:18:00
 
 Apache Griffin填补了开源世界里在大数据质量领域的空白。就像空气质量，水和食品安全等无时不刻地在影响人类的生命一样，数据质量在数据科学领域是至关重要的。在大数据时代，企业决策调整，商机发现等越来越依赖于大数据的数据分析和数据挖掘，而数据质量的保证是所有一切数据分析和数据挖掘的基础。
 
-系统架构：
+###### 系统架构
 
-
-
+![img.png](../../../../images/post-images/10224563-4cdc01da7a0a285c.png)
 
 Griffin架构图
+
 1.apache griffin  安装配置；
 
 从官网下载最新版本http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；
@@ -83,10 +82,9 @@ java -jar -Dserver.port=9270 -Dfs.defaultFS=hdfs:///griffin/persist service-0.3.
 
        ../angular/node_modules/.bin/ng serve --port 9280
 
-
-
-
+![img.png](../../../../images/post-images/10224563-b1e4fcbdee632715.png)
 griffin运行界面
+
 4.建立数据质量检测方案poc；
 
     （1）建立accuracy类型检测，点击create measure 按钮，按照操作步骤进行设置，注意设置分区要相对应或者不设置；
@@ -97,19 +95,16 @@ griffin运行界面
 
      结果如图：
 
+###### job界面
+![img.png](../../../../images/post-images/10224563-a7e84c6a56d5f3a4.png)
 
 
+###### job详解界面
+![img.png](../../../../images/post-images/10224563-aa9b60841926f0a0.png)
 
-job界面
-
-
-
-job详解界面
-
+###### job4
+![img.png](../../../../images/post-images/10224563-cd9a5aaafb910e22.png)
 
 
-job4
-
-
-
-mea-job1
+###### mea-job1
+![img.png](../../../../images/post-images/10224563-577da07c46b740dd.png)

@@ -57,7 +57,7 @@ categories: 后端
 >     }
 > 
 我们尝试运行，看看结果：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-039c5928d44ca760.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-039c5928d44ca760.png)
 结果是12\#a\*b\#a\*b,来分析下整个流程：
 - 第一步按顺序加载2个类的静态代码块，程序载入时，只会执行一次，输出12；
 - 第二步按顺序分别加载A类和B类的非静态代码块以及构造方法，输出#a*b;

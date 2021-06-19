@@ -4,7 +4,7 @@ date: 2021-06-17 21:49:09
 tags: [java]
 categories: 后端
 ---
-1.静态代理
+#### 1.静态代理
 
     静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。
 
@@ -122,7 +122,7 @@ public static void main(String[] args) {
 
 
 静态代理
-2.jdk动态代理模式
+#### 2.jdk动态代理模式
 
     jdk动态代理模式是通过java的反射机制实现的，避免静态代理下多个接口多种事务需求而需要多写冗余的代码，而且不需要实现目标接口，同上使用相同的目标接口和实现类，只是代理类变成了DynamicUserDaoProxy。
 
@@ -218,7 +218,7 @@ public static void main(String[] args) {
 
 
 jdk动态代理
-3.基于cglib的动态代理
+#### 3.基于cglib的动态代理
 
     基于jdk的动态代理是需要一个实现接口的目标对象，实现单独对象的话要使用cglib的代理。新建一个CUserDao目标类，以及一个代理工厂类ProxyFactory，spring的核心包已经包括cglib的包，这里导入spring-core-4.0.0.RELEASE.jar的版本。
 
@@ -331,7 +331,7 @@ public static void main(String[] args) {
 
 
 cglib代理
-4.spring中的代理
+#### 4.spring中的代理
 
     Spring中代理对象可通过xml配置方式获得，也可通过ProxyFactory手动编程方式创建对象。先讲手动编程的方式。Spring中的代理对象其实是JDK Proxy和CGLIB Proxy 的结合。 下面我们新建spring包，新建目标类MyTarget，目标接口PeopleService，它的实现类EnglishService，织入类AroundInteceptor实现aop包下MethodInterceptor的接口，测试类ProxyFactoryTest，这里要导入的几个jar包有spring-aop-4.0.0.RELEASE.jar，aopalliance-1.0.jar，aspectjweaver-1.8.1.jar，commons-logging-1.0.4.jar。
 

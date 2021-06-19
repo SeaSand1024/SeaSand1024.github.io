@@ -4,7 +4,7 @@ date: 2021-06-17 21:52:12
 tags: [java,spring]
 categories: 后端
 ---
-####1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：
+#### 1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：
 
     <?xml version="1.0" encoding="UTF-8"?>
     
@@ -149,7 +149,7 @@ categories: 后端
 
 具体的搭建项目步骤，自行百度解决。
 
-####2.转账事务环境搭建：
+#### 2.转账事务环境搭建：
 1）创建表和各个类与接口：
 
         create database ee19_spring_day03;
@@ -295,7 +295,7 @@ categories: 后端
 
 3）测试文件的配置
 - 在main同级的test文件下的java下新建test文件（其实已经maven自动生成了），如图：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-f0a8e95d111c2c32.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-f0a8e95d111c2c32.png)
 
 配置代码：
 
@@ -324,28 +324,28 @@ categories: 后端
         }
     
     }
-####3.测试运行 
+#### 3.测试运行 
 原本数据库jack和rose的money都是10000的：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-ac72d8c125bc3062.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-ac72d8c125bc3062.png)
 
 此处在AccountServiceImpl暂时注销掉了
   //        int i = 1 / 0;
 先保证事务的正确运行查看效果，点击运行AppTest类：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-ab28af911bfe3aac.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-ab28af911bfe3aac.png)
 
 测试通过，再来查看数据库：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-749472f82639c604.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-749472f82639c604.png)
 
 已经成功实现了转账1000块的功能，这次把  //        int i = 1 / 0;注释去掉，
 并且恢复数据库原本数值，再次点击AppTest类运行：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-9fe139292e669e3f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-9fe139292e669e3f.png)
 
 异常报错，再去查看数据库：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-5a2104cf2c23e421.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-5a2104cf2c23e421.png)
 
 事务没有正确回滚，导致事务的ACID特性被破坏，所以接下来，我们将通过几种方式实现事务的管理。
 
-####4.手动事务管理
+#### 4.手动事务管理
 
 - 修改AccountService接口：
 
@@ -402,10 +402,10 @@ categories: 后端
 	</bean>
 - 再次点击AppTest类运行测试，运行结果：
 
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-48ab6b16ab8d2df0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-48ab6b16ab8d2df0.png)
 
 如期报错,再去查看数据库：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-dcdf6ad87573eace.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-dcdf6ad87573eace.png)
 
 如期实现了手动的事务管理，通过spring底层使用 TransactionTemplate 事务模板进行操作。
 
@@ -441,11 +441,11 @@ categories: 后端
 
 - 测试结果：
 
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-6f94344b6dcf4d61.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-6f94344b6dcf4d61.png)
 
 一样报错，但是数据库没有实现错误转账，如图：
 
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-ba3ab6d571d669c7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-ba3ab6d571d669c7.png)
 
 ####6.基于xml的aop事务配置
 
@@ -468,10 +468,10 @@ categories: 后端
 
 - 运行测试AppTest类的demo1()方法：
 
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-218e84e6ecb0e0a9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-218e84e6ecb0e0a9.png)
 
 数据库：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-9640bee658b2336a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-9640bee658b2336a.png)
 
 ####7.基于注解的aop事务配置
 
@@ -484,10 +484,10 @@ categories: 后端
 
 简单解释一下，这里的传播级别设置的是REQUIRED,即支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置;隔离级别DEFAULT，使用数据库默认的事务隔离级别（MySQL 事务默认隔离级别是可重复读）。
 - 再次查看测试结果：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-fea1db5aaed45a0d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-fea1db5aaed45a0d.png)
 
 报错，数据库：
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-c891d9eec4750387.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-c891d9eec4750387.png)
 
 
 

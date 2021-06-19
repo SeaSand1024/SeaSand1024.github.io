@@ -31,6 +31,6 @@ DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;
 #####显示索引信息:
 格式：SHOW INDEX FROM 表名;
 SHOW INDEX FROM sys_user;
-![image.png](https://upload-images.jianshu.io/upload_images/10224563-2af9d972939f6a7a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](../../../../images/post-images/10224563-2af9d972939f6a7a.png)
 
 

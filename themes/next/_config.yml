@@ -97,7 +97,7 @@ menu:
   tags: /tags/ || tags
   categories: /categories/ || th
   archives: /archives/ || archive
-  love: /love/ || heart-o
+#  love: /love/ || heart-o
   schedule: /schedule/ || calendar
 #  sitemap: /sitemap.xml || sitemap
 #  commonweal: /404/ || heartbeat
@@ -130,9 +130,9 @@ scheme: Gemini
 social:
   GitHub: https://github.com/SeaSand1024 || github
   E-Mail: mailto:2215205259@qq.com || envelope
-#  JIANSHU: https://www.jianshu.com/u/8ec2ddde693f || jianshu
+#  JianShu: https://www.jianshu.com/u/8ec2ddde693f || JianShu
   #Google: https://plus.google.com/yourname || google
-  #Twitter: https://twitter.com/yourname || twitter
+#  Twitter: https://www.jianshu.com/u/8ec2ddde693f || twitter
   #FB Page: https://www.facebook.com/yourname || facebook
   #VK Group: https://vk.com/yourname || vk
   #StackOverflow: https://stackoverflow.com/yourname || stack-overflow
