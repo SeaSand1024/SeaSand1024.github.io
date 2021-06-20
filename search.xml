@@ -72,6 +72,35 @@ cd ui/angular
       </tags>
   </entry>
   <entry>
+    <title>MySQL中exists和in的区别及使用场景</title>
+    <url>/2021/06/17/MySQL%E4%B8%ADexists%E5%92%8Cin%E7%9A%84%E5%8C%BA%E5%88%AB%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/</url>
+    <content><![CDATA[<blockquote>
+<p>1.对B查询涉及id，使用索引，故B表效率高，可用大表 –&gt;外小内大<br>select <em> from A where exists (select </em> from B where A.id=B.id);</p>
+</blockquote>
+<blockquote>
+<p>2.对A查询涉及id，使用索引，故A表效率高，可用大表 –&gt;外大内小<br>select * from A where A.id in (select id from B);</p>
+</blockquote>
+<h5 id="1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"><a href="#1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；" class="headerlink" title="1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"></a>1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；</h5><h5 id="2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"><a href="#2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。" class="headerlink" title="2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"></a>2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。</h5><h5 id="3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。"><a href="#3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。" class="headerlink" title="3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。"></a>3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。</h5><p>　　此外，新近遇到的坑，mysql版本问题：</p>
+<p>　　MySQL版本问题：5.6.5优化了子查询，引入物化子查询(针对where clause的subquery)，子查询物化将子查询结果存入临时表，确保子查询只执行一次，该表不记录重复数据且采用哈希索引查找;</p>
+<p>而之前的版本则会把非相关子查询转化为相关子查询，导致效率低下（尤其是子查询是小表，外表是大表的情况下，效率变慢许多）。　</p>
+<p>　相关子查询：子查询依赖外层连接的返回值；</p>
+<p>　　非相关子查询：子查询不依赖外层连接的返回值；</p>
+<p>　　子查询分两种，from语句（派生表）和where语句（子查询），派生表的效率要高一些，5.6的优化就是把where语句变成from语句。</p>
+<p>　　本来是内表小，用的in，但是据说5.6之前的版本会把非相关子查询改为相关子查询，就是把in的语句改成了exists的，结果效率超低。</p>
+<p>　　实验说明：派生表join比派生表的速度还要快。而使用in查询需要很多分钟还没有查出来。　</p>
+<blockquote>
+<p>#使用派生表 4.68秒<br>SELECT id FROM la WHERE cardid IN (<br>SELECT cardid FROM (<br>select cardid from la group by cardid having count(1)&gt;50) a) ;<br>#使用派生表的内连接 1.26秒<br>SELECT id FROM la JOIN (<br>select cardid from la group by cardid having count(1)&gt;50) a ON la.cardid=a.cardid;</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+        <tag>SQL</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Mysql之索引的基本概念语法</title>
     <url>/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</url>
     <content><![CDATA[<p>####1.Mysql中索引的概念<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
@@ -225,18 +254,18 @@ cd ui/angular
       </tags>
   </entry>
   <entry>
-    <title>flink 理解</title>
-    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
-    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
-<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
-<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
+    <title>Hello World</title>
+    <url>/2018/06/28/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
 ]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>flink</tag>
-      </tags>
   </entry>
   <entry>
     <title>Streamsets POC总结</title>
@@ -271,18 +300,100 @@ cd ui/angular
       </tags>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2018/06/28/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
+    <title>flink 理解</title>
+    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
+    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
+<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
+<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
 ]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>flink</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>hive跨集群迁移表</title>
+    <url>/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/</url>
+    <content><![CDATA[<h4 id="1-export-table-xxx-to-‘-tmp-xxxx’"><a href="#1-export-table-xxx-to-‘-tmp-xxxx’" class="headerlink" title="1.export table xxx to ‘/tmp/xxxx’;"></a>1.export table xxx to ‘/tmp/xxxx’;</h4><h4 id="2-hadoop-fs-get-tmp-xxx-tmp-xxx"><a href="#2-hadoop-fs-get-tmp-xxx-tmp-xxx" class="headerlink" title="2.hadoop fs - get /tmp/xxx /tmp/xxx"></a>2.hadoop fs - get /tmp/xxx /tmp/xxx</h4><h4 id="3-scp文件。。。"><a href="#3-scp文件。。。" class="headerlink" title="3.scp文件。。。"></a>3.scp文件。。。</h4><h4 id="4-zip-r-tmp-xxxx-zip-tmp-xxx"><a href="#4-zip-r-tmp-xxxx-zip-tmp-xxx" class="headerlink" title="4.zip -r /tmp/xxxx.zip /tmp/xxx"></a>4.zip -r /tmp/xxxx.zip /tmp/xxx</h4><h4 id="5-unzip-xxx-zip-tmp"><a href="#5-unzip-xxx-zip-tmp" class="headerlink" title="5.unzip xxx.zip /tmp/"></a>5.unzip xxx.zip /tmp/</h4><h4 id="6-hadoop-fs-put-tmp-xxxx-tmp-xxxx"><a href="#6-hadoop-fs-put-tmp-xxxx-tmp-xxxx" class="headerlink" title="6.hadoop fs -put /tmp/xxxx /tmp/xxxx"></a>6.hadoop fs -put /tmp/xxxx /tmp/xxxx</h4><h4 id="7-import-table-xxx-from-‘-tmp-xxx’"><a href="#7-import-table-xxx-from-‘-tmp-xxx’" class="headerlink" title="7.import table xxx from ‘/tmp/xxx’__"></a>7.import table xxx from ‘/tmp/xxx’__</h4>]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>hive</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>java之静态代码块与构造方法加载次序</title>
+    <url>/2021/06/17/java%E4%B9%8B%E9%9D%99%E6%80%81%E4%BB%A3%E7%A0%81%E5%9D%97%E4%B8%8E%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95%E5%8A%A0%E8%BD%BD%E6%AC%A1%E5%BA%8F/</url>
+    <content><![CDATA[<ul>
+<li>java中的静态代码块，非静态块，构造办法的加载顺序是这样的：<br>静态代码块 （程序加载时一次）—&gt;非静态块（每次实例化一次）—&gt; 构造方法（每次实例化一次），废话不多说，上代码。</li>
+</ul>
+<p>#####A类：</p>
+<blockquote>
+<pre><code>public class A {
+
+    static {
+        System.out.print(&quot;1&quot;);
+    }
+     {
+        System.out.print(&quot;#&quot;);
+    }
+
+    public A(){
+        System.out.print(&quot;a&quot;);
+    }
+
+
+}
+</code></pre></blockquote>
+<p>#####B类：</p>
+<blockquote>
+<pre><code>/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 16:08 2018/7/28
+ */
+public class B extends A {
+
+    static {
+        System.out.print(&quot;2&quot;);
+    }
+     {
+        System.out.print(&quot;*&quot;);
+    }
+
+    public B(){
+        System.out.print(&quot;b&quot;);
+    }
+    {
+        System.out.print(&quot;c&quot;);
+    }
+
+    public static void main(String[] args) {
+//        A a=new A();//结果12a,执行一次2个静态区代码，执行非静态代码块，再执行A的构造办法
+//        B b=new B();//结果12ab,执行一次2个静态区代码，执行非静态代码块，再依次执行A和B的构造办法
+        A ab=new B();//同上
+
+        ab=new B();//此时静态代码块已经加载,只加载一次，执行非静态代码块，是每次实例化都一次，跟构造方法一样，比构造办法先，输出非静态代码和构造办法的部分
+
+    }
+}
+</code></pre></blockquote>
+<p>我们尝试运行，看看结果：<br><img src="../../../../images/post-images/10224563-039c5928d44ca760.png" alt="image.png"><br>结果是12#a*b#a*b,来分析下整个流程：</p>
+<ul>
+<li>第一步按顺序加载2个类的静态代码块，程序载入时，只会执行一次，输出12；</li>
+<li>第二步按顺序分别加载A类和B类的非静态代码块以及构造方法，输出#a*b;</li>
+<li>第三步，再次实例化B类的时候，不在静态代码块了，只会加载非静态代码块和构造方法，再次输出结果#a*b;</li>
+</ul>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>java</tag>
+      </tags>
   </entry>
   <entry>
     <title>idea2017 搭建ssm框架过程</title>
@@ -311,36 +422,12 @@ dao层
       </tags>
   </entry>
   <entry>
-    <title>hive跨集群迁移表</title>
-    <url>/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/</url>
-    <content><![CDATA[<h4 id="1-export-table-xxx-to-‘-tmp-xxxx’"><a href="#1-export-table-xxx-to-‘-tmp-xxxx’" class="headerlink" title="1.export table xxx to ‘/tmp/xxxx’;"></a>1.export table xxx to ‘/tmp/xxxx’;</h4><h4 id="2-hadoop-fs-get-tmp-xxx-tmp-xxx"><a href="#2-hadoop-fs-get-tmp-xxx-tmp-xxx" class="headerlink" title="2.hadoop fs - get /tmp/xxx /tmp/xxx"></a>2.hadoop fs - get /tmp/xxx /tmp/xxx</h4><h4 id="3-scp文件。。。"><a href="#3-scp文件。。。" class="headerlink" title="3.scp文件。。。"></a>3.scp文件。。。</h4><h4 id="4-zip-r-tmp-xxxx-zip-tmp-xxx"><a href="#4-zip-r-tmp-xxxx-zip-tmp-xxx" class="headerlink" title="4.zip -r /tmp/xxxx.zip /tmp/xxx"></a>4.zip -r /tmp/xxxx.zip /tmp/xxx</h4><h4 id="5-unzip-xxx-zip-tmp"><a href="#5-unzip-xxx-zip-tmp" class="headerlink" title="5.unzip xxx.zip /tmp/"></a>5.unzip xxx.zip /tmp/</h4><h4 id="6-hadoop-fs-put-tmp-xxxx-tmp-xxxx"><a href="#6-hadoop-fs-put-tmp-xxxx-tmp-xxxx" class="headerlink" title="6.hadoop fs -put /tmp/xxxx /tmp/xxxx"></a>6.hadoop fs -put /tmp/xxxx /tmp/xxxx</h4><h4 id="7-import-table-xxx-from-‘-tmp-xxx’"><a href="#7-import-table-xxx-from-‘-tmp-xxx’" class="headerlink" title="7.import table xxx from ‘/tmp/xxx’__"></a>7.import table xxx from ‘/tmp/xxx’__</h4>]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>hive</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MySQL中exists和in的区别及使用场景</title>
-    <url>/2021/06/17/MySQL%E4%B8%ADexists%E5%92%8Cin%E7%9A%84%E5%8C%BA%E5%88%AB%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/</url>
-    <content><![CDATA[<blockquote>
-<p>1.对B查询涉及id，使用索引，故B表效率高，可用大表 –&gt;外小内大<br>select <em> from A where exists (select </em> from B where A.id=B.id);</p>
-</blockquote>
-<blockquote>
-<p>2.对A查询涉及id，使用索引，故A表效率高，可用大表 –&gt;外大内小<br>select * from A where A.id in (select id from B);</p>
-</blockquote>
-<h5 id="1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"><a href="#1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；" class="headerlink" title="1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"></a>1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；</h5><h5 id="2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"><a href="#2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。" class="headerlink" title="2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"></a>2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。</h5><h5 id="3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。"><a href="#3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。" class="headerlink" title="3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。"></a>3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。</h5><p>　　此外，新近遇到的坑，mysql版本问题：</p>
-<p>　　MySQL版本问题：5.6.5优化了子查询，引入物化子查询(针对where clause的subquery)，子查询物化将子查询结果存入临时表，确保子查询只执行一次，该表不记录重复数据且采用哈希索引查找;</p>
-<p>而之前的版本则会把非相关子查询转化为相关子查询，导致效率低下（尤其是子查询是小表，外表是大表的情况下，效率变慢许多）。　</p>
-<p>　相关子查询：子查询依赖外层连接的返回值；</p>
-<p>　　非相关子查询：子查询不依赖外层连接的返回值；</p>
-<p>　　子查询分两种，from语句（派生表）和where语句（子查询），派生表的效率要高一些，5.6的优化就是把where语句变成from语句。</p>
-<p>　　本来是内表小，用的in，但是据说5.6之前的版本会把非相关子查询改为相关子查询，就是把in的语句改成了exists的，结果效率超低。</p>
-<p>　　实验说明：派生表join比派生表的速度还要快。而使用in查询需要很多分钟还没有查出来。　</p>
-<blockquote>
-<p>#使用派生表 4.68秒<br>SELECT id FROM la WHERE cardid IN (<br>SELECT cardid FROM (<br>select cardid from la group by cardid having count(1)&gt;50) a) ;<br>#使用派生表的内连接 1.26秒<br>SELECT id FROM la JOIN (<br>select cardid from la group by cardid having count(1)&gt;50) a ON la.cardid=a.cardid;</p>
-</blockquote>
+    <title>mysql 连接</title>
+    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
+    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
+<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
+<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
+<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
 ]]></content>
       <categories>
         <category>后端</category>
@@ -348,142 +435,6 @@ dao层
       <tags>
         <tag>mysql</tag>
         <tag>SQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>python-时间序列处理</title>
-    <url>/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</url>
-    <content><![CDATA[<p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
-<p>要求：</p>
-<p>1.利用已有的记录数据进行建模，将缺失值填充完整，评估指标采用RMSE、MAE和；</p>
-<p>2.尝试多种方法进行建模，对比各种模型的性能;</p>
-<p>3.希望你不要直接用中值、均值、前一时刻、后一时刻等常数填充法进行填充（方法对比中可用做简单对比，如表 2所示）；</p>
-<p>4.将数据填充完整后保存至’pm25_predicted.csv’文件（只保存缺失时刻的数据，不按要求则作废），数据格式如表 3所示（列名、文件名不按要求则作废）。</p>
-<p>题解：</p>
-<p>（1）完成时间序列缺失数据填充，一般来说有如下几种方式：常数填充有均值填充，中位数填充，众数填充，前一时刻和后一时刻填充，传统回归模型方式有自回归模型，移动平均模型，自回归移动平均模型和差分自回归移动平均模型，一般采用插值法填充数据，插值办法一般有滑动平均插值，线性插值，拉格朗日多项式插值；</p>
-<p>（2）每个函数对应一种办法，先将数据用pandas从csv文件中读取为df,然后进行数据插值的算法操作，最后将插值后的数据集用matplotlib呈现出来，最后将插值的数据转化为df，用pandas重新写回csv之中；</p>
-<p>代码：</p>
-<p>1.time_series_fill.py</p>
-<blockquote>
-<p># -<em>- coding:utf-8 -</em>-<br>from pandas.compat import reduce<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>from scipy.interpolate import lagrange<br># from fbprophet import Prophet<br>#</p>
-</blockquote>
-<h1 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h1><blockquote>
-<p>def load_data():<br>df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)</p>
-<h1 id="return-df-head-100"><a href="#return-df-head-100" class="headerlink" title="return df.head(100)"></a>return df.head(100)</h1><p>return df</p>
-</blockquote>
-<h1 id="画散点图"><a href="#画散点图" class="headerlink" title="画散点图"></a>画散点图</h1><blockquote>
-<p>def draw_scatte_diagram(df):<br>plt.plot(df[‘index’].to_list(), df[‘PM2.5’].to_list())<br>plt.show()</p>
-</blockquote>
-<h1 id="均值填充"><a href="#均值填充" class="headerlink" title="均值填充"></a>均值填充</h1><blockquote>
-<p>def mean_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mean(), inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="中位数填充"><a href="#中位数填充" class="headerlink" title="中位数填充"></a>中位数填充</h1><blockquote>
-<p>def median_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].median(), inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="众数填充"><a href="#众数填充" class="headerlink" title="众数填充"></a>众数填充</h1><blockquote>
-<p>def mode_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mode(), inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="前一时刻填充"><a href="#前一时刻填充" class="headerlink" title="前一时刻填充"></a>前一时刻填充</h1><blockquote>
-<p>def ffill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’ffill’, inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="后一时刻填充"><a href="#后一时刻填充" class="headerlink" title="后一时刻填充"></a>后一时刻填充</h1><blockquote>
-<p>def bfill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’bfill’, inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="前后时刻平均值插值"><a href="#前后时刻平均值插值" class="headerlink" title="前后时刻平均值插值"></a>前后时刻平均值插值</h1><blockquote>
-<p>def mean_by_before_after_method():<br>df = load_data()</p>
-<h1 id="data-index-df-‘index’-to-list"><a href="#data-index-df-‘index’-to-list" class="headerlink" title="data_index = df[‘index’].to_list()"></a>data_index = df[‘index’].to_list()</h1><h1 id="data-value-df-‘PM2-5’-to-list"><a href="#data-value-df-‘PM2-5’-to-list" class="headerlink" title="data_value = df[‘PM2.5’].to_list()"></a>data_value = df[‘PM2.5’].to_list()</h1><p>fill = []<br>for i in range(len(df)):<br>if np.math.isnan(df.iloc[i - 1][1]):<br>left = df.iloc[i - 2][1]<br>for j in range(i, len(df)):<br>if np.math.isnan(df.iloc[j][1]):<br>continue<br>else:<br>right = df.iloc[j][1]<br>break<br>df.iloc[i - 1, 1] = (left + right) / 2<br>fill_tuple = i, df.iloc[i - 1][1]<br>fill.append(fill_tuple)<br>draw_scatte_diagram(df)<br>    df = pd.DataFrame(fill, columns=[‘index’, ‘PM2.5’])<br>    df.to_csv(‘pm25_predicted_mean.csv’, index=False)</p>
-</blockquote>
-<h1 id="线性插值详细"><a href="#线性插值详细" class="headerlink" title="线性插值详细"></a>线性插值详细</h1><blockquote>
-<p>def linear_detail(x1, y1, x2, y2):<br>    k = (y2 - y1) / (x2 - x1)<br>    b = y1 - k <em> x1<br>    return lambda x: b + k </em> x</p>
-</blockquote>
-<h1 id="线性插值"><a href="#线性插值" class="headerlink" title="线性插值"></a>线性插值</h1><blockquote>
-<p>def linear_method():</p>
-</blockquote>
-<pre><code># global j
-df = load_data()
-fill = []
-for i in range(len(df)):
-    if np.isnan(df.iloc[i][1]):
-        for j in range(i, len(df)):
-            if np.isnan(df.iloc[j][1]):
-                continue
-            else:
-                break
-        df.iloc[i, 1] = (linear_detail(i, df.iloc[i - 1][1], j + 1, df.iloc[j][1]))(i + 1)
-        fill_tuple = i + 1, df.iloc[i][1]
-        fill.append(fill_tuple)
-draw_scatte_diagram(df)
-df = pd.DataFrame(fill, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-df.to_csv(&apos;pm25_predicted_linear.csv&apos;, index=False)
-</code></pre><h1 id="平滑插值详细"><a href="#平滑插值详细" class="headerlink" title="平滑插值详细"></a>平滑插值详细</h1><blockquote>
-<p>def smooth_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]<br>    return reduce(lambda a, b: a + b, y) / len(y)</p>
-</blockquote>
-<h1 id="平滑插值"><a href="#平滑插值" class="headerlink" title="平滑插值"></a>平滑插值</h1><blockquote>
-<p>def smooth_method(show=1):<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = smooth_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
-</blockquote>
-<pre><code>        # print(j, df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;])
-        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
-        full.append(full_tuple)
-if show:
-    draw_scatte_diagram(df_raw)
-    df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-    df.to_csv(&apos;pm25_predicted_smooth.csv&apos;, index=False)
-return df_raw
-</code></pre><h1 id="拉格朗日插值详细"><a href="#拉格朗日插值详细" class="headerlink" title="拉格朗日插值详细"></a>拉格朗日插值详细</h1><blockquote>
-<p>def lagrange_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]  # 剔除空值<br>    return lagrange(y.index, list(y))(pos)  # 插值并返回插值结果</p>
-</blockquote>
-<h1 id="拉格朗日插值"><a href="#拉格朗日插值" class="headerlink" title="拉格朗日插值"></a>拉格朗日插值</h1><blockquote>
-<p>def lagrange_method():<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = lagrange_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
-</blockquote>
-<pre><code>        # print(j, df.loc[j, &apos;index&apos;], df[j])
-        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
-        full.append(full_tuple)
-draw_scatte_diagram(df_raw)
-df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-df.to_csv(&apos;pm25_predicted_lagrange.csv&apos;, index=False)
-</code></pre><h1 id="计算RMSE"><a href="#计算RMSE" class="headerlink" title="计算RMSE"></a>计算RMSE</h1><blockquote>
-<p>def calculate_RMSE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return (sum([n * n for n in error]) / len(error)) ** 0.5</p>
-</blockquote>
-<h1 id="计算MAE"><a href="#计算MAE" class="headerlink" title="计算MAE"></a>计算MAE</h1><blockquote>
-<p>def calculate_MAE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return sum([abs(n) for n in error]) / len(error)</p>
-</blockquote>
-<h1 id="计算R-square"><a href="#计算R-square" class="headerlink" title="计算R-square"></a>计算R-square</h1><blockquote>
-<p>def calculate_R_Square(target, prediction):<br>    error = []<br>    a = calculate_MAE(target, prediction) <em> len(error)<br>    mean = np.mean(np.array(target))<br>    for i in range(len(target)):<br>        error.append(prediction[i] - mean)<br>    b = sum([n </em> n for n in error])<br>    return 1 - a / b</p>
-</blockquote>
-<blockquote>
-<p>if <strong>name</strong> == ‘<strong>main</strong>‘:</p>
-</blockquote>
-<pre><code># mean_method()
-# median_method()
-# mode_method()
-# ffill_method()
-# bfill_method()
-# mean_by_before_after_method()
-# linear_method()
-# lagrange_method()
-smooth_method()
-</code></pre><p>2.fbprophet_fill.py</p>
-<blockquote>
-<p># -<em>- coding:utf-8 -</em>-<br>from pandas.io.sas.sas7bdat import _column<br>from time_series_fill import smooth_method<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>import datetime<br>from fbprophet import Prophet<br>if <strong>name</strong> == ‘<strong>main</strong>‘:<br>    def load_data():<br>        # df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)<br>        # return df.head(100)<br>        df = smooth_method(0)<br>        return df.head(3129)<br>    df = load_data()<br>    first_value = datetime.datetime.strptime(‘2017-01-01 00:00:00’, ‘%Y-%m-%d %H:%M:%S’)<br>    for i in range(len(df)):<br>        df.iloc[i, 0] = (first_value + datetime.timedelta(hours=i)).strftime(“%Y-%m-%d %H:%M:%S”)<br>    # df = pd.DataFrame(, columns=[‘ds’, ‘y’])<br>    # df.to_csv(‘pm25_predicted_mean.csv’, index=False)<br>    # print(df.iloc[1,0])<br>    df.rename(columns={‘index’: ‘ds’, ‘PM2.5’: ‘y’}, inplace=True)<br>    m = Prophet()<br>    # df[‘y’] = np.log(df[‘y’])<br>    df = m.fit(df)<br>    future = m.make_future_dataframe(freq=’H’, periods=5428)<br>    future.tail()<br>    forecast = m.predict(future)<br>    forecast[[‘ds’, ‘yhat’, ‘yhat_lower’, ‘yhat_upper’]].tail()<br>    fig1 = m.plot(forecast)<br>    fig2 = m.plot_components(forecast)<br>    plt.show()</p>
-</blockquote>
-<p>运行结果图：<br><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
-<p><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
-<p>Mean</p>
-<p>Median</p>
-<p>Ffill_method</p>
-<p>Bfill_method</p>
-<p>Linear_method</p>
-<p>lagrange_method</p>
-<p>smooth_method</p>
-<p>Fbprophet实现</p>
-<p>日，周，月的趋势<br>未完待续。。。</p>
-]]></content>
-      <categories>
-        <category>数据分析</category>
-      </categories>
-      <tags>
-        <tag>python</tag>
-        <tag>时间序列处理</tag>
       </tags>
   </entry>
   <entry>
@@ -842,19 +793,409 @@ proxy.save();
       </tags>
   </entry>
   <entry>
-    <title>mysql 连接</title>
-    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
-    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
-<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
-<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
-<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
+    <title>java实现多线程的6种方式</title>
+    <url>/2021/06/17/java%E5%AE%9E%E7%8E%B0%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%846%E7%A7%8D%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<p>java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。</p>
+<h4 id="1-基于继承Thread类的实现"><a href="#1-基于继承Thread类的实现" class="headerlink" title="1.基于继承Thread类的实现"></a>1.基于继承Thread类的实现</h4><blockquote>
+<pre><code>/**
+* @Author: Cyy
+* @Description: 使用继承Thread实现线程的方式
+* @Date:Created in 23:33 2018/7/27
+*/
+public class Thread01 extends Thread {
+
+@Override
+ public void run() {
+    super.run();
+    System.out.println(&quot;使用继承Thread实现线程的方式。。。&quot;);
+    int i=0;
+    while (true) {
+
+        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException  e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+public Thread01(String name){
+    super(name);
+}
+public static void main(String[] args) {
+    Thread01 thread_1=new Thread01(&quot;t1&quot;);
+    Thread01 thread_2=new Thread01(&quot;t2&quot;);
+    thread_1.start();
+    thread_2.start();
+    while (true) {
+            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException  e) {
+            e.printStackTrace();
+        }
+    }
+ }
+}
+</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-88d736905e9966c0.png" alt="image.png"></p>
+</blockquote>
+<h4 id="2-基于实现Runnable接口的实现"><a href="#2-基于实现Runnable接口的实现" class="headerlink" title="2.基于实现Runnable接口的实现"></a>2.基于实现Runnable接口的实现</h4><blockquote>
+<pre><code>/**
+* @Author: Cyy
+* @Description:基于实现Runnable接口的实现
+* @Date:Created in 23:46 2018/7/27
+*/
+public class Thread02 implements Runnable {
+@Override
+public void run() {
+    System.out.println(&quot;使用实现Runnable实现线程的方式。。。&quot;);
+    while(true){
+            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try{
+            Thread.sleep(1000);
+        }catch (InterruptedException  e){
+            e.printStackTrace();
+        }
+    }
+}
+public static void main(String[] args) {
+    Thread02 thread01=new Thread02();
+    Thread02 thread02=new Thread02();
+    Thread thread1=new Thread(thread01,&quot;t1&quot;);
+    thread1.start();
+    Thread thread2=new Thread(thread02,&quot;t2&quot;);
+    thread2.start();
+    while (true) {
+        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException  e) {
+            e.printStackTrace();
+        }
+    }
+  }
+ }
+</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-f166fcf2937e4e63.png" alt="image.png"></p>
+</blockquote>
+<h4 id="3-基于内部类的实现"><a href="#3-基于内部类的实现" class="headerlink" title="3.基于内部类的实现"></a>3.基于内部类的实现</h4><blockquote>
+<pre><code>public class Thread00 {
+
+    public static void main(String[] args) {
+
+        //基于子类的实现
+        new Thread(&quot;t_t&quot;){
+            @Override
+            public void run() {
+                super.run();
+                while (true) {
+                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+
+        //基于接口的实现
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        },&quot;t_r&quot;){}.start();
+
+        while (true) {
+                System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-4551d8c4def647f6.png" alt="image.png"><br>另外，还有同时实现基于子类和接口的实现的情况：</p>
+<blockquote>
+<pre><code>/**
+ * @Author: Cyy
+ * @Description: 同时基于子类和内部类
+ * @Date:Created in 10:11 2018/7/28
+ */
+public class Thread03 {
+
+    public static void main(String args[]){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    System.out.println(&quot;Runnable is running...&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }){
+            @Override
+            public void run() {
+//                super.run();
+                while (true) {
+                    System.out.println(&quot;sub is running...&quot;);
+                    try {
+                            Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-61a1e5b9bb26d736.png" alt="image.png"><br>这里运行结果只有子类线程的打印，原因是虽然实现了Thread类构造办法里Runnable接口的实例，但是子类已经将父类的run方法进行重写了，所以只会执行子类的办法。</p>
+<h4 id="4-基于带返回值的线程实现方式"><a href="#4-基于带返回值的线程实现方式" class="headerlink" title="4.基于带返回值的线程实现方式"></a>4.基于带返回值的线程实现方式</h4><blockquote>
+<pre><code>import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 10:35 2018/7/28
+ */
+public class Thread04 {
+
+    public static void main(String args[]) throws ExecutionException, InterruptedException {
+        Callable&lt;Integer&gt; call=new Callable&lt;Integer&gt;() {
+            @Override
+            public Integer call() throws Exception {
+                System.out.println(&quot;thread start...&quot;);
+                Thread.sleep(2000);
+                return 520;
+            }
+        };
+
+        FutureTask&lt;Integer&gt; task=new FutureTask&lt;&gt;(call);
+        Thread t=new Thread(task);
+        t.start();
+        System.out.println(&quot;线程的执行结果 &quot;+task.get());
+
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-13077b7fb6481123.png" alt="image.png"></p>
+<h4 id="5-基于线程池的方式。"><a href="#5-基于线程池的方式。" class="headerlink" title="5.基于线程池的方式。"></a>5.基于线程池的方式。</h4><blockquote>
+<pre><code>import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 13:02 2018/7/28
+ */
+public class Thread05 {
+
+    public static void main(String[] args) {
+
+        ExecutorService threadPool= Executors.newFixedThreadPool(5);
+
+        while (true) {
+            threadPool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println(Thread.currentThread().getName() + &quot; is running...&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-2133e7d7e0cd6a0e.png" alt="image.png"></p>
+<ul>
+<li>可以基于ExecutorService、Callable、Future实现有返回结果的多线程。</li>
+</ul>
+<blockquote>
+<pre><code>import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.*;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 13:16 2018/7/28
+ */
+public class Thread06 {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        System.out.println(&quot;----程序开始运行-----&quot;);
+
+        Date date1=new Date();
+        int taskSize=5;
+
+        ExecutorService threadPool= Executors.newFixedThreadPool(taskSize);
+        List&lt;Future&gt; list=new ArrayList&lt;Future&gt;();
+        for (int i=0;i&lt;taskSize;i++) {
+            Callable c=new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    Date dateTmp1 = new Date();
+                    Thread.sleep(2000);
+                    Date dateTmp2 = new Date();
+                    long time = dateTmp2.getTime() - dateTmp1.getTime();
+                    return time;
+                }
+            };
+            Future f = threadPool.submit(c);
+            list.add(f);
+        }
+        threadPool.shutdown();
+        for (Future f : list) {
+            System.out.println(&quot;&gt;&gt;&gt;&quot;+f.get().toString());
+        }
+        Date date2=new Date();
+        System.out.println(&quot;-----程序结束运行-----，程序运行时间【&quot;+(date2.getTime()-date1.getTime())+&quot;毫秒】&quot;);
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-77c92e58f3e72d7b.png" alt="image.png"></p>
+<h4 id="6-基于定时任务实现的多线程"><a href="#6-基于定时任务实现的多线程" class="headerlink" title="6.基于定时任务实现的多线程"></a>6.基于定时任务实现的多线程</h4><blockquote>
+<pre><code>import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 16:43 2018/7/28
+ */
+public class Thread07 {
+
+    private static final SimpleDateFormat format=new SimpleDateFormat(&quot;yyyy-MM-dd hh:mm:ss&quot;);
+
+    //定时任务
+    public static void timeLapse() throws ParseException {
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println(&quot;定时任务开始执行。。。。。&quot;);
+            }
+        },format.parse(&quot;2018-07-28 16:51:00&quot;));
+
+    }
+    public static void timeLapseBySomeTimes(){
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println(Thread.currentThread().getName()+&quot; is Running...&quot;);
+            }
+        },new Date(),1000);
+    }
+    public static void main(String[] args) throws ParseException {
+//        timeLapse();
+        timeLapseBySomeTimes();
+        timeLapseBySomeTimes();
+        while (true) {
+            System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：</p>
+<p><img src="../../../../images/post-images/10224563-a872cc0e4d4c4047.png" alt="image.png"></p>
 ]]></content>
       <categories>
         <category>后端</category>
       </categories>
       <tags>
-        <tag>mysql</tag>
-        <tag>SQL</tag>
+        <tag>java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>spring 事务理解</title>
+    <url>/2021/06/17/spring-%E4%BA%8B%E5%8A%A1%E7%90%86%E8%A7%A3/</url>
+    <content><![CDATA[<h3 id="1-事务的概念"><a href="#1-事务的概念" class="headerlink" title="1.事务的概念"></a>1.事务的概念</h3><p> 通俗的讲，事务指的是一组业务操作ABCD，要么全部成功，要么全部不成功。</p>
+<h3 id="2-关系数据库的事务的特性-ACID"><a href="#2-关系数据库的事务的特性-ACID" class="headerlink" title="2.关系数据库的事务的特性(ACID)"></a>2.关系数据库的事务的特性(ACID)</h3><ul>
+<li>原子性(Atomicity)：事务是数据库的逻辑工作单位，而且是必须是原子工作单位，对于修改，要么全部执行，要么全部不执行。</li>
+<li>一致性(Consistency)：事务在完成时，必须是所有的数据都保持一致状态。在相关数据库中，所有规则都必须应用于事务的修改，以保持所有数据的完整性。</li>
+<li>隔离性(Isolation)：一个事务的执行不能被其他事务所影响。事务必须是互相隔离的，防止并发读写同一个数据的情况发生 。</li>
+<li><p>持久性(Durability) : 一个事务一旦提交，事物的操作便永久性的保存在DB中。即使此时再执行回滚操作也不能撤消所做的更改。</p>
+<h3 id="3-spring事务的隔离级别"><a href="#3-spring事务的隔离级别" class="headerlink" title="3.spring事务的隔离级别"></a>3.spring事务的隔离级别</h3></li>
+<li><p>ISOLATION_DEFAULT  –使用数据库默认的事务隔离级别。</p>
+<ul>
+<li><p>ISOLATION_READ_UNCOMMITTED  –这是事务最低的隔离级别，它充许令外一个事务可以看到这个事务未提交的数据(<strong>读未提交</strong>)。</p>
+</li>
+<li><p>ISOLATION_READ_COMMITTED  –保证一个事务修改的数据提交后才能被另外一个事务读取。另外一个事务不能读取该事务未提交的数据(<strong>读已提交</strong>)。</p>
+</li>
+<li><p>ISOLATION_REPEATABLE_READ  –这种事务隔离级别可以防止脏读，不可重复读。但是可能出现幻像读(<strong>虚读</strong>)。</p>
+</li>
+<li><p>ISOLATION_SERIALIZABLE  –这是花费最高代价但是最可靠的事务隔离级别。事务被处理为顺序执行。除了防止脏读，不可重复读外，还避免了幻像读(<strong>序列化</strong>)。</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>理解Spring事务的隔离级别，需要明白的几个概念：</p>
+<ul>
+<li>脏读（脏数据）: 指当一个事务正在访问数据，并且对数据进行了修改，而这种修改还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。因为这个数据是还没有提交的数据， 那么另外一个事务读到的这个数据是脏数据，依据脏数据所做的操作可能是不正确的。</li>
+<li>不可重复读: 指在一个事务内，多次读同一数据。在这个事务还没有结束时，另外一个事务也访问该同一数据。那么，在第一个事务中的两次读数据之间，由于第二个事务的修改，那么第一个事务两次读到的数据可能是不一样的。这样就发生了在一个事务内两次读到的数据是不一样的，因此称为是不可重复读。</li>
+<li>幻觉读: 指当事务不是独立执行时发生的一种现象，例如第一个事务对一个表中的数据进行了修改，这种修改涉及到表中的全部数据行。同时，第二个事务也修改这个表中的数据，这种修改是向表中插入一行新数据。那么，以后就会发生操作第一个事务的用户发现表中还有没有修改的数据行，就好象发生了幻觉一样。<h3 id="4-Spring事务的传播属性（Propagation）"><a href="#4-Spring事务的传播属性（Propagation）" class="headerlink" title="4.Spring事务的传播属性（Propagation）"></a>4.Spring事务的传播属性（Propagation）</h3></li>
+<li><p>PROPAGATION_REQUIRED  –支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置。</p>
+</li>
+<li><p>PROPAGATION_SUPPORTS  –支持当前事务，如果当前没有事务，就以非事务方式执行。</p>
+</li>
+<li><p>PROPAGATION_MANDATORY  –支持当前事务，如果当前没有事务，就抛出异常。</p>
+</li>
+<li><p>PROPAGATION_REQUIRES_NEW  –新建事务，如果当前存在事务，把当前事务挂起。</p>
+</li>
+<li><p>PROPAGATION_NOT_SUPPORTED  –以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。</p>
+</li>
+<li><p>PROPAGATION_NEVER  –以非事务方式执行，如果当前存在事务，则抛出异常。</p>
+<h3 id="5-JDBC事务的隔离级别"><a href="#5-JDBC事务的隔离级别" class="headerlink" title="5.JDBC事务的隔离级别"></a>5.JDBC事务的隔离级别</h3></li>
+<li><p>TRANSACTION_NONE  –不支持事务，实际项目中很少使用。</p>
+</li>
+<li><p>TRANSACTION_READ_UNCOMMITTED  –在提交前一个事务可以看到另一个事务的变化。脏读、不可重复的读和幻觉读都是允许的。</p>
+</li>
+<li><p>TRANSACTION_READ_COMMITTED  –读取未提交的数据是不允许的。这个级别仍然允许不可重复的读和虚读产生。</p>
+</li>
+<li><p>TRANSACTION_REPEATABLE_READ  –事务保证能够再次读取相同的数据而不会失败，但虚读仍然会出现。</p>
+</li>
+<li><p>TRANSACTION_SERIALIZABLE  –最高的事务级别，它防止脏读、不可重复的读和虚读。</p>
+</li>
+</ul>
+<p><img src="../../../../images/post-images/10224563-5d3e594331d0c758.png" alt="$LBPYPLJ89T4Z~VED9O)9@E.png"></p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>事务</tag>
+        <tag>spring</tag>
       </tags>
   </entry>
   <entry>
@@ -1311,525 +1652,158 @@ public void demo02(){
       </tags>
   </entry>
   <entry>
-    <title>spring 事务理解</title>
-    <url>/2021/06/17/spring-%E4%BA%8B%E5%8A%A1%E7%90%86%E8%A7%A3/</url>
-    <content><![CDATA[<h3 id="1-事务的概念"><a href="#1-事务的概念" class="headerlink" title="1.事务的概念"></a>1.事务的概念</h3><p> 通俗的讲，事务指的是一组业务操作ABCD，要么全部成功，要么全部不成功。</p>
-<h3 id="2-关系数据库的事务的特性-ACID"><a href="#2-关系数据库的事务的特性-ACID" class="headerlink" title="2.关系数据库的事务的特性(ACID)"></a>2.关系数据库的事务的特性(ACID)</h3><ul>
-<li>原子性(Atomicity)：事务是数据库的逻辑工作单位，而且是必须是原子工作单位，对于修改，要么全部执行，要么全部不执行。</li>
-<li>一致性(Consistency)：事务在完成时，必须是所有的数据都保持一致状态。在相关数据库中，所有规则都必须应用于事务的修改，以保持所有数据的完整性。</li>
-<li>隔离性(Isolation)：一个事务的执行不能被其他事务所影响。事务必须是互相隔离的，防止并发读写同一个数据的情况发生 。</li>
-<li><p>持久性(Durability) : 一个事务一旦提交，事物的操作便永久性的保存在DB中。即使此时再执行回滚操作也不能撤消所做的更改。</p>
-<h3 id="3-spring事务的隔离级别"><a href="#3-spring事务的隔离级别" class="headerlink" title="3.spring事务的隔离级别"></a>3.spring事务的隔离级别</h3></li>
-<li><p>ISOLATION_DEFAULT  –使用数据库默认的事务隔离级别。</p>
-<ul>
-<li><p>ISOLATION_READ_UNCOMMITTED  –这是事务最低的隔离级别，它充许令外一个事务可以看到这个事务未提交的数据(<strong>读未提交</strong>)。</p>
-</li>
-<li><p>ISOLATION_READ_COMMITTED  –保证一个事务修改的数据提交后才能被另外一个事务读取。另外一个事务不能读取该事务未提交的数据(<strong>读已提交</strong>)。</p>
-</li>
-<li><p>ISOLATION_REPEATABLE_READ  –这种事务隔离级别可以防止脏读，不可重复读。但是可能出现幻像读(<strong>虚读</strong>)。</p>
-</li>
-<li><p>ISOLATION_SERIALIZABLE  –这是花费最高代价但是最可靠的事务隔离级别。事务被处理为顺序执行。除了防止脏读，不可重复读外，还避免了幻像读(<strong>序列化</strong>)。</p>
-</li>
-</ul>
-</li>
-</ul>
-<p>理解Spring事务的隔离级别，需要明白的几个概念：</p>
-<ul>
-<li>脏读（脏数据）: 指当一个事务正在访问数据，并且对数据进行了修改，而这种修改还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。因为这个数据是还没有提交的数据， 那么另外一个事务读到的这个数据是脏数据，依据脏数据所做的操作可能是不正确的。</li>
-<li>不可重复读: 指在一个事务内，多次读同一数据。在这个事务还没有结束时，另外一个事务也访问该同一数据。那么，在第一个事务中的两次读数据之间，由于第二个事务的修改，那么第一个事务两次读到的数据可能是不一样的。这样就发生了在一个事务内两次读到的数据是不一样的，因此称为是不可重复读。</li>
-<li>幻觉读: 指当事务不是独立执行时发生的一种现象，例如第一个事务对一个表中的数据进行了修改，这种修改涉及到表中的全部数据行。同时，第二个事务也修改这个表中的数据，这种修改是向表中插入一行新数据。那么，以后就会发生操作第一个事务的用户发现表中还有没有修改的数据行，就好象发生了幻觉一样。<h3 id="4-Spring事务的传播属性（Propagation）"><a href="#4-Spring事务的传播属性（Propagation）" class="headerlink" title="4.Spring事务的传播属性（Propagation）"></a>4.Spring事务的传播属性（Propagation）</h3></li>
-<li><p>PROPAGATION_REQUIRED  –支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置。</p>
-</li>
-<li><p>PROPAGATION_SUPPORTS  –支持当前事务，如果当前没有事务，就以非事务方式执行。</p>
-</li>
-<li><p>PROPAGATION_MANDATORY  –支持当前事务，如果当前没有事务，就抛出异常。</p>
-</li>
-<li><p>PROPAGATION_REQUIRES_NEW  –新建事务，如果当前存在事务，把当前事务挂起。</p>
-</li>
-<li><p>PROPAGATION_NOT_SUPPORTED  –以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。</p>
-</li>
-<li><p>PROPAGATION_NEVER  –以非事务方式执行，如果当前存在事务，则抛出异常。</p>
-<h3 id="5-JDBC事务的隔离级别"><a href="#5-JDBC事务的隔离级别" class="headerlink" title="5.JDBC事务的隔离级别"></a>5.JDBC事务的隔离级别</h3></li>
-<li><p>TRANSACTION_NONE  –不支持事务，实际项目中很少使用。</p>
-</li>
-<li><p>TRANSACTION_READ_UNCOMMITTED  –在提交前一个事务可以看到另一个事务的变化。脏读、不可重复的读和幻觉读都是允许的。</p>
-</li>
-<li><p>TRANSACTION_READ_COMMITTED  –读取未提交的数据是不允许的。这个级别仍然允许不可重复的读和虚读产生。</p>
-</li>
-<li><p>TRANSACTION_REPEATABLE_READ  –事务保证能够再次读取相同的数据而不会失败，但虚读仍然会出现。</p>
-</li>
-<li><p>TRANSACTION_SERIALIZABLE  –最高的事务级别，它防止脏读、不可重复的读和虚读。</p>
-</li>
-</ul>
-<p><img src="../../../../images/post-images/10224563-5d3e594331d0c758.png" alt="$LBPYPLJ89T4Z~VED9O)9@E.png"></p>
+    <title>python-时间序列处理</title>
+    <url>/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</url>
+    <content><![CDATA[<p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
+<p>要求：</p>
+<p>1.利用已有的记录数据进行建模，将缺失值填充完整，评估指标采用RMSE、MAE和；</p>
+<p>2.尝试多种方法进行建模，对比各种模型的性能;</p>
+<p>3.希望你不要直接用中值、均值、前一时刻、后一时刻等常数填充法进行填充（方法对比中可用做简单对比，如表 2所示）；</p>
+<p>4.将数据填充完整后保存至’pm25_predicted.csv’文件（只保存缺失时刻的数据，不按要求则作废），数据格式如表 3所示（列名、文件名不按要求则作废）。</p>
+<p>题解：</p>
+<p>（1）完成时间序列缺失数据填充，一般来说有如下几种方式：常数填充有均值填充，中位数填充，众数填充，前一时刻和后一时刻填充，传统回归模型方式有自回归模型，移动平均模型，自回归移动平均模型和差分自回归移动平均模型，一般采用插值法填充数据，插值办法一般有滑动平均插值，线性插值，拉格朗日多项式插值；</p>
+<p>（2）每个函数对应一种办法，先将数据用pandas从csv文件中读取为df,然后进行数据插值的算法操作，最后将插值后的数据集用matplotlib呈现出来，最后将插值的数据转化为df，用pandas重新写回csv之中；</p>
+<p>代码：</p>
+<p>1.time_series_fill.py</p>
+<blockquote>
+<p># -<em>- coding:utf-8 -</em>-<br>from pandas.compat import reduce<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>from scipy.interpolate import lagrange<br># from fbprophet import Prophet<br>#</p>
+</blockquote>
+<h1 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h1><blockquote>
+<p>def load_data():<br>df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)</p>
+<h1 id="return-df-head-100"><a href="#return-df-head-100" class="headerlink" title="return df.head(100)"></a>return df.head(100)</h1><p>return df</p>
+</blockquote>
+<h1 id="画散点图"><a href="#画散点图" class="headerlink" title="画散点图"></a>画散点图</h1><blockquote>
+<p>def draw_scatte_diagram(df):<br>plt.plot(df[‘index’].to_list(), df[‘PM2.5’].to_list())<br>plt.show()</p>
+</blockquote>
+<h1 id="均值填充"><a href="#均值填充" class="headerlink" title="均值填充"></a>均值填充</h1><blockquote>
+<p>def mean_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mean(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="中位数填充"><a href="#中位数填充" class="headerlink" title="中位数填充"></a>中位数填充</h1><blockquote>
+<p>def median_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].median(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="众数填充"><a href="#众数填充" class="headerlink" title="众数填充"></a>众数填充</h1><blockquote>
+<p>def mode_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mode(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="前一时刻填充"><a href="#前一时刻填充" class="headerlink" title="前一时刻填充"></a>前一时刻填充</h1><blockquote>
+<p>def ffill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’ffill’, inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="后一时刻填充"><a href="#后一时刻填充" class="headerlink" title="后一时刻填充"></a>后一时刻填充</h1><blockquote>
+<p>def bfill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’bfill’, inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="前后时刻平均值插值"><a href="#前后时刻平均值插值" class="headerlink" title="前后时刻平均值插值"></a>前后时刻平均值插值</h1><blockquote>
+<p>def mean_by_before_after_method():<br>df = load_data()</p>
+<h1 id="data-index-df-‘index’-to-list"><a href="#data-index-df-‘index’-to-list" class="headerlink" title="data_index = df[‘index’].to_list()"></a>data_index = df[‘index’].to_list()</h1><h1 id="data-value-df-‘PM2-5’-to-list"><a href="#data-value-df-‘PM2-5’-to-list" class="headerlink" title="data_value = df[‘PM2.5’].to_list()"></a>data_value = df[‘PM2.5’].to_list()</h1><p>fill = []<br>for i in range(len(df)):<br>if np.math.isnan(df.iloc[i - 1][1]):<br>left = df.iloc[i - 2][1]<br>for j in range(i, len(df)):<br>if np.math.isnan(df.iloc[j][1]):<br>continue<br>else:<br>right = df.iloc[j][1]<br>break<br>df.iloc[i - 1, 1] = (left + right) / 2<br>fill_tuple = i, df.iloc[i - 1][1]<br>fill.append(fill_tuple)<br>draw_scatte_diagram(df)<br>    df = pd.DataFrame(fill, columns=[‘index’, ‘PM2.5’])<br>    df.to_csv(‘pm25_predicted_mean.csv’, index=False)</p>
+</blockquote>
+<h1 id="线性插值详细"><a href="#线性插值详细" class="headerlink" title="线性插值详细"></a>线性插值详细</h1><blockquote>
+<p>def linear_detail(x1, y1, x2, y2):<br>    k = (y2 - y1) / (x2 - x1)<br>    b = y1 - k <em> x1<br>    return lambda x: b + k </em> x</p>
+</blockquote>
+<h1 id="线性插值"><a href="#线性插值" class="headerlink" title="线性插值"></a>线性插值</h1><blockquote>
+<p>def linear_method():</p>
+</blockquote>
+<pre><code># global j
+df = load_data()
+fill = []
+for i in range(len(df)):
+    if np.isnan(df.iloc[i][1]):
+        for j in range(i, len(df)):
+            if np.isnan(df.iloc[j][1]):
+                continue
+            else:
+                break
+        df.iloc[i, 1] = (linear_detail(i, df.iloc[i - 1][1], j + 1, df.iloc[j][1]))(i + 1)
+        fill_tuple = i + 1, df.iloc[i][1]
+        fill.append(fill_tuple)
+draw_scatte_diagram(df)
+df = pd.DataFrame(fill, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+df.to_csv(&apos;pm25_predicted_linear.csv&apos;, index=False)
+</code></pre><h1 id="平滑插值详细"><a href="#平滑插值详细" class="headerlink" title="平滑插值详细"></a>平滑插值详细</h1><blockquote>
+<p>def smooth_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]<br>    return reduce(lambda a, b: a + b, y) / len(y)</p>
+</blockquote>
+<h1 id="平滑插值"><a href="#平滑插值" class="headerlink" title="平滑插值"></a>平滑插值</h1><blockquote>
+<p>def smooth_method(show=1):<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = smooth_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
+</blockquote>
+<pre><code>        # print(j, df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;])
+        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
+        full.append(full_tuple)
+if show:
+    draw_scatte_diagram(df_raw)
+    df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+    df.to_csv(&apos;pm25_predicted_smooth.csv&apos;, index=False)
+return df_raw
+</code></pre><h1 id="拉格朗日插值详细"><a href="#拉格朗日插值详细" class="headerlink" title="拉格朗日插值详细"></a>拉格朗日插值详细</h1><blockquote>
+<p>def lagrange_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]  # 剔除空值<br>    return lagrange(y.index, list(y))(pos)  # 插值并返回插值结果</p>
+</blockquote>
+<h1 id="拉格朗日插值"><a href="#拉格朗日插值" class="headerlink" title="拉格朗日插值"></a>拉格朗日插值</h1><blockquote>
+<p>def lagrange_method():<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = lagrange_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
+</blockquote>
+<pre><code>        # print(j, df.loc[j, &apos;index&apos;], df[j])
+        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
+        full.append(full_tuple)
+draw_scatte_diagram(df_raw)
+df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+df.to_csv(&apos;pm25_predicted_lagrange.csv&apos;, index=False)
+</code></pre><h1 id="计算RMSE"><a href="#计算RMSE" class="headerlink" title="计算RMSE"></a>计算RMSE</h1><blockquote>
+<p>def calculate_RMSE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return (sum([n * n for n in error]) / len(error)) ** 0.5</p>
+</blockquote>
+<h1 id="计算MAE"><a href="#计算MAE" class="headerlink" title="计算MAE"></a>计算MAE</h1><blockquote>
+<p>def calculate_MAE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return sum([abs(n) for n in error]) / len(error)</p>
+</blockquote>
+<h1 id="计算R-square"><a href="#计算R-square" class="headerlink" title="计算R-square"></a>计算R-square</h1><blockquote>
+<p>def calculate_R_Square(target, prediction):<br>    error = []<br>    a = calculate_MAE(target, prediction) <em> len(error)<br>    mean = np.mean(np.array(target))<br>    for i in range(len(target)):<br>        error.append(prediction[i] - mean)<br>    b = sum([n </em> n for n in error])<br>    return 1 - a / b</p>
+</blockquote>
+<blockquote>
+<p>if <strong>name</strong> == ‘<strong>main</strong>‘:</p>
+</blockquote>
+<pre><code># mean_method()
+# median_method()
+# mode_method()
+# ffill_method()
+# bfill_method()
+# mean_by_before_after_method()
+# linear_method()
+# lagrange_method()
+smooth_method()
+</code></pre><p>2.fbprophet_fill.py</p>
+<blockquote>
+<p># -<em>- coding:utf-8 -</em>-<br>from pandas.io.sas.sas7bdat import _column<br>from time_series_fill import smooth_method<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>import datetime<br>from fbprophet import Prophet<br>if <strong>name</strong> == ‘<strong>main</strong>‘:<br>    def load_data():<br>        # df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)<br>        # return df.head(100)<br>        df = smooth_method(0)<br>        return df.head(3129)<br>    df = load_data()<br>    first_value = datetime.datetime.strptime(‘2017-01-01 00:00:00’, ‘%Y-%m-%d %H:%M:%S’)<br>    for i in range(len(df)):<br>        df.iloc[i, 0] = (first_value + datetime.timedelta(hours=i)).strftime(“%Y-%m-%d %H:%M:%S”)<br>    # df = pd.DataFrame(, columns=[‘ds’, ‘y’])<br>    # df.to_csv(‘pm25_predicted_mean.csv’, index=False)<br>    # print(df.iloc[1,0])<br>    df.rename(columns={‘index’: ‘ds’, ‘PM2.5’: ‘y’}, inplace=True)<br>    m = Prophet()<br>    # df[‘y’] = np.log(df[‘y’])<br>    df = m.fit(df)<br>    future = m.make_future_dataframe(freq=’H’, periods=5428)<br>    future.tail()<br>    forecast = m.predict(future)<br>    forecast[[‘ds’, ‘yhat’, ‘yhat_lower’, ‘yhat_upper’]].tail()<br>    fig1 = m.plot(forecast)<br>    fig2 = m.plot_components(forecast)<br>    plt.show()</p>
+</blockquote>
+<p>运行结果图：<br><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
+<p><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
+<p>Mean</p>
+<p>Median</p>
+<p>Ffill_method</p>
+<p>Bfill_method</p>
+<p>Linear_method</p>
+<p>lagrange_method</p>
+<p>smooth_method</p>
+<p>Fbprophet实现</p>
+<p>日，周，月的趋势<br>未完待续。。。</p>
 ]]></content>
       <categories>
-        <category>后端</category>
+        <category>数据分析</category>
       </categories>
       <tags>
-        <tag>spring</tag>
-        <tag>事务</tag>
+        <tag>python</tag>
+        <tag>时间序列处理</tag>
       </tags>
   </entry>
   <entry>
-    <title>浅谈java基础之JVM</title>
-    <url>/2021/06/17/%E6%B5%85%E8%B0%88java%E5%9F%BA%E7%A1%80%E4%B9%8BJVM/</url>
-    <content><![CDATA[<h4 id="java实现跨平台的原理"><a href="#java实现跨平台的原理" class="headerlink" title="java实现跨平台的原理"></a>java实现跨平台的原理</h4><ul>
-<li>java实现跨平台的原理是基于JVM实现的，即Java Virtual Machine,对于不同机器平台有不同的JVM版本（JVM本身是用C/C++实现的），通过模拟一台计算机来达到一个计算机所具有的计算功能，底层都是运行编译器生成的java字节码文件，实现了 “一次编译，到处运行” 的目的。<br>总结： JVM 屏蔽了与各个计算机平台相关的软件或者硬件之间的差异，使得与平台相关的耦合统一由 JVM 提供者来实现<h4 id="JVM的组成以及各部分详解"><a href="#JVM的组成以及各部分详解" class="headerlink" title="JVM的组成以及各部分详解"></a>JVM的组成以及各部分详解</h4>JVM的基本结构是由4部分组成的：</li>
-<li>类加载器，在 JVM 启动时或者类运行时将需要的 class 加载到 JVM 中；</li>
-<li>执行引擎，执行引擎负责执行class文件包含的字节码指令，相当于机器的CPU；</li>
-<li>内存区，将内存划分成若干个区域，模拟机器上上的存储，记录和调度功能模块，比如各种功能的寄存器和PC指针记录器；</li>
-<li>本地方法调用，调用C/C++实现的本地代码的返回结果；<br><img src="../../../../images/post-images/10224563-59034e35b9037bf9.png" alt="image.png"><h4 id="类加载器基本原理"><a href="#类加载器基本原理" class="headerlink" title="类加载器基本原理"></a>类加载器基本原理</h4>类加载器（class loader），用来加载java类到虚拟机中。一般来说，java虚拟机使用java的过程如下：java源程序经过java编译器转化之后变化成java字节码文件。类加载器负责读取java字节码文件，并转化成java.lang.Class的一个实例，每个实例就是一个java类,通过实例的newInstance()方法生成该类的一个对象，或者使用java动态代理生成的会有更复杂的过程，或者通过网络下载的。<h4 id="补充：java判断2个对象的过程"><a href="#补充：java判断2个对象的过程" class="headerlink" title="补充：java判断2个对象的过程"></a>补充：java判断2个对象的过程</h4>第一步查看类名是否相同，第二步查看类加载器是否相同，只有2者都是相同的情况下才会被认为2者是相同的。具体来说，可以在不同包里面新建2个相同类名的类，进行编译运行测试，判断2者是否属于相同，判断对象是否相同可以用.equal()方法；<h4 id="类加载器加载class文件的详细过程"><a href="#类加载器加载class文件的详细过程" class="headerlink" title="类加载器加载class文件的详细过程"></a>类加载器加载class文件的详细过程</h4><img src="../../../../images/post-images/10224563-b8cb7ca912749afc.png" alt="image.png"></li>
-<li>第一阶段找到这个class文件，并且 把它加载到内存中；</li>
-<li>第二阶段分为3个小步骤，即<ul>
-<li>字节码验证；</li>
-<li>class类数据分析；</li>
-<li>相应的内存分配与符号链接；</li>
-</ul>
-</li>
-<li>第三个阶段是静态属性和初始化赋值，静态代码块的执行；<br>#####（1）加载阶段的详细分析<br>查找并加载类的二进制数据时的类加载的第一个阶段，即加载阶段需要执行3个操作：</li>
-<li>通过一个类的全限定名称来获取其定义的二进制流；</li>
-<li>将二进制的静态存储结构转化为方法区的运行时数据结构；</li>
-<li>在java堆中生成一个这个类的java.lang.Class对象，作为对方法区中的这些数据的访问入口。</li>
-</ul>
-<p>相对于类加载的其他阶段而言，加载阶段（准确地说，是加载阶段获取类的二进制字节流的动作）是可控性最强的阶段，因为开发人员既可以使用系统提供的类加载器来完成加载，也可以自定义自己的类加载器来完成加载。</p>
-<p>加载阶段完成后，虚拟机外部的二进制字节流就按照虚拟机所需的格式存储在方法区之中，而且在Java堆中也创建一个 java.lang.Class类的对象，这样便可以通过该对象访问方法区中的这些数据。</p>
-<p>#####（2）连接阶段详细分析</p>
-<h6 id="验证：确保被加载的类的正确性"><a href="#验证：确保被加载的类的正确性" class="headerlink" title="验证：确保被加载的类的正确性"></a>验证：确保被加载的类的正确性</h6><p>验证是连接阶段的第一步，这一阶段的目的是为了确保Class文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机自身的安全。验证阶段大致会完成4个阶段的检验动作：</p>
-<ul>
-<li>文件格式验证：验证字节流是否符合Class文件格式的规范；例如：是否以 0xCAFEBABE开头、主次版本号是否在当前虚拟机的处理范围之内、常量池中的常量是否有不被支持的类型。</li>
-<li>元数据验证：对字节码描述的信息进行语义分析（注意：对比javac编译阶段的语义分析），以保证其描述的信息符合Java语言规范的要求；例如：这个类是否有父类，除了 java.lang.Object之外。</li>
-<li>字节码验证：通过数据流和控制流分析，确定程序语义是合法的、符合逻辑的。</li>
-<li>符号引用验证：确保解析动作能正确执行。</li>
-</ul>
-<p>验证阶段是非常重要的，但不是必须的，它对程序运行期没有影响，如果所引用的类经过反复验证，那么可以考虑采用 -Xverifynone 参数来关闭大部分的类验证措施，以缩短虚拟机类加载的时间。</p>
-<h6 id="准备：为类的静态变量分配内存，并将其初始化为默认值"><a href="#准备：为类的静态变量分配内存，并将其初始化为默认值" class="headerlink" title="准备：为类的静态变量分配内存，并将其初始化为默认值"></a>准备：为类的静态变量分配内存，并将其初始化为默认值</h6><p>准备阶段是正式为类变量分配内存并设置类变量初始值的阶段，这些内存都将在方法区中分配。对于该阶段有以下几点需要注意：</p>
-<ul>
-<li>这时候进行内存分配的仅包括类变量（static），而不包括实例变量，实例变量会在对象实例化时随着对象一块分配在Java堆中。</li>
-<li>这里所设置的初始值通常情况下是数据类型默认的零值（如0、0L、null、false等），而不是被在Java代码中被显式地赋予的值。</li>
-</ul>
-<p>假设一个类变量的定义为： public static int value = 3;</p>
-<p>那么变量value在准备阶段过后的初始值为 0，而不是 3，因为这时候尚未开始执行任何 Java 方法，而把 value 赋值为 3 的public static指令是在程序编译后，存放于类构造器 <clinit>（）方法之中的，所以把value赋值为3的动作将在初始化阶段才会执行。</clinit></p>
-<blockquote>
-<p>这里还需要注意如下几点：</p>
-<ul>
-<li>对基本数据类型来说，对于类变量（static）和全局变量，如果不显式地对其赋值而直接使用，则系统会为其赋予默认的零值，而对于局部变量来说，在使用前必须显式地为其赋值，否则编译时不通过。</li>
-<li>对于同时被static和final修饰的常量，必须在声明的时候就为其显式地赋值，否则编译时不通过；而只被final修饰的常量则既可以在声明时显式地为其赋值，也可以在类初始化时显式地为其赋值，总之，在使用前必须为其显式地赋值，系统不会为其赋予默认零值。</li>
-<li>对于引用数据类型reference来说，如数组引用、对象引用等，如果没有对其进行显式地赋值而直接使用，系统都会为其赋予默认的零值，即null。</li>
-<li>如果在数组初始化时没有对数组中的各元素赋值，那么其中的元素将根据对应的数据类型而被赋予默认的零值。</li>
-<li>如果类字段的字段属性表中存在 ConstantValue 属性，即同时被 final 和 static 修饰，那么在准备阶段变量 value 就会被初始化为 ConstValue 属性所指定的值。</li>
-</ul>
-</blockquote>
-<p>假设上面的类变量 value 被定义为： public static final int value = 3;</p>
-<p>编译时 Javac 将会为 value 生成 ConstantValue 属性，在准备阶段虚拟机就会根据 ConstantValue 的设置将 value 赋值为 3。我们可以理解为 static final 常量在编译期就将其结果放入了调用它的类的常量池中。</p>
-<h6 id="解析：把类中的符号引用转换为直接引用"><a href="#解析：把类中的符号引用转换为直接引用" class="headerlink" title="解析：把类中的符号引用转换为直接引用"></a>解析：把类中的符号引用转换为直接引用</h6><p>#####（3）初始化阶段详细分析<br>初始化，为类的静态变量赋予正确的初始值，JVM负责对类进行初始化，主要对类变量进行初始化。在Java中对类变量进行初始值设定有两种方式：</p>
-<ul>
-<li>声明类变量是指定初始值</li>
-<li>使用静态代码块为类变量指定初始值</li>
-</ul>
-<p>JVM初始化步骤</p>
-<ul>
-<li>假如这个类还没有被加载和连接，则程序先加载并连接该类</li>
-<li>假如该类的直接父类还没有被初始化，则先初始化其直接父类</li>
-<li>假如类中有初始化语句，则系统依次执行这些初始化语句</li>
-</ul>
-<p>类初始化时机：只有当对类的主动使用的时候才会导致类的初始化，类的<br>主动使用包括以下六种：</p>
-<ul>
-<li>创建类的实例，也就是new的方式</li>
-<li>访问某个类或接口的静态变量，或者对该静态变量赋值</li>
-<li>调用类的静态方法</li>
-<li>反射（如 Class.forName(“com.shengsiyuan.Test”)）</li>
-<li>初始化某个类的子类，则其父类也会被初始化</li>
-<li>Java虚拟机启动时被标明为启动类的类（ JavaTest），直接使用 java.exe命令来运行某个主类</li>
-</ul>
-<h6 id="结束生命周期"><a href="#结束生命周期" class="headerlink" title="结束生命周期"></a>结束生命周期</h6><p>在如下几种情况下，Java虚拟机将结束生命周期</p>
-<ul>
-<li>执行了 System.exit()方法</li>
-<li>程序正常执行结束</li>
-<li>程序在执行过程中遇到了异常或错误而异常终止</li>
-<li>由于操作系统出现错误而导致Java虚拟机进程终止</li>
-</ul>
-<h4 id="双亲委派模型（Parent-Delegation-Model）"><a href="#双亲委派模型（Parent-Delegation-Model）" class="headerlink" title="双亲委派模型（Parent Delegation Model）"></a>双亲委派模型（Parent Delegation Model）</h4><p>类的加载过程采用双亲委派机制，这种机制能更好的保证 Java 平台的安全性。<br>类加载器 ClassLoader 是具有层次结构的，也就是父子关系，其中，Bootstrap 是所有类加载器的父亲，如下图所示：<br><img src="../../../../images/post-images/10224563-247d5c507d8494e3.png" alt="image.png"></p>
-<blockquote>
-<p>该模型要求除了顶层的 Bootstrap class loader 启动类加载器外，其余的类加载器都应当有自己的父类加载器。子类加载器和父类加载器不是以继承（Inheritance）的关系来实现，而是通过组合（Composition）关系来复用父加载器的代码。每个类加载器都有自己的命名空间（由该加载器及所有父类加载器所加载的类组成，在同一个命名空间中，不会出现类的完整名字（包括类的包名）相同的两个类；在不同的命名空间中，有可能会出现类的完整名字（包括类的包名）相同的两个类）。</p>
-</blockquote>
-<p>双亲委派模型的工作过程如下：</p>
-<ul>
-<li>当前 ClassLoader 首先从自己已经加载的类中查询是否此类已经加载，如果已经加载则直接返回原来已经加载的类。<blockquote>
-<p>每个类加载器都有自己的加载缓存，当一个类被加载了以后就会放入缓存，等下次加载的时候就可以直接返回了。</p>
-</blockquote>
-</li>
-<li>当前 ClassLoader 的缓存中没有找到被加载的类的时候，委托父类加载器去加载，父类加载器采用同样的策略，首先查看自己的缓存，然后委托父类的父类去加载，一直到 bootstrap ClassLoader。<blockquote>
-<p>当所有的父类加载器都没有加载的时候，再由当前的类加载器加载，并将其放入它自己的缓存中，以便下次有加载请求的时候直接返回。</p>
-</blockquote>
-</li>
-</ul>
-<p>这样设计的原因：</p>
-<blockquote>
-<p>这是对于使用这种模型来组织累加器的好处；主要是为了安全性，避免用户自己编写的类动态替换 Java 的一些核心类，比如 String，同时也避免了重复加载，因为 JVM 中区分不同类，不仅仅是根据类名，相同的 class 文件被不同的 ClassLoader 加载就是不同的两个类，如果相互转型的话会抛java.lang.ClassCaseException。</p>
-</blockquote>
-<h4 id="JVM内存管理"><a href="#JVM内存管理" class="headerlink" title="JVM内存管理"></a>JVM内存管理</h4><h5 id="（1）内存划分"><a href="#（1）内存划分" class="headerlink" title="（1）内存划分"></a>（1）内存划分</h5><p><img src="../../../../images/post-images/10224563-2b40e6da3a433ed9.png" alt="image.png"></p>
-<p>1.方法区（线程共享）：各个线程共享的一个区域，用于存储虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码等数据。虽然 Java 虚拟机规范把方法区描述为堆的一个逻辑部分，但是它却又一个别名叫做 Non-Heap（非堆），目的应该是与 Java 堆区分开来。</p>
-<ul>
-<li>运行时常量池：是方法区的一部分，用于存放编译器生成的各种字面量和符号引用。</li>
-</ul>
-<p>2.堆内存（线程共享）：所有线程共享的一块区域，垃圾收集器管理的主要区域。目前主要的垃圾回收算法都是分代收集算法，所以 Java 堆中还可以细分为：新生代和老年代；再细致一点的有 Eden 空间、From Survivor 空间、To Survivor 空间等，默认情况下新生代按照8:1:1的比例来分配。根据 Java 虚拟机规范的规定，Java 堆可以处于物理上不连续的内存空间中，只要逻辑上是连续的即可，就像我们的磁盘一样；</p>
-<p>3.程序计数器： Java 线程私有，类似于操作系统里的 PC 计数器，它可以看做是当前线程所执行的字节码的行号指示器。如果线程正在执行的是一个 Java 方法，这个计数器记录的是正在执行的虚拟机字节码指令的地址；如果正在执行的是 Native 方法，这个计数器值则为空（Undefined）。此内存区域是唯一一个在 Java 虚拟机规范中没有规定任何 OutOfMemoryError 情况的区域；</p>
-<p>4.虚拟机栈（栈内存）：Java线程私有，虚拟机展描述的是Java方法执行的内存模型：每个方法在执行的时候，都会创建一个栈帧用于存储局部变量、操作数、动态链接、方法出口等信息；每个方法调用都意味着一个栈帧在虚拟机栈中入栈到出栈的过程；</p>
-<p>5.本地方法栈 ：和Java虚拟机栈的作用类似，区别是该区域为 JVM 提供使用 native 方法的服务；</p>
-<p>作者：我没有三颗心脏<br>链接：<a href="https://www.jianshu.com/p/bfb876565a1e" target="_blank" rel="noopener">https://www.jianshu.com/p/bfb876565a1e</a><br>來源：简书<br>简书著作权归作者所有，任何形式的转载都请联系作者获得授权并注明出处。</p>
+    <title>正则表达式</title>
+    <url>/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</url>
+    <content><![CDATA[<p>? 通配符匹配文件名中的 0 个或 1 个字符</p>
+<p>* 通配符匹配零个或多个字符</p>
+<p>^ 为匹配输入字符串的开始位置。</p>
+<p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p>
+<p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p>
+<p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p>
+<p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
+<p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>
 ]]></content>
       <categories>
         <category>后端</category>
       </categories>
       <tags>
-        <tag>java</tag>
-        <tag>JVM</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>java实现多线程的6种方式</title>
-    <url>/2021/06/17/java%E5%AE%9E%E7%8E%B0%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%846%E7%A7%8D%E6%96%B9%E5%BC%8F/</url>
-    <content><![CDATA[<p>java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。</p>
-<h4 id="1-基于继承Thread类的实现"><a href="#1-基于继承Thread类的实现" class="headerlink" title="1.基于继承Thread类的实现"></a>1.基于继承Thread类的实现</h4><blockquote>
-<pre><code>/**
-* @Author: Cyy
-* @Description: 使用继承Thread实现线程的方式
-* @Date:Created in 23:33 2018/7/27
-*/
-public class Thread01 extends Thread {
-
-@Override
- public void run() {
-    super.run();
-    System.out.println(&quot;使用继承Thread实现线程的方式。。。&quot;);
-    int i=0;
-    while (true) {
-
-        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException  e) {
-            e.printStackTrace();
-        }
-    }
-}
-
-public Thread01(String name){
-    super(name);
-}
-public static void main(String[] args) {
-    Thread01 thread_1=new Thread01(&quot;t1&quot;);
-    Thread01 thread_2=new Thread01(&quot;t2&quot;);
-    thread_1.start();
-    thread_2.start();
-    while (true) {
-            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException  e) {
-            e.printStackTrace();
-        }
-    }
- }
-}
-</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-88d736905e9966c0.png" alt="image.png"></p>
-</blockquote>
-<h4 id="2-基于实现Runnable接口的实现"><a href="#2-基于实现Runnable接口的实现" class="headerlink" title="2.基于实现Runnable接口的实现"></a>2.基于实现Runnable接口的实现</h4><blockquote>
-<pre><code>/**
-* @Author: Cyy
-* @Description:基于实现Runnable接口的实现
-* @Date:Created in 23:46 2018/7/27
-*/
-public class Thread02 implements Runnable {
-@Override
-public void run() {
-    System.out.println(&quot;使用实现Runnable实现线程的方式。。。&quot;);
-    while(true){
-            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try{
-            Thread.sleep(1000);
-        }catch (InterruptedException  e){
-            e.printStackTrace();
-        }
-    }
-}
-public static void main(String[] args) {
-    Thread02 thread01=new Thread02();
-    Thread02 thread02=new Thread02();
-    Thread thread1=new Thread(thread01,&quot;t1&quot;);
-    thread1.start();
-    Thread thread2=new Thread(thread02,&quot;t2&quot;);
-    thread2.start();
-    while (true) {
-        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException  e) {
-            e.printStackTrace();
-        }
-    }
-  }
- }
-</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-f166fcf2937e4e63.png" alt="image.png"></p>
-</blockquote>
-<h4 id="3-基于内部类的实现"><a href="#3-基于内部类的实现" class="headerlink" title="3.基于内部类的实现"></a>3.基于内部类的实现</h4><blockquote>
-<pre><code>public class Thread00 {
-
-    public static void main(String[] args) {
-
-        //基于子类的实现
-        new Thread(&quot;t_t&quot;){
-            @Override
-            public void run() {
-                super.run();
-                while (true) {
-                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-
-        //基于接口的实现
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        },&quot;t_r&quot;){}.start();
-
-        while (true) {
-                System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-4551d8c4def647f6.png" alt="image.png"><br>另外，还有同时实现基于子类和接口的实现的情况：</p>
-<blockquote>
-<pre><code>/**
- * @Author: Cyy
- * @Description: 同时基于子类和内部类
- * @Date:Created in 10:11 2018/7/28
- */
-public class Thread03 {
-
-    public static void main(String args[]){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    System.out.println(&quot;Runnable is running...&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }){
-            @Override
-            public void run() {
-//                super.run();
-                while (true) {
-                    System.out.println(&quot;sub is running...&quot;);
-                    try {
-                            Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-61a1e5b9bb26d736.png" alt="image.png"><br>这里运行结果只有子类线程的打印，原因是虽然实现了Thread类构造办法里Runnable接口的实例，但是子类已经将父类的run方法进行重写了，所以只会执行子类的办法。</p>
-<h4 id="4-基于带返回值的线程实现方式"><a href="#4-基于带返回值的线程实现方式" class="headerlink" title="4.基于带返回值的线程实现方式"></a>4.基于带返回值的线程实现方式</h4><blockquote>
-<pre><code>import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 10:35 2018/7/28
- */
-public class Thread04 {
-
-    public static void main(String args[]) throws ExecutionException, InterruptedException {
-        Callable&lt;Integer&gt; call=new Callable&lt;Integer&gt;() {
-            @Override
-            public Integer call() throws Exception {
-                System.out.println(&quot;thread start...&quot;);
-                Thread.sleep(2000);
-                return 520;
-            }
-        };
-
-        FutureTask&lt;Integer&gt; task=new FutureTask&lt;&gt;(call);
-        Thread t=new Thread(task);
-        t.start();
-        System.out.println(&quot;线程的执行结果 &quot;+task.get());
-
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-13077b7fb6481123.png" alt="image.png"></p>
-<h4 id="5-基于线程池的方式。"><a href="#5-基于线程池的方式。" class="headerlink" title="5.基于线程池的方式。"></a>5.基于线程池的方式。</h4><blockquote>
-<pre><code>import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 13:02 2018/7/28
- */
-public class Thread05 {
-
-    public static void main(String[] args) {
-
-        ExecutorService threadPool= Executors.newFixedThreadPool(5);
-
-        while (true) {
-            threadPool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    System.out.println(Thread.currentThread().getName() + &quot; is running...&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-        }
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-2133e7d7e0cd6a0e.png" alt="image.png"></p>
-<ul>
-<li>可以基于ExecutorService、Callable、Future实现有返回结果的多线程。</li>
-</ul>
-<blockquote>
-<pre><code>import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.*;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 13:16 2018/7/28
- */
-public class Thread06 {
-
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
-        System.out.println(&quot;----程序开始运行-----&quot;);
-
-        Date date1=new Date();
-        int taskSize=5;
-
-        ExecutorService threadPool= Executors.newFixedThreadPool(taskSize);
-        List&lt;Future&gt; list=new ArrayList&lt;Future&gt;();
-        for (int i=0;i&lt;taskSize;i++) {
-            Callable c=new Callable() {
-                @Override
-                public Object call() throws Exception {
-                    Date dateTmp1 = new Date();
-                    Thread.sleep(2000);
-                    Date dateTmp2 = new Date();
-                    long time = dateTmp2.getTime() - dateTmp1.getTime();
-                    return time;
-                }
-            };
-            Future f = threadPool.submit(c);
-            list.add(f);
-        }
-        threadPool.shutdown();
-        for (Future f : list) {
-            System.out.println(&quot;&gt;&gt;&gt;&quot;+f.get().toString());
-        }
-        Date date2=new Date();
-        System.out.println(&quot;-----程序结束运行-----，程序运行时间【&quot;+(date2.getTime()-date1.getTime())+&quot;毫秒】&quot;);
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-77c92e58f3e72d7b.png" alt="image.png"></p>
-<h4 id="6-基于定时任务实现的多线程"><a href="#6-基于定时任务实现的多线程" class="headerlink" title="6.基于定时任务实现的多线程"></a>6.基于定时任务实现的多线程</h4><blockquote>
-<pre><code>import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 16:43 2018/7/28
- */
-public class Thread07 {
-
-    private static final SimpleDateFormat format=new SimpleDateFormat(&quot;yyyy-MM-dd hh:mm:ss&quot;);
-
-    //定时任务
-    public static void timeLapse() throws ParseException {
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                System.out.println(&quot;定时任务开始执行。。。。。&quot;);
-            }
-        },format.parse(&quot;2018-07-28 16:51:00&quot;));
-
-    }
-    public static void timeLapseBySomeTimes(){
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                System.out.println(Thread.currentThread().getName()+&quot; is Running...&quot;);
-            }
-        },new Date(),1000);
-    }
-    public static void main(String[] args) throws ParseException {
-//        timeLapse();
-        timeLapseBySomeTimes();
-        timeLapseBySomeTimes();
-        while (true) {
-            System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：</p>
-<p><img src="../../../../images/post-images/10224563-a872cc0e4d4c4047.png" alt="image.png"></p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>java</tag>
+        <tag>正则匹配</tag>
       </tags>
   </entry>
   <entry>
@@ -1844,215 +1818,6 @@ public class Thread07 {
       </categories>
       <tags>
         <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>java之静态代码块与构造方法加载次序</title>
-    <url>/2021/06/17/java%E4%B9%8B%E9%9D%99%E6%80%81%E4%BB%A3%E7%A0%81%E5%9D%97%E4%B8%8E%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95%E5%8A%A0%E8%BD%BD%E6%AC%A1%E5%BA%8F/</url>
-    <content><![CDATA[<ul>
-<li>java中的静态代码块，非静态块，构造办法的加载顺序是这样的：<br>静态代码块 （程序加载时一次）—&gt;非静态块（每次实例化一次）—&gt; 构造方法（每次实例化一次），废话不多说，上代码。</li>
-</ul>
-<p>#####A类：</p>
-<blockquote>
-<pre><code>public class A {
-
-    static {
-        System.out.print(&quot;1&quot;);
-    }
-     {
-        System.out.print(&quot;#&quot;);
-    }
-
-    public A(){
-        System.out.print(&quot;a&quot;);
-    }
-
-
-}
-</code></pre></blockquote>
-<p>#####B类：</p>
-<blockquote>
-<pre><code>/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 16:08 2018/7/28
- */
-public class B extends A {
-
-    static {
-        System.out.print(&quot;2&quot;);
-    }
-     {
-        System.out.print(&quot;*&quot;);
-    }
-
-    public B(){
-        System.out.print(&quot;b&quot;);
-    }
-    {
-        System.out.print(&quot;c&quot;);
-    }
-
-    public static void main(String[] args) {
-//        A a=new A();//结果12a,执行一次2个静态区代码，执行非静态代码块，再执行A的构造办法
-//        B b=new B();//结果12ab,执行一次2个静态区代码，执行非静态代码块，再依次执行A和B的构造办法
-        A ab=new B();//同上
-
-        ab=new B();//此时静态代码块已经加载,只加载一次，执行非静态代码块，是每次实例化都一次，跟构造方法一样，比构造办法先，输出非静态代码和构造办法的部分
-
-    }
-}
-</code></pre></blockquote>
-<p>我们尝试运行，看看结果：<br><img src="../../../../images/post-images/10224563-039c5928d44ca760.png" alt="image.png"><br>结果是12#a*b#a*b,来分析下整个流程：</p>
-<ul>
-<li>第一步按顺序加载2个类的静态代码块，程序载入时，只会执行一次，输出12；</li>
-<li>第二步按顺序分别加载A类和B类的非静态代码块以及构造方法，输出#a*b;</li>
-<li>第三步，再次实例化B类的时候，不在静态代码块了，只会加载非静态代码块和构造方法，再次输出结果#a*b;</li>
-</ul>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>一个你不会认识的陌生人</title>
-    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
-    <content><![CDATA[<p>漫长的时光里</p>
-<p>你独自一个人度过</p>
-<p>生命总是孤独</p>
-<p>你总是默默承受</p>
-<p>即使每一个过客</p>
-<p>终究有谢幕离场的时分</p>
-<p>我是一个你不会认识的陌生人</p>
-<p>你是一道我永远也遇不上的彩虹</p>
-<p>没有遇上方知有</p>
-<p>好在花有清香月有阴</p>
-<p>我们在不同的世界</p>
-<p>演绎着类似的人生</p>
-<p>陌生的旧情人</p>
-<p>你是谁的新欢和旧爱</p>
-<p>而我只是一个</p>
-<p>你不会认识的陌生人</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>记一次阿里巴巴电面经历</title>
-    <url>/2021/06/17/%E8%AE%B0%E4%B8%80%E6%AC%A1%E9%98%BF%E9%87%8C%E5%B7%B4%E5%B7%B4%E7%94%B5%E9%9D%A2%E7%BB%8F%E5%8E%86/</url>
-    <content><![CDATA[<p><strong>前言</strong>：本人有幸在boss直聘上获得一次阿里巴巴国际技术事业部的电话面试机会，由于太突然，大部分问题都没有发挥原来的水平，诶，决定痛下决心好好总结，还有就是坚定下自己的目标=_=。<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上来先做了个自我介绍，由于要找个信号好的地方，爬到了楼顶，结果气喘吁吁的=_=，下面就开始提问一些专业的问题。</p>
-<h4 id="1-面向对象的封装，继承，多态的含义"><a href="#1-面向对象的封装，继承，多态的含义" class="headerlink" title="1.面向对象的封装，继承，多态的含义"></a>1.面向对象的封装，继承，多态的含义</h4><ul>
-<li>封装是指将对象的细节隐藏起来，然后通过公共的方法来向外暴露该对象的功能；<br>一般来说封装是使用private修饰符对属性进行包装，使用getter/setter对属性进行获取与修改，但是也可以使用setter对属性进行更加深层次的设置，包括你可以对设置的格式做转化，对数据的要求；</li>
-<li>继承是面向对象实现软件复用的重要手段，子类继承父类，子类就拥有父类的成员属性和成员办法，可以拥有父类的功能，也可以对父类的方法进行重写（覆盖）；缺点是违背了高内聚，低耦合的编程思想，耦合程度比较高，并且破坏了封装的特性，可见部分功能的丧失来换取另一部功能的完整。</li>
-<li><p>多态可以理解为同一个行为有不同的表达形式或者形态的能力，举个例子，父类可以是Animals类，具有say()方法行为，但是对于不同种类动物手说的话是不同的，比如Cat类，可能说”喵喵喵”，Dog类说”汪汪汪”之类的；多态实现的条件是上具备一些以上的条件的：<br>1）继承；2）重写；3）向上转型；</p>
-<h4 id="2-抽象类和接口的区别"><a href="#2-抽象类和接口的区别" class="headerlink" title="2.抽象类和接口的区别"></a>2.抽象类和接口的区别</h4></li>
-<li><p>这个算是老生常谈的问题了，大概有以下几点：</p>
-</li>
-<li>抽象类中可以有普通的方法和成员变量，而接口中的办法必须是抽象的，变量也必须是static final类型的（其实就是常量），必须被初始化，接口中只有常量，没有变量；</li>
-<li>抽象类中的方法可以不全为抽象方法，子类继承可以不必全部实现，全部实现为普通类，不全部实现还是抽象类，而实现接口的类必须实现其中的方法；</li>
-<li>抽象类拥有类的特性，单继承，而接口多继承；</li>
-<li>Java8 中接口中会有 default 方法，即方法可以被实现。</li>
-</ul>
-<h4 id="3-内存溢出和内存泄露的含义，举例说明，不超过10行代码；"><a href="#3-内存溢出和内存泄露的含义，举例说明，不超过10行代码；" class="headerlink" title="3.内存溢出和内存泄露的含义，举例说明，不超过10行代码；"></a>3.内存溢出和内存泄露的含义，举例说明，不超过10行代码；</h4><ul>
-<li><p>内存泄露的概念是指对象可达，但是没用了，就是本该被CG回收的那些没有被回收；内存泄露的原因有以下2点：<br>1）长周期对象引用短周期对象；<br>2）没有将无用对象置为null；<br>举一个第一个情况的例子：</p>
-<blockquote>
-<p>Static Vector v = new Vector(10);<br>  for (int i = 1; i&lt;100; i++)<br>  {<br>  &nbsp;&nbsp;Object o = new Object();<br>  &nbsp;&nbsp;v.add(o);<br>  &nbsp;&nbsp;o = null;<br>  }</p>
-</blockquote>
-</li>
-</ul>
-<p>内存泄露可以造成内存溢出，是造成内存溢出的一种情况，内存泄露积累起来将导致内存溢出。</p>
-<h4 id="4-对Spring-IOC的理解"><a href="#4-对Spring-IOC的理解" class="headerlink" title="4.对Spring IOC的理解"></a>4.对Spring IOC的理解</h4><p>spring IOC 的ioc是inverse of controller的英文缩写，意思是控制反转的意思，spring ioc有3种注入方式：</p>
-<ul>
-<li>基于属性的注入；<br>eg:<bean>标签下配置&lt;property name=”xxxx(属性名称)” value/ref=”xxxx(属性值/依赖注入的bean)”&gt;<br>这种注入前提是注入的bean要有默认实现的setter方法；</bean></li>
-<li><p>基于构造器的注入；<br>eg:<bean> 标签下配置<constructor-arg ref="引用的bean id"><br>前提是该bean注入的值是引用的bean对象类型，另外还可以是基本数据类型的注入，包括集合；<br>eg:<br><strong>基本数据类型</strong>:</constructor-arg></bean></p>
-<pre><code>&lt;constructor-arg index=&quot;0&quot; type=&quot;java.lang.String&quot; value=&quot;1&quot;/&gt;&lt;/constructor-arg&gt;
-&lt;constructor-arg index=&quot;1&quot; type=&quot;java.lang.Integer&quot; value=&quot;2&quot;&gt;&lt;/constructor-arg&gt;
-</code></pre></li>
-</ul>
-<p><strong>集合</strong>:</p>
-<pre><code>&lt;bean id=&quot;xxxx&quot; class=&quot;com.xxxx.xxxx&quot; &gt;
-        &lt;property name=&quot;arrayData&quot;&gt;
-            &lt;array/list/set&gt;
-                &lt;value&gt;xxx&lt;/value&gt;
-                &lt;value&gt;aaa&lt;/value&gt;
-                &lt;value&gt;bbb&lt;/value&gt;
-                &lt;value&gt;ccc&lt;/value&gt;
-            &lt;/array/list/set&gt;
-        &lt;/property&gt;
-&lt;/bean&gt;
-&lt;property name=&quot;mapData&quot;&gt;
-    &lt;map&gt;
-        &lt;entry key=&quot;jack&quot; value=&quot;杰克&quot;&gt;&lt;/entry&gt;
-        &lt;entry&gt;
-            &lt;key&gt;&lt;value&gt;rose&lt;/value&gt;&lt;/key&gt;
-            &lt;value&gt;肉丝&lt;/value&gt;
-        &lt;/entry&gt;
-    &lt;/map&gt;
-&lt;/property&gt;
-
-&lt;property name=&quot;propsData&quot;&gt;
-    &lt;props&gt;
-        &lt;prop key=&quot;xxxx&quot;&gt;xxxx&lt;/prop&gt;
-        &lt;prop key=&quot;aaaa&quot;&gt;aaaa&lt;/prop&gt;
-        &lt;prop key=&quot;bbbb&quot;&gt;bbbb&lt;/prop&gt;
-    &lt;/props&gt;
-&lt;/property&gt;
-</code></pre><ul>
-<li><p>基于注解的注入；<br>使用注解实现ioc的方法，首先记得要配置spring context 的命名空间，并且在applicationContext.xml中配置扫描的含有注解的包；<br>eg:</p>
-<pre><code>&lt;context:component-scan base-package=&quot;xxx.xxxx.xxxx&quot;/&gt;
-</code></pre></li>
-</ul>
-<h4 id="5-Spring-aop的理解，底层实现原理"><a href="#5-Spring-aop的理解，底层实现原理" class="headerlink" title="5.Spring aop的理解，底层实现原理"></a>5.Spring aop的理解，底层实现原理</h4><p>以下给出一段代码解释：<br>当实现日志控制时，</p>
-<pre><code>//将织入类交给spring bean处理
-&lt;bean id=&quot;loggingAspect&quot; class=&quot;com.cyy.maven.core.Aspect.LoggingAspect&quot;/&gt;
-&lt;aop:config&gt;
-    //定义切入点
-    &lt;aop:pointcut id=&quot;serviceOpearation&quot; expression=&quot;execution(* com.cyy.maven.core.service.impl.*.*(..))&quot;/&gt;
-    //引用切入点
-    &lt;aop:aspect  ref=&quot;loggingAspect&quot;&gt;
-    //使用切入点中的方法织入
-        &lt;aop:before method=&quot;beforeMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
-        &lt;aop:after method=&quot;afterMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
-        &lt;aop:after-returning method=&quot;afterReturning&quot; pointcut-ref=&quot;serviceOpearation&quot; returning=&quot;result&quot;/&gt;
-        &lt;aop:after-throwing method=&quot;afterThrowing&quot; pointcut-ref=&quot;serviceOpearation&quot; throwing=&quot;e&quot;/&gt;
-        //环绕方法，等价于以上4个的作用
-        &lt;aop:around method=&quot;aroundMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
-    &lt;/aop:aspect&gt;
-&lt;/aop:config&gt;
-</code></pre><h4 id="6-nbsp-Set和Map的区别"><a href="#6-nbsp-Set和Map的区别" class="headerlink" title="6.&nbsp;Set和Map的区别"></a>6.&nbsp;Set和Map的区别</h4><ul>
-<li>Set是Collection接口下的子接口，Set中的数据可以是无序的，不可以重复，Set的形式是set<type>  myset，即节点是一个type类型的数据；</type></li>
-<li>Map 是跟Collection同级别的集合接口，Map的形式是map&lt;type1,type2&gt; mymap,即节点数据是一对数据，以键值对的形式存在，key唯一，value可以重复；<br>最基础的回答可以是这样，以后会专门写一篇来对集合这种数据类型进行深入浅出的研究；</li>
-</ul>
-<h4 id="7-nbsp-对数据库索引的理解，会举例考察你"><a href="#7-nbsp-对数据库索引的理解，会举例考察你" class="headerlink" title="7.&nbsp;对数据库索引的理解，会举例考察你"></a>7.&nbsp;对数据库索引的理解，会举例考察你</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/b82f2926d9e5" target="_blank" rel="noopener">Mysql 索引的具体优化策略</a></p>
-<h4 id="8-nbsp-方法覆盖和重载的区别"><a href="#8-nbsp-方法覆盖和重载的区别" class="headerlink" title="8.&nbsp;方法覆盖和重载的区别"></a>8.&nbsp;方法覆盖和重载的区别</h4><ul>
-<li>方法覆盖又叫方法重写，是重写父类的办法，权限不能更小，抛出的异常不能更多；</li>
-<li>重载是同一个类中可以有相同名字的方法，但是由于方法参数的类型，顺序，个数不尽相同的相同名称的方法；</li>
-</ul>
-<h4 id="9-nbsp-数据库事务的4个特性，最好能说出详细的特征"><a href="#9-nbsp-数据库事务的4个特性，最好能说出详细的特征" class="headerlink" title="9.&nbsp;数据库事务的4个特性，最好能说出详细的特征"></a>9.&nbsp;数据库事务的4个特性，最好能说出详细的特征</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/3e7c12a1a2be" target="_blank" rel="noopener">spring 事务理解</a></p>
-<h4 id="10-nbsp-讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）"><a href="#10-nbsp-讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）" class="headerlink" title="10.&nbsp;讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）"></a>10.&nbsp;讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）</h4><h4 id="11-nbsp-10000个String对象的去重"><a href="#11-nbsp-10000个String对象的去重" class="headerlink" title="11.&nbsp;10000个String对象的去重"></a>11.&nbsp;10000个String对象的去重</h4><p><strong>tips</strong>: 可以使用HashSet解决；</p>
-<h4 id="12-nbsp-String对象的取值范围"><a href="#12-nbsp-String对象的取值范围" class="headerlink" title="12.&nbsp;String对象的取值范围"></a>12.&nbsp;String对象的取值范围</h4><p>定长的String数据类型占用的存储空间为字符串的长度，取值范围为1——65400个字符;</p>
-<h4 id="13-nbsp-TCP建立连接-3次握手，结束时4次挥手原理具体内容"><a href="#13-nbsp-TCP建立连接-3次握手，结束时4次挥手原理具体内容" class="headerlink" title="13&nbsp;TCP建立连接 3次握手，结束时4次挥手原理具体内容"></a>13&nbsp;TCP建立连接 3次握手，结束时4次挥手原理具体内容</h4><h4 id="14-nbsp-ThreadLocal使用过吗，你来说说对它的理解"><a href="#14-nbsp-ThreadLocal使用过吗，你来说说对它的理解" class="headerlink" title="14.&nbsp;ThreadLocal使用过吗，你来说说对它的理解"></a>14.&nbsp;ThreadLocal使用过吗，你来说说对它的理解</h4><h4 id="15-nbsp-说说数据库内连接，左外连接，右外连接的理解"><a href="#15-nbsp-说说数据库内连接，左外连接，右外连接的理解" class="headerlink" title="15.&nbsp;说说数据库内连接，左外连接，右外连接的理解"></a>15.&nbsp;说说数据库内连接，左外连接，右外连接的理解</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/83d84d7df306" target="_blank" rel="noopener">mysql 连接</a></p>
-<p>####16.&nbsp;Session和Cookie的区别</p>
-<p>####17.&nbsp;StringBuffer和StringBuild的区别和含义</p>
-<ul>
-<li>StringBuffer:每次都对对象本身进行操作，而不是生成新的对象。所以在字符串内容不断改变的情况，建议使用StringBuffer。</li>
-<li>String对象的字符串拼接其实是被JVM解释成了StringBuffer对象的拼接，所以这些时候String对象的速度并不会比StringBuffer慢。</li>
-<li>StringBuild: 区别在于,StringBuffer是线程安全的类。StringBuild不是线程安全的类，在单线程中性能要比StringBuffrer高。</li>
-</ul>
-<h4 id="18-nbsp-熟悉设计模式吗，说说你对java设计模式的了解"><a href="#18-nbsp-熟悉设计模式吗，说说你对java设计模式的了解" class="headerlink" title="18.&nbsp;熟悉设计模式吗，说说你对java设计模式的了解"></a>18.&nbsp;熟悉设计模式吗，说说你对java设计模式的了解</h4><h4 id="19-nbsp-mysql-in-和exists的区别"><a href="#19-nbsp-mysql-in-和exists的区别" class="headerlink" title="19.&nbsp;mysql  in 和exists的区别"></a>19.&nbsp;mysql  in 和exists的区别</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/2138cbdeea34" target="_blank" rel="noopener">MySQL中exists和in的区别及使用场景</a></p>
-<h4 id="20-nbsp-请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用"><a href="#20-nbsp-请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用" class="headerlink" title="20.&nbsp;请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用"></a>20.&nbsp;请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用</h4><h4 id="21-nbsp-你对我们有什么想要提问的吗"><a href="#21-nbsp-你对我们有什么想要提问的吗" class="headerlink" title="21.&nbsp;你对我们有什么想要提问的吗"></a>21.&nbsp;你对我们有什么想要提问的吗</h4>]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>面试</tag>
       </tags>
   </entry>
   <entry>
@@ -2359,52 +2124,6 @@ try {
       </tags>
   </entry>
   <entry>
-    <title>正则表达式</title>
-    <url>/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</url>
-    <content><![CDATA[<p>? 通配符匹配文件名中的 0 个或 1 个字符</p>
-<p>* 通配符匹配零个或多个字符</p>
-<p>^ 为匹配输入字符串的开始位置。</p>
-<p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p>
-<p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p>
-<p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p>
-<p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
-<p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>正则匹配</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>鄉愁</title>
-    <url>/2021/06/17/%E9%84%89%E6%84%81/</url>
-    <content><![CDATA[<p>芦苇飘荡的季节﻿</p>
-<p>少年将沉沉的离别披在肩上﻿</p>
-<p>乡愁像芦苇荡里的水一样柔﻿</p>
-<p>遗忘的日子里﻿</p>
-<p>心中总是若有所思﻿</p>
-<p>乡愁像渔家的灯火一样引人入眠﻿</p>
-<p>岁月像车轮一般轧过如路面荒芜的日子﻿</p>
-<p>远处月台橘黄色的站台灯碰弯了旅人的思绪﻿</p>
-<p>恍惚流失的光阴迷失在记忆的岔道口﻿</p>
-<p>春日大海的阳光照耀着北回归线﻿</p>
-<p>视野里的芦苇叶子眯成一线﻿</p>
-<p>蓝的海黑的海 逐渐缩成点的海鸥﻿</p>
-<p>露水闪透着晶莹的清晨﻿</p>
-<p>列车经过铁轨吸进一个个影子后逝去﻿</p>
-<p>乡愁像一曲永不停息的曲子﻿</p>
-<p>在风尘苦旅的夜里奏起</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>無題</title>
     <url>/2021/06/17/%E7%84%A1%E9%A1%8C/</url>
     <content><![CDATA[<p>就像没说完的一段故事</p>
@@ -2430,6 +2149,287 @@ try {
 <p>雨中潮湿的羽翼</p>
 <p>在遥远的空中挥动</p>
 <p>在视野中渐行渐远</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>浅谈java基础之JVM</title>
+    <url>/2021/06/17/%E6%B5%85%E8%B0%88java%E5%9F%BA%E7%A1%80%E4%B9%8BJVM/</url>
+    <content><![CDATA[<h4 id="java实现跨平台的原理"><a href="#java实现跨平台的原理" class="headerlink" title="java实现跨平台的原理"></a>java实现跨平台的原理</h4><ul>
+<li>java实现跨平台的原理是基于JVM实现的，即Java Virtual Machine,对于不同机器平台有不同的JVM版本（JVM本身是用C/C++实现的），通过模拟一台计算机来达到一个计算机所具有的计算功能，底层都是运行编译器生成的java字节码文件，实现了 “一次编译，到处运行” 的目的。<br>总结： JVM 屏蔽了与各个计算机平台相关的软件或者硬件之间的差异，使得与平台相关的耦合统一由 JVM 提供者来实现<h4 id="JVM的组成以及各部分详解"><a href="#JVM的组成以及各部分详解" class="headerlink" title="JVM的组成以及各部分详解"></a>JVM的组成以及各部分详解</h4>JVM的基本结构是由4部分组成的：</li>
+<li>类加载器，在 JVM 启动时或者类运行时将需要的 class 加载到 JVM 中；</li>
+<li>执行引擎，执行引擎负责执行class文件包含的字节码指令，相当于机器的CPU；</li>
+<li>内存区，将内存划分成若干个区域，模拟机器上上的存储，记录和调度功能模块，比如各种功能的寄存器和PC指针记录器；</li>
+<li>本地方法调用，调用C/C++实现的本地代码的返回结果；<br><img src="../../../../images/post-images/10224563-59034e35b9037bf9.png" alt="image.png"><h4 id="类加载器基本原理"><a href="#类加载器基本原理" class="headerlink" title="类加载器基本原理"></a>类加载器基本原理</h4>类加载器（class loader），用来加载java类到虚拟机中。一般来说，java虚拟机使用java的过程如下：java源程序经过java编译器转化之后变化成java字节码文件。类加载器负责读取java字节码文件，并转化成java.lang.Class的一个实例，每个实例就是一个java类,通过实例的newInstance()方法生成该类的一个对象，或者使用java动态代理生成的会有更复杂的过程，或者通过网络下载的。<h4 id="补充：java判断2个对象的过程"><a href="#补充：java判断2个对象的过程" class="headerlink" title="补充：java判断2个对象的过程"></a>补充：java判断2个对象的过程</h4>第一步查看类名是否相同，第二步查看类加载器是否相同，只有2者都是相同的情况下才会被认为2者是相同的。具体来说，可以在不同包里面新建2个相同类名的类，进行编译运行测试，判断2者是否属于相同，判断对象是否相同可以用.equal()方法；<h4 id="类加载器加载class文件的详细过程"><a href="#类加载器加载class文件的详细过程" class="headerlink" title="类加载器加载class文件的详细过程"></a>类加载器加载class文件的详细过程</h4><img src="../../../../images/post-images/10224563-b8cb7ca912749afc.png" alt="image.png"></li>
+<li>第一阶段找到这个class文件，并且 把它加载到内存中；</li>
+<li>第二阶段分为3个小步骤，即<ul>
+<li>字节码验证；</li>
+<li>class类数据分析；</li>
+<li>相应的内存分配与符号链接；</li>
+</ul>
+</li>
+<li>第三个阶段是静态属性和初始化赋值，静态代码块的执行；<br>#####（1）加载阶段的详细分析<br>查找并加载类的二进制数据时的类加载的第一个阶段，即加载阶段需要执行3个操作：</li>
+<li>通过一个类的全限定名称来获取其定义的二进制流；</li>
+<li>将二进制的静态存储结构转化为方法区的运行时数据结构；</li>
+<li>在java堆中生成一个这个类的java.lang.Class对象，作为对方法区中的这些数据的访问入口。</li>
+</ul>
+<p>相对于类加载的其他阶段而言，加载阶段（准确地说，是加载阶段获取类的二进制字节流的动作）是可控性最强的阶段，因为开发人员既可以使用系统提供的类加载器来完成加载，也可以自定义自己的类加载器来完成加载。</p>
+<p>加载阶段完成后，虚拟机外部的二进制字节流就按照虚拟机所需的格式存储在方法区之中，而且在Java堆中也创建一个 java.lang.Class类的对象，这样便可以通过该对象访问方法区中的这些数据。</p>
+<p>#####（2）连接阶段详细分析</p>
+<h6 id="验证：确保被加载的类的正确性"><a href="#验证：确保被加载的类的正确性" class="headerlink" title="验证：确保被加载的类的正确性"></a>验证：确保被加载的类的正确性</h6><p>验证是连接阶段的第一步，这一阶段的目的是为了确保Class文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机自身的安全。验证阶段大致会完成4个阶段的检验动作：</p>
+<ul>
+<li>文件格式验证：验证字节流是否符合Class文件格式的规范；例如：是否以 0xCAFEBABE开头、主次版本号是否在当前虚拟机的处理范围之内、常量池中的常量是否有不被支持的类型。</li>
+<li>元数据验证：对字节码描述的信息进行语义分析（注意：对比javac编译阶段的语义分析），以保证其描述的信息符合Java语言规范的要求；例如：这个类是否有父类，除了 java.lang.Object之外。</li>
+<li>字节码验证：通过数据流和控制流分析，确定程序语义是合法的、符合逻辑的。</li>
+<li>符号引用验证：确保解析动作能正确执行。</li>
+</ul>
+<p>验证阶段是非常重要的，但不是必须的，它对程序运行期没有影响，如果所引用的类经过反复验证，那么可以考虑采用 -Xverifynone 参数来关闭大部分的类验证措施，以缩短虚拟机类加载的时间。</p>
+<h6 id="准备：为类的静态变量分配内存，并将其初始化为默认值"><a href="#准备：为类的静态变量分配内存，并将其初始化为默认值" class="headerlink" title="准备：为类的静态变量分配内存，并将其初始化为默认值"></a>准备：为类的静态变量分配内存，并将其初始化为默认值</h6><p>准备阶段是正式为类变量分配内存并设置类变量初始值的阶段，这些内存都将在方法区中分配。对于该阶段有以下几点需要注意：</p>
+<ul>
+<li>这时候进行内存分配的仅包括类变量（static），而不包括实例变量，实例变量会在对象实例化时随着对象一块分配在Java堆中。</li>
+<li>这里所设置的初始值通常情况下是数据类型默认的零值（如0、0L、null、false等），而不是被在Java代码中被显式地赋予的值。</li>
+</ul>
+<p>假设一个类变量的定义为： public static int value = 3;</p>
+<p>那么变量value在准备阶段过后的初始值为 0，而不是 3，因为这时候尚未开始执行任何 Java 方法，而把 value 赋值为 3 的public static指令是在程序编译后，存放于类构造器 <clinit>（）方法之中的，所以把value赋值为3的动作将在初始化阶段才会执行。</clinit></p>
+<blockquote>
+<p>这里还需要注意如下几点：</p>
+<ul>
+<li>对基本数据类型来说，对于类变量（static）和全局变量，如果不显式地对其赋值而直接使用，则系统会为其赋予默认的零值，而对于局部变量来说，在使用前必须显式地为其赋值，否则编译时不通过。</li>
+<li>对于同时被static和final修饰的常量，必须在声明的时候就为其显式地赋值，否则编译时不通过；而只被final修饰的常量则既可以在声明时显式地为其赋值，也可以在类初始化时显式地为其赋值，总之，在使用前必须为其显式地赋值，系统不会为其赋予默认零值。</li>
+<li>对于引用数据类型reference来说，如数组引用、对象引用等，如果没有对其进行显式地赋值而直接使用，系统都会为其赋予默认的零值，即null。</li>
+<li>如果在数组初始化时没有对数组中的各元素赋值，那么其中的元素将根据对应的数据类型而被赋予默认的零值。</li>
+<li>如果类字段的字段属性表中存在 ConstantValue 属性，即同时被 final 和 static 修饰，那么在准备阶段变量 value 就会被初始化为 ConstValue 属性所指定的值。</li>
+</ul>
+</blockquote>
+<p>假设上面的类变量 value 被定义为： public static final int value = 3;</p>
+<p>编译时 Javac 将会为 value 生成 ConstantValue 属性，在准备阶段虚拟机就会根据 ConstantValue 的设置将 value 赋值为 3。我们可以理解为 static final 常量在编译期就将其结果放入了调用它的类的常量池中。</p>
+<h6 id="解析：把类中的符号引用转换为直接引用"><a href="#解析：把类中的符号引用转换为直接引用" class="headerlink" title="解析：把类中的符号引用转换为直接引用"></a>解析：把类中的符号引用转换为直接引用</h6><p>#####（3）初始化阶段详细分析<br>初始化，为类的静态变量赋予正确的初始值，JVM负责对类进行初始化，主要对类变量进行初始化。在Java中对类变量进行初始值设定有两种方式：</p>
+<ul>
+<li>声明类变量是指定初始值</li>
+<li>使用静态代码块为类变量指定初始值</li>
+</ul>
+<p>JVM初始化步骤</p>
+<ul>
+<li>假如这个类还没有被加载和连接，则程序先加载并连接该类</li>
+<li>假如该类的直接父类还没有被初始化，则先初始化其直接父类</li>
+<li>假如类中有初始化语句，则系统依次执行这些初始化语句</li>
+</ul>
+<p>类初始化时机：只有当对类的主动使用的时候才会导致类的初始化，类的<br>主动使用包括以下六种：</p>
+<ul>
+<li>创建类的实例，也就是new的方式</li>
+<li>访问某个类或接口的静态变量，或者对该静态变量赋值</li>
+<li>调用类的静态方法</li>
+<li>反射（如 Class.forName(“com.shengsiyuan.Test”)）</li>
+<li>初始化某个类的子类，则其父类也会被初始化</li>
+<li>Java虚拟机启动时被标明为启动类的类（ JavaTest），直接使用 java.exe命令来运行某个主类</li>
+</ul>
+<h6 id="结束生命周期"><a href="#结束生命周期" class="headerlink" title="结束生命周期"></a>结束生命周期</h6><p>在如下几种情况下，Java虚拟机将结束生命周期</p>
+<ul>
+<li>执行了 System.exit()方法</li>
+<li>程序正常执行结束</li>
+<li>程序在执行过程中遇到了异常或错误而异常终止</li>
+<li>由于操作系统出现错误而导致Java虚拟机进程终止</li>
+</ul>
+<h4 id="双亲委派模型（Parent-Delegation-Model）"><a href="#双亲委派模型（Parent-Delegation-Model）" class="headerlink" title="双亲委派模型（Parent Delegation Model）"></a>双亲委派模型（Parent Delegation Model）</h4><p>类的加载过程采用双亲委派机制，这种机制能更好的保证 Java 平台的安全性。<br>类加载器 ClassLoader 是具有层次结构的，也就是父子关系，其中，Bootstrap 是所有类加载器的父亲，如下图所示：<br><img src="../../../../images/post-images/10224563-247d5c507d8494e3.png" alt="image.png"></p>
+<blockquote>
+<p>该模型要求除了顶层的 Bootstrap class loader 启动类加载器外，其余的类加载器都应当有自己的父类加载器。子类加载器和父类加载器不是以继承（Inheritance）的关系来实现，而是通过组合（Composition）关系来复用父加载器的代码。每个类加载器都有自己的命名空间（由该加载器及所有父类加载器所加载的类组成，在同一个命名空间中，不会出现类的完整名字（包括类的包名）相同的两个类；在不同的命名空间中，有可能会出现类的完整名字（包括类的包名）相同的两个类）。</p>
+</blockquote>
+<p>双亲委派模型的工作过程如下：</p>
+<ul>
+<li>当前 ClassLoader 首先从自己已经加载的类中查询是否此类已经加载，如果已经加载则直接返回原来已经加载的类。<blockquote>
+<p>每个类加载器都有自己的加载缓存，当一个类被加载了以后就会放入缓存，等下次加载的时候就可以直接返回了。</p>
+</blockquote>
+</li>
+<li>当前 ClassLoader 的缓存中没有找到被加载的类的时候，委托父类加载器去加载，父类加载器采用同样的策略，首先查看自己的缓存，然后委托父类的父类去加载，一直到 bootstrap ClassLoader。<blockquote>
+<p>当所有的父类加载器都没有加载的时候，再由当前的类加载器加载，并将其放入它自己的缓存中，以便下次有加载请求的时候直接返回。</p>
+</blockquote>
+</li>
+</ul>
+<p>这样设计的原因：</p>
+<blockquote>
+<p>这是对于使用这种模型来组织累加器的好处；主要是为了安全性，避免用户自己编写的类动态替换 Java 的一些核心类，比如 String，同时也避免了重复加载，因为 JVM 中区分不同类，不仅仅是根据类名，相同的 class 文件被不同的 ClassLoader 加载就是不同的两个类，如果相互转型的话会抛java.lang.ClassCaseException。</p>
+</blockquote>
+<h4 id="JVM内存管理"><a href="#JVM内存管理" class="headerlink" title="JVM内存管理"></a>JVM内存管理</h4><h5 id="（1）内存划分"><a href="#（1）内存划分" class="headerlink" title="（1）内存划分"></a>（1）内存划分</h5><p><img src="../../../../images/post-images/10224563-2b40e6da3a433ed9.png" alt="image.png"></p>
+<p>1.方法区（线程共享）：各个线程共享的一个区域，用于存储虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码等数据。虽然 Java 虚拟机规范把方法区描述为堆的一个逻辑部分，但是它却又一个别名叫做 Non-Heap（非堆），目的应该是与 Java 堆区分开来。</p>
+<ul>
+<li>运行时常量池：是方法区的一部分，用于存放编译器生成的各种字面量和符号引用。</li>
+</ul>
+<p>2.堆内存（线程共享）：所有线程共享的一块区域，垃圾收集器管理的主要区域。目前主要的垃圾回收算法都是分代收集算法，所以 Java 堆中还可以细分为：新生代和老年代；再细致一点的有 Eden 空间、From Survivor 空间、To Survivor 空间等，默认情况下新生代按照8:1:1的比例来分配。根据 Java 虚拟机规范的规定，Java 堆可以处于物理上不连续的内存空间中，只要逻辑上是连续的即可，就像我们的磁盘一样；</p>
+<p>3.程序计数器： Java 线程私有，类似于操作系统里的 PC 计数器，它可以看做是当前线程所执行的字节码的行号指示器。如果线程正在执行的是一个 Java 方法，这个计数器记录的是正在执行的虚拟机字节码指令的地址；如果正在执行的是 Native 方法，这个计数器值则为空（Undefined）。此内存区域是唯一一个在 Java 虚拟机规范中没有规定任何 OutOfMemoryError 情况的区域；</p>
+<p>4.虚拟机栈（栈内存）：Java线程私有，虚拟机展描述的是Java方法执行的内存模型：每个方法在执行的时候，都会创建一个栈帧用于存储局部变量、操作数、动态链接、方法出口等信息；每个方法调用都意味着一个栈帧在虚拟机栈中入栈到出栈的过程；</p>
+<p>5.本地方法栈 ：和Java虚拟机栈的作用类似，区别是该区域为 JVM 提供使用 native 方法的服务；</p>
+<p>作者：我没有三颗心脏<br>链接：<a href="https://www.jianshu.com/p/bfb876565a1e" target="_blank" rel="noopener">https://www.jianshu.com/p/bfb876565a1e</a><br>來源：简书<br>简书著作权归作者所有，任何形式的转载都请联系作者获得授权并注明出处。</p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>java</tag>
+        <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>一个你不会认识的陌生人</title>
+    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
+    <content><![CDATA[<p>漫长的时光里</p>
+<p>你独自一个人度过</p>
+<p>生命总是孤独</p>
+<p>你总是默默承受</p>
+<p>即使每一个过客</p>
+<p>终究有谢幕离场的时分</p>
+<p>我是一个你不会认识的陌生人</p>
+<p>你是一道我永远也遇不上的彩虹</p>
+<p>没有遇上方知有</p>
+<p>好在花有清香月有阴</p>
+<p>我们在不同的世界</p>
+<p>演绎着类似的人生</p>
+<p>陌生的旧情人</p>
+<p>你是谁的新欢和旧爱</p>
+<p>而我只是一个</p>
+<p>你不会认识的陌生人</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>记一次阿里巴巴电面经历</title>
+    <url>/2021/06/17/%E8%AE%B0%E4%B8%80%E6%AC%A1%E9%98%BF%E9%87%8C%E5%B7%B4%E5%B7%B4%E7%94%B5%E9%9D%A2%E7%BB%8F%E5%8E%86/</url>
+    <content><![CDATA[<p><strong>前言</strong>：本人有幸在boss直聘上获得一次阿里巴巴国际技术事业部的电话面试机会，由于太突然，大部分问题都没有发挥原来的水平，诶，决定痛下决心好好总结，还有就是坚定下自己的目标=_=。<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上来先做了个自我介绍，由于要找个信号好的地方，爬到了楼顶，结果气喘吁吁的=_=，下面就开始提问一些专业的问题。</p>
+<h4 id="1-面向对象的封装，继承，多态的含义"><a href="#1-面向对象的封装，继承，多态的含义" class="headerlink" title="1.面向对象的封装，继承，多态的含义"></a>1.面向对象的封装，继承，多态的含义</h4><ul>
+<li>封装是指将对象的细节隐藏起来，然后通过公共的方法来向外暴露该对象的功能；<br>一般来说封装是使用private修饰符对属性进行包装，使用getter/setter对属性进行获取与修改，但是也可以使用setter对属性进行更加深层次的设置，包括你可以对设置的格式做转化，对数据的要求；</li>
+<li>继承是面向对象实现软件复用的重要手段，子类继承父类，子类就拥有父类的成员属性和成员办法，可以拥有父类的功能，也可以对父类的方法进行重写（覆盖）；缺点是违背了高内聚，低耦合的编程思想，耦合程度比较高，并且破坏了封装的特性，可见部分功能的丧失来换取另一部功能的完整。</li>
+<li><p>多态可以理解为同一个行为有不同的表达形式或者形态的能力，举个例子，父类可以是Animals类，具有say()方法行为，但是对于不同种类动物手说的话是不同的，比如Cat类，可能说”喵喵喵”，Dog类说”汪汪汪”之类的；多态实现的条件是上具备一些以上的条件的：<br>1）继承；2）重写；3）向上转型；</p>
+<h4 id="2-抽象类和接口的区别"><a href="#2-抽象类和接口的区别" class="headerlink" title="2.抽象类和接口的区别"></a>2.抽象类和接口的区别</h4></li>
+<li><p>这个算是老生常谈的问题了，大概有以下几点：</p>
+</li>
+<li>抽象类中可以有普通的方法和成员变量，而接口中的办法必须是抽象的，变量也必须是static final类型的（其实就是常量），必须被初始化，接口中只有常量，没有变量；</li>
+<li>抽象类中的方法可以不全为抽象方法，子类继承可以不必全部实现，全部实现为普通类，不全部实现还是抽象类，而实现接口的类必须实现其中的方法；</li>
+<li>抽象类拥有类的特性，单继承，而接口多继承；</li>
+<li>Java8 中接口中会有 default 方法，即方法可以被实现。</li>
+</ul>
+<h4 id="3-内存溢出和内存泄露的含义，举例说明，不超过10行代码；"><a href="#3-内存溢出和内存泄露的含义，举例说明，不超过10行代码；" class="headerlink" title="3.内存溢出和内存泄露的含义，举例说明，不超过10行代码；"></a>3.内存溢出和内存泄露的含义，举例说明，不超过10行代码；</h4><ul>
+<li><p>内存泄露的概念是指对象可达，但是没用了，就是本该被CG回收的那些没有被回收；内存泄露的原因有以下2点：<br>1）长周期对象引用短周期对象；<br>2）没有将无用对象置为null；<br>举一个第一个情况的例子：</p>
+<blockquote>
+<p>Static Vector v = new Vector(10);<br>  for (int i = 1; i&lt;100; i++)<br>  {<br>  &nbsp;&nbsp;Object o = new Object();<br>  &nbsp;&nbsp;v.add(o);<br>  &nbsp;&nbsp;o = null;<br>  }</p>
+</blockquote>
+</li>
+</ul>
+<p>内存泄露可以造成内存溢出，是造成内存溢出的一种情况，内存泄露积累起来将导致内存溢出。</p>
+<h4 id="4-对Spring-IOC的理解"><a href="#4-对Spring-IOC的理解" class="headerlink" title="4.对Spring IOC的理解"></a>4.对Spring IOC的理解</h4><p>spring IOC 的ioc是inverse of controller的英文缩写，意思是控制反转的意思，spring ioc有3种注入方式：</p>
+<ul>
+<li>基于属性的注入；<br>eg:<bean>标签下配置&lt;property name=”xxxx(属性名称)” value/ref=”xxxx(属性值/依赖注入的bean)”&gt;<br>这种注入前提是注入的bean要有默认实现的setter方法；</bean></li>
+<li><p>基于构造器的注入；<br>eg:<bean> 标签下配置<constructor-arg ref="引用的bean id"><br>前提是该bean注入的值是引用的bean对象类型，另外还可以是基本数据类型的注入，包括集合；<br>eg:<br><strong>基本数据类型</strong>:</constructor-arg></bean></p>
+<pre><code>&lt;constructor-arg index=&quot;0&quot; type=&quot;java.lang.String&quot; value=&quot;1&quot;/&gt;&lt;/constructor-arg&gt;
+&lt;constructor-arg index=&quot;1&quot; type=&quot;java.lang.Integer&quot; value=&quot;2&quot;&gt;&lt;/constructor-arg&gt;
+</code></pre></li>
+</ul>
+<p><strong>集合</strong>:</p>
+<pre><code>&lt;bean id=&quot;xxxx&quot; class=&quot;com.xxxx.xxxx&quot; &gt;
+        &lt;property name=&quot;arrayData&quot;&gt;
+            &lt;array/list/set&gt;
+                &lt;value&gt;xxx&lt;/value&gt;
+                &lt;value&gt;aaa&lt;/value&gt;
+                &lt;value&gt;bbb&lt;/value&gt;
+                &lt;value&gt;ccc&lt;/value&gt;
+            &lt;/array/list/set&gt;
+        &lt;/property&gt;
+&lt;/bean&gt;
+&lt;property name=&quot;mapData&quot;&gt;
+    &lt;map&gt;
+        &lt;entry key=&quot;jack&quot; value=&quot;杰克&quot;&gt;&lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;&lt;value&gt;rose&lt;/value&gt;&lt;/key&gt;
+            &lt;value&gt;肉丝&lt;/value&gt;
+        &lt;/entry&gt;
+    &lt;/map&gt;
+&lt;/property&gt;
+
+&lt;property name=&quot;propsData&quot;&gt;
+    &lt;props&gt;
+        &lt;prop key=&quot;xxxx&quot;&gt;xxxx&lt;/prop&gt;
+        &lt;prop key=&quot;aaaa&quot;&gt;aaaa&lt;/prop&gt;
+        &lt;prop key=&quot;bbbb&quot;&gt;bbbb&lt;/prop&gt;
+    &lt;/props&gt;
+&lt;/property&gt;
+</code></pre><ul>
+<li><p>基于注解的注入；<br>使用注解实现ioc的方法，首先记得要配置spring context 的命名空间，并且在applicationContext.xml中配置扫描的含有注解的包；<br>eg:</p>
+<pre><code>&lt;context:component-scan base-package=&quot;xxx.xxxx.xxxx&quot;/&gt;
+</code></pre></li>
+</ul>
+<h4 id="5-Spring-aop的理解，底层实现原理"><a href="#5-Spring-aop的理解，底层实现原理" class="headerlink" title="5.Spring aop的理解，底层实现原理"></a>5.Spring aop的理解，底层实现原理</h4><p>以下给出一段代码解释：<br>当实现日志控制时，</p>
+<pre><code>//将织入类交给spring bean处理
+&lt;bean id=&quot;loggingAspect&quot; class=&quot;com.cyy.maven.core.Aspect.LoggingAspect&quot;/&gt;
+&lt;aop:config&gt;
+    //定义切入点
+    &lt;aop:pointcut id=&quot;serviceOpearation&quot; expression=&quot;execution(* com.cyy.maven.core.service.impl.*.*(..))&quot;/&gt;
+    //引用切入点
+    &lt;aop:aspect  ref=&quot;loggingAspect&quot;&gt;
+    //使用切入点中的方法织入
+        &lt;aop:before method=&quot;beforeMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
+        &lt;aop:after method=&quot;afterMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
+        &lt;aop:after-returning method=&quot;afterReturning&quot; pointcut-ref=&quot;serviceOpearation&quot; returning=&quot;result&quot;/&gt;
+        &lt;aop:after-throwing method=&quot;afterThrowing&quot; pointcut-ref=&quot;serviceOpearation&quot; throwing=&quot;e&quot;/&gt;
+        //环绕方法，等价于以上4个的作用
+        &lt;aop:around method=&quot;aroundMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
+    &lt;/aop:aspect&gt;
+&lt;/aop:config&gt;
+</code></pre><h4 id="6-nbsp-Set和Map的区别"><a href="#6-nbsp-Set和Map的区别" class="headerlink" title="6.&nbsp;Set和Map的区别"></a>6.&nbsp;Set和Map的区别</h4><ul>
+<li>Set是Collection接口下的子接口，Set中的数据可以是无序的，不可以重复，Set的形式是set<type>  myset，即节点是一个type类型的数据；</type></li>
+<li>Map 是跟Collection同级别的集合接口，Map的形式是map&lt;type1,type2&gt; mymap,即节点数据是一对数据，以键值对的形式存在，key唯一，value可以重复；<br>最基础的回答可以是这样，以后会专门写一篇来对集合这种数据类型进行深入浅出的研究；</li>
+</ul>
+<h4 id="7-nbsp-对数据库索引的理解，会举例考察你"><a href="#7-nbsp-对数据库索引的理解，会举例考察你" class="headerlink" title="7.&nbsp;对数据库索引的理解，会举例考察你"></a>7.&nbsp;对数据库索引的理解，会举例考察你</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/b82f2926d9e5" target="_blank" rel="noopener">Mysql 索引的具体优化策略</a></p>
+<h4 id="8-nbsp-方法覆盖和重载的区别"><a href="#8-nbsp-方法覆盖和重载的区别" class="headerlink" title="8.&nbsp;方法覆盖和重载的区别"></a>8.&nbsp;方法覆盖和重载的区别</h4><ul>
+<li>方法覆盖又叫方法重写，是重写父类的办法，权限不能更小，抛出的异常不能更多；</li>
+<li>重载是同一个类中可以有相同名字的方法，但是由于方法参数的类型，顺序，个数不尽相同的相同名称的方法；</li>
+</ul>
+<h4 id="9-nbsp-数据库事务的4个特性，最好能说出详细的特征"><a href="#9-nbsp-数据库事务的4个特性，最好能说出详细的特征" class="headerlink" title="9.&nbsp;数据库事务的4个特性，最好能说出详细的特征"></a>9.&nbsp;数据库事务的4个特性，最好能说出详细的特征</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/3e7c12a1a2be" target="_blank" rel="noopener">spring 事务理解</a></p>
+<h4 id="10-nbsp-讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）"><a href="#10-nbsp-讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）" class="headerlink" title="10.&nbsp;讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）"></a>10.&nbsp;讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）</h4><h4 id="11-nbsp-10000个String对象的去重"><a href="#11-nbsp-10000个String对象的去重" class="headerlink" title="11.&nbsp;10000个String对象的去重"></a>11.&nbsp;10000个String对象的去重</h4><p><strong>tips</strong>: 可以使用HashSet解决；</p>
+<h4 id="12-nbsp-String对象的取值范围"><a href="#12-nbsp-String对象的取值范围" class="headerlink" title="12.&nbsp;String对象的取值范围"></a>12.&nbsp;String对象的取值范围</h4><p>定长的String数据类型占用的存储空间为字符串的长度，取值范围为1——65400个字符;</p>
+<h4 id="13-nbsp-TCP建立连接-3次握手，结束时4次挥手原理具体内容"><a href="#13-nbsp-TCP建立连接-3次握手，结束时4次挥手原理具体内容" class="headerlink" title="13&nbsp;TCP建立连接 3次握手，结束时4次挥手原理具体内容"></a>13&nbsp;TCP建立连接 3次握手，结束时4次挥手原理具体内容</h4><h4 id="14-nbsp-ThreadLocal使用过吗，你来说说对它的理解"><a href="#14-nbsp-ThreadLocal使用过吗，你来说说对它的理解" class="headerlink" title="14.&nbsp;ThreadLocal使用过吗，你来说说对它的理解"></a>14.&nbsp;ThreadLocal使用过吗，你来说说对它的理解</h4><h4 id="15-nbsp-说说数据库内连接，左外连接，右外连接的理解"><a href="#15-nbsp-说说数据库内连接，左外连接，右外连接的理解" class="headerlink" title="15.&nbsp;说说数据库内连接，左外连接，右外连接的理解"></a>15.&nbsp;说说数据库内连接，左外连接，右外连接的理解</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/83d84d7df306" target="_blank" rel="noopener">mysql 连接</a></p>
+<p>####16.&nbsp;Session和Cookie的区别</p>
+<p>####17.&nbsp;StringBuffer和StringBuild的区别和含义</p>
+<ul>
+<li>StringBuffer:每次都对对象本身进行操作，而不是生成新的对象。所以在字符串内容不断改变的情况，建议使用StringBuffer。</li>
+<li>String对象的字符串拼接其实是被JVM解释成了StringBuffer对象的拼接，所以这些时候String对象的速度并不会比StringBuffer慢。</li>
+<li>StringBuild: 区别在于,StringBuffer是线程安全的类。StringBuild不是线程安全的类，在单线程中性能要比StringBuffrer高。</li>
+</ul>
+<h4 id="18-nbsp-熟悉设计模式吗，说说你对java设计模式的了解"><a href="#18-nbsp-熟悉设计模式吗，说说你对java设计模式的了解" class="headerlink" title="18.&nbsp;熟悉设计模式吗，说说你对java设计模式的了解"></a>18.&nbsp;熟悉设计模式吗，说说你对java设计模式的了解</h4><h4 id="19-nbsp-mysql-in-和exists的区别"><a href="#19-nbsp-mysql-in-和exists的区别" class="headerlink" title="19.&nbsp;mysql  in 和exists的区别"></a>19.&nbsp;mysql  in 和exists的区别</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/2138cbdeea34" target="_blank" rel="noopener">MySQL中exists和in的区别及使用场景</a></p>
+<h4 id="20-nbsp-请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用"><a href="#20-nbsp-请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用" class="headerlink" title="20.&nbsp;请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用"></a>20.&nbsp;请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用</h4><h4 id="21-nbsp-你对我们有什么想要提问的吗"><a href="#21-nbsp-你对我们有什么想要提问的吗" class="headerlink" title="21.&nbsp;你对我们有什么想要提问的吗"></a>21.&nbsp;你对我们有什么想要提问的吗</h4>]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>面试</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>鄉愁</title>
+    <url>/2021/06/17/%E9%84%89%E6%84%81/</url>
+    <content><![CDATA[<p>芦苇飘荡的季节﻿</p>
+<p>少年将沉沉的离别披在肩上﻿</p>
+<p>乡愁像芦苇荡里的水一样柔﻿</p>
+<p>遗忘的日子里﻿</p>
+<p>心中总是若有所思﻿</p>
+<p>乡愁像渔家的灯火一样引人入眠﻿</p>
+<p>岁月像车轮一般轧过如路面荒芜的日子﻿</p>
+<p>远处月台橘黄色的站台灯碰弯了旅人的思绪﻿</p>
+<p>恍惚流失的光阴迷失在记忆的岔道口﻿</p>
+<p>春日大海的阳光照耀着北回归线﻿</p>
+<p>视野里的芦苇叶子眯成一线﻿</p>
+<p>蓝的海黑的海 逐渐缩成点的海鸥﻿</p>
+<p>露水闪透着晶莹的清晨﻿</p>
+<p>列车经过铁轨吸进一个个影子后逝去﻿</p>
+<p>乡愁像一曲永不停息的曲子﻿</p>
+<p>在风尘苦旅的夜里奏起</p>
 ]]></content>
       <categories>
         <category>现代诗</category>
