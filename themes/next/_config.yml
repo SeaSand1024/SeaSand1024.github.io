@@ -98,9 +98,11 @@ menu:
   categories: /categories/ || th
   archives: /archives/ || archive
 #  love: /love/ || heart-o
-  schedule: /schedule/ || calendar
-#  sitemap: /sitemap.xml || sitemap
+#  schedule: /schedule/ || calendar
+  sitemap: /sitemap.xml || sitemap
 #  commonweal: /404/ || heartbeat
+  movies: /movies/ || film
+  books: /books/ || book
 
 # Enable/Disable menu icons.
 menu_icons:
@@ -154,6 +156,7 @@ links:
   Bilibili: https://www.bilibili.com
   Google: https://www.google.com
   Nature: https://www.nature.com
+  Jos: http://www.jos.org.cn
 
 # Sidebar Avatar
 # in theme directory(source/images): /images/head.gif
@@ -816,4 +819,10 @@ images: images
 
 # Theme version
 version: 5.1.4
+
+# Site map
+sitemap:
+  path: sitemap.xml
+
+
 

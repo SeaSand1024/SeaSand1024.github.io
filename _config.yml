@@ -82,9 +82,25 @@ deploy:
   repo: git@github.com:SeaSand1024/SeaSand1024.github.io.git
   branch: master
 
+douban:
+  user: 140573087
+  builtin: false
+  book:
+    title: '阅读'
+    quote: 'This is my book quote'
+  movie:
+    title: '观影'
+    quote: 'This is my movie quote'
+  #  game:
+  #    title: 'This is my game title'
+  #    quote: 'This is my game quote'
+  timeout: 10000
 
 search:
   path: search.xml
   field: post
   format: html
   limit: 10000
+
+
+
