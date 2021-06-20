@@ -1,74 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Griffin POC</title>
-    <url>/2021/06/17/Griffin-POC/</url>
-    <content><![CDATA[<pre><code>Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。
-</code></pre><p>Apache Griffin填补了开源世界里在大数据质量领域的空白。就像空气质量，水和食品安全等无时不刻地在影响人类的生命一样，数据质量在数据科学领域是至关重要的。在大数据时代，企业决策调整，商机发现等越来越依赖于大数据的数据分析和数据挖掘，而数据质量的保证是所有一切数据分析和数据挖掘的基础。</p>
-<h6 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h6><p><img src="../../../../images/post-images/10224563-4cdc01da7a0a285c.png" alt="img.png"></p>
-<p>Griffin架构图</p>
-<p>1.apache griffin  安装配置；</p>
-<p>从官网下载最新版本<a href="http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；" target="_blank" rel="noopener">http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；</a></p>
-<p>2.(1)配置measure组件；</p>
-<pre><code>配置env-batch.json中hdfs和es的path,分别为&quot;hdfs://10.2.29.101:8020/griffin/batch/persist&quot;,&quot;http://10.2.29.102:9200/griffin/accuracy&quot;,env-streaming.json类似，env-streaming.json还要配置zk的host为“10.2.29.101:2181“，其他默认；
-
-配置config-batch.json，config-streaming.json其中的sinks至少要有es，配置config-batch-advanced.json[&quot;HDFS&quot;,&quot;ELASTICSEARCH&quot;,&quot;CONSOLE&quot;]，运行maven命令，mvn clean package -Dmaven.test.skip=true;
-</code></pre><p>   (2)配置service组件；</p>
-<pre><code>配置env下env_streaming.json，env_batch.json，配置同measure;
-
-配置application.properties，配置端口为9270，server.port=9270；
-
-配置quartz数据库，进入postgres用户下bin目录下，createdb -O &lt;username&gt; quartz，将项目中的Init_quartz_postgres.sql quartz拷贝到一个目录，psql -p &lt;port&gt; -h &lt;host address&gt; -U &lt;username&gt; -f Init_quartz_postgres.sql quartz；
-
-配置spring.datasource为相应的数据库quartz，设置用户名密码，设置相应数据库驱动，设置hive.metastore.uris=thrift://en1-dev1-tbdp.trendy-global.com:9083，hive.metastore.dbname=default，kafka.schema.registry.url=http://en1- dev1-tbdp.trendy-global.com:6667，fs.defaultFS=hdfs://nn1-dev1-tbdp.trendy-global.com:8020，elasticsearch.host=10.2.29.102，elasticsearch.port=9200，livy.uri=http://en1-dev1-tbdp.trendy-global.com:8999/batches，yarn.uri=http://en1-dev1-tbdp.trendy-global.com:8088；
-
-配置sparkProperties.json，如下：
-</code></pre><p>{</p>
-<p>   “file”: “hdfs:///griffin/griffin-measure.jar”,</p>
-<p>   “className”: “org.apache.griffin.measure.Application”,</p>
-<p>   “name”: “griffin”,</p>
-<p>   “queue”: “default”,</p>
-<p>   “numExecutors”: 3,</p>
-<p>   “executorCores”: 1,</p>
-<p>   “driverMemory”: “1g”,</p>
-<p>   “executorMemory”: “1g”,</p>
-<p>   “files”: [ “hdfs:///livy/hive-site.xml” ]</p>
-<p>}；</p>
-<pre><code>然后在service根目录下运行maven命令，mvn clean package -Dmaven.test.skip=true;
-
-将measure组件按照sparkProperties.json配置的丢到hdfs上；
-</code></pre><p>   (3)配置ui组件；</p>
-<pre><code>配置ui/angular/src/app/service/service.service.ts文件public BACKEND_SERVER = &apos;http://localhost:9270&apos;;为之前service的端口；
-
-在angular下运行命令npm run build 
-</code></pre><p>3.运行；</p>
-<p>  （1）启动service组件，命令：</p>
-<p>java -jar -Dserver.port=9270 -Dfs.defaultFS=hdfs:///griffin/persist service-0.3.0-incubating.jar；</p>
-<p>  （2）启动ui 组件，命令：</p>
-<pre><code>在angular下运行命令npm run start或者
-
-cd ui/angular 
-
-../angular/node_modules/.bin/ng serve --port 9280
-</code></pre><p><img src="../../../../images/post-images/10224563-b1e4fcbdee632715.png" alt="img.png"><br>griffin运行界面</p>
-<p>4.建立数据质量检测方案poc；</p>
-<pre><code>（1）建立accuracy类型检测，点击create measure 按钮，按照操作步骤进行设置，注意设置分区要相对应或者不设置；
-
-（2）建立data profiling类型检测，同样按照步骤操作；
-
-（3）点击create job根据提示创建job;
-
- 结果如图：
-</code></pre><h6 id="job界面"><a href="#job界面" class="headerlink" title="job界面"></a>job界面</h6><p><img src="../../../../images/post-images/10224563-a7e84c6a56d5f3a4.png" alt="img.png"></p>
-<h6 id="job详解界面"><a href="#job详解界面" class="headerlink" title="job详解界面"></a>job详解界面</h6><p><img src="../../../../images/post-images/10224563-aa9b60841926f0a0.png" alt="img.png"></p>
-<h6 id="job4"><a href="#job4" class="headerlink" title="job4"></a>job4</h6><p><img src="../../../../images/post-images/10224563-cd9a5aaafb910e22.png" alt="img.png"></p>
-<h6 id="mea-job1"><a href="#mea-job1" class="headerlink" title="mea-job1"></a>mea-job1</h6><p><img src="../../../../images/post-images/10224563-577da07c46b740dd.png" alt="img.png"></p>
+    <title>Mysql之索引的基本概念语法</title>
+    <url>/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</url>
+    <content><![CDATA[<p>####1.Mysql中索引的概念<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
+<p>######索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p>
+<p>####2.索引的基本创建，删除以及数据库表的修改</p>
+<p>#####单列索引的基本创建格式是：<br>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p>
+<p>#####修改表结构的方式创建索引：<br>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
+<p>#####或者也可以创建表的时候指明：<br>    CREATE TABLE sys_user(<br>    id INT NOT NULL primary key,<br>    account VARCHAR(16) NOT NULL,<br>    password VARCHAR(32) NOT NULL,<br>    INDEX ac (account (16))<br>    );  </p>
+<p>#####删除索引的语法：<br>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
+<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
 ]]></content>
       <categories>
-        <category>数据开发</category>
+        <category>后端</category>
       </categories>
       <tags>
-        <tag>数据质量监控</tag>
+        <tag>mysql</tag>
+        <tag>索引</tag>
       </tags>
   </entry>
   <entry>
@@ -101,23 +50,74 @@ cd ui/angular
       </tags>
   </entry>
   <entry>
-    <title>Mysql之索引的基本概念语法</title>
-    <url>/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</url>
-    <content><![CDATA[<p>####1.Mysql中索引的概念<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
-<p>######索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p>
-<p>####2.索引的基本创建，删除以及数据库表的修改</p>
-<p>#####单列索引的基本创建格式是：<br>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p>
-<p>#####修改表结构的方式创建索引：<br>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
-<p>#####或者也可以创建表的时候指明：<br>    CREATE TABLE sys_user(<br>    id INT NOT NULL primary key,<br>    account VARCHAR(16) NOT NULL,<br>    password VARCHAR(32) NOT NULL,<br>    INDEX ac (account (16))<br>    );  </p>
-<p>#####删除索引的语法：<br>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
-<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
+    <title>Streamsets POC总结</title>
+    <url>/2021/06/17/POC%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<h4 id="Streamsets介绍"><a href="#Streamsets介绍" class="headerlink" title="Streamsets介绍"></a>Streamsets介绍</h4><p>Streamsets是一款大数据实时采集和ETL工具，可以实现不写一行代码完成数据的采集和流转。通过拖拽式的可视化界面，实现数据管道(Pipelines)的设计和定时任务调度。最大的特点有：</p>
+<p>(1) 可视化界面操作，不写代码完成数据的采集和流转;</p>
+<p>(2) 内置监控，可是实时查看数据流传输的基本信息和数据的质量;</p>
+<p>(3) 强大的整合力，对现有常用组件全力支持，包括50种数据源、44种数据操作、46种目的地。</p>
+<p>对于Streamsets来说，最重要的概念就是数据源(Origins)、操作(Processors)、目的地(Destinations)，创建一个Pipelines管道配置也基本是这三个方面，除此之外还有执行器(executor)，是做一些数据处理操作的。</p>
+<p>常见的Origins有Kafka、HTTP、UDP、JDBC、HDFS等；Processors可以实现对每个字段的过滤、更改、编码、聚合等操作；Destinations跟Origins差不多，可以写入Kafka、Flume、JDBC、HDFS、Redis等。</p>
+<h4 id="POC-需求"><a href="#POC-需求" class="headerlink" title="POC 需求"></a>POC 需求</h4><p>实现一个工作流程：</p>
+<p>1.对一个数据库中的所需要的表进行增量的抽取，从数据库到分布式文件系统上，比如从postgresql到hive上；</p>
+<p>2.有业务需求的抽取，因为数据库表中的修改时间字段不会跟随修改的数据而更新，所以需要在每次增量的抽取上次抽取时间点之前时间的数据（比如前3个月）；</p>
+<p>3.要能自动判断hive上是否存在该表，根据情况进行创建，之后进行数据载入；</p>
+<p>POC结果</p>
+<p>最后的实现方案是：</p>
+<p>   通过airflow调度streamsets的restapi实现pipeline的开启以及一些数据的获取和pipline的状态判断，筛选条件offset的设置，实现整个sdc的etl 流程，不过最后发现该实现方案存在较大的缺陷，而且还有一个时间变量的设置存在问题；</p>
+<p>streamsets的案例是: 全量抽取pipeline<br><a href="http://10.2.29.102:9230/collector/pipeline/streamsettest03byquerycopy57a756ec-6d71-4640-9fd9-40e4ce24eb46；" target="_blank" rel="noopener">http://10.2.29.102:9230/collector/pipeline/streamsettest03byquerycopy57a756ec-6d71-4640-9fd9-40e4ce24eb46；</a></p>
+<p>以及增量pipeline<br><a href="http://10.2.29.102:9230/collector/pipeline/streamsettest03byqueryincr6ce53b23-cb23-455e-b3f5-8921a1d93afa；" target="_blank" rel="noopener">http://10.2.29.102:9230/collector/pipeline/streamsettest03byqueryincr6ce53b23-cb23-455e-b3f5-8921a1d93afa；</a></p>
+<p>全量<br><img src="../../../../images/post-images/10224563-e5747904c91a11a1.png" alt="img.png"></p>
+<p>增量<br><img src="../../../../images/post-images/10224563-1b359d9207f8e2e2.png" alt="img.png"></p>
+<p>airflow调度脚本案例是：<a href="http://10.2.29.102:9210/admin/airflow/code?dag_id=test_my_http；" target="_blank" rel="noopener">http://10.2.29.102:9210/admin/airflow/code?dag_id=test_my_http；</a></p>
+<p>airflow调度<br><img src="../../../../images/post-images/10224563-6f993055d421c0f5.png" alt="img.png"></p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><h5 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h5><p>1.使用拖拽的方式减少了手动etl各种繁琐的代码编写，并且实时即开即用，可以实现UI界面的etl的简单操作，运行时候的可视化界面可以了解数据载入的各个过程情况，并且有rest的api可以实现其他进程的调用，比如调度程序airflow的调度，实现定时任务自动化etl，减少每次人工操作的繁琐，实现自动化智能化，适合大数据下的使用；</p>
+<h5 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h5><p>1.因为设计的时候是定制普通的etl，某些根据业务要求的etl无法实现，比如本次poc中的案例，还有pipeline 之间的依赖，包括restapi在airflow调度后的异步问题导致的etl流程顺序紊乱 ，比如本例中的conditional_task1根据实际情况进行判断，假如全量抽取之前不存在的话，会调用SimpleHttpOperator进行一次全量的抽取，但是通过restapi返回的response并不是pipeline执行完成后才返回的，执行表明已经调用成功，但是运行的状态未知，这样可能在load_crm_goods_full还没跑完的情况下（数据量大的情况下），conditional_task2开始执行，去拿load_crm_goods_full对应的pipeline的id的offset去对增量表的offset进行设置，有可能导致拿不到的结果，而导致整个etl流程失败；除此之外，run_hive_query对2表的数据进行合并的时候要拿到一个判断值去进行表的数据merge,是根据上一个job,load_crm_goods_incr的offset来取值的，但是load_crm_goods_incr要根据reset_crm_goods1，reset_crm_goods2的其中一个结果来决定，所以在定义sql的时候需要动态定义时间的值，这在整个airflow脚本中是很难实现的，暂时没有想到解决的方案。</p>
 ]]></content>
       <categories>
-        <category>后端</category>
+        <category>数据开发</category>
       </categories>
       <tags>
-        <tag>mysql</tag>
-        <tag>索引</tag>
+        <tag>etl</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2018/06/28/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>flink 理解</title>
+    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
+    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
+<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
+<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
+]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>flink</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>hive跨集群迁移表</title>
+    <url>/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/</url>
+    <content><![CDATA[<h4 id="1-export-table-xxx-to-‘-tmp-xxxx’"><a href="#1-export-table-xxx-to-‘-tmp-xxxx’" class="headerlink" title="1.export table xxx to ‘/tmp/xxxx’;"></a>1.export table xxx to ‘/tmp/xxxx’;</h4><h4 id="2-hadoop-fs-get-tmp-xxx-tmp-xxx"><a href="#2-hadoop-fs-get-tmp-xxx-tmp-xxx" class="headerlink" title="2.hadoop fs - get /tmp/xxx /tmp/xxx"></a>2.hadoop fs - get /tmp/xxx /tmp/xxx</h4><h4 id="3-scp文件。。。"><a href="#3-scp文件。。。" class="headerlink" title="3.scp文件。。。"></a>3.scp文件。。。</h4><h4 id="4-zip-r-tmp-xxxx-zip-tmp-xxx"><a href="#4-zip-r-tmp-xxxx-zip-tmp-xxx" class="headerlink" title="4.zip -r /tmp/xxxx.zip /tmp/xxx"></a>4.zip -r /tmp/xxxx.zip /tmp/xxx</h4><h4 id="5-unzip-xxx-zip-tmp"><a href="#5-unzip-xxx-zip-tmp" class="headerlink" title="5.unzip xxx.zip /tmp/"></a>5.unzip xxx.zip /tmp/</h4><h4 id="6-hadoop-fs-put-tmp-xxxx-tmp-xxxx"><a href="#6-hadoop-fs-put-tmp-xxxx-tmp-xxxx" class="headerlink" title="6.hadoop fs -put /tmp/xxxx /tmp/xxxx"></a>6.hadoop fs -put /tmp/xxxx /tmp/xxxx</h4><h4 id="7-import-table-xxx-from-‘-tmp-xxx’"><a href="#7-import-table-xxx-from-‘-tmp-xxx’" class="headerlink" title="7.import table xxx from ‘/tmp/xxx’__"></a>7.import table xxx from ‘/tmp/xxx’__</h4>]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>hive</tag>
       </tags>
   </entry>
   <entry>
@@ -254,77 +254,6 @@ cd ui/angular
       </tags>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2018/06/28/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>Streamsets POC总结</title>
-    <url>/2021/06/17/POC%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<h4 id="Streamsets介绍"><a href="#Streamsets介绍" class="headerlink" title="Streamsets介绍"></a>Streamsets介绍</h4><p>Streamsets是一款大数据实时采集和ETL工具，可以实现不写一行代码完成数据的采集和流转。通过拖拽式的可视化界面，实现数据管道(Pipelines)的设计和定时任务调度。最大的特点有：</p>
-<p>(1) 可视化界面操作，不写代码完成数据的采集和流转;</p>
-<p>(2) 内置监控，可是实时查看数据流传输的基本信息和数据的质量;</p>
-<p>(3) 强大的整合力，对现有常用组件全力支持，包括50种数据源、44种数据操作、46种目的地。</p>
-<p>对于Streamsets来说，最重要的概念就是数据源(Origins)、操作(Processors)、目的地(Destinations)，创建一个Pipelines管道配置也基本是这三个方面，除此之外还有执行器(executor)，是做一些数据处理操作的。</p>
-<p>常见的Origins有Kafka、HTTP、UDP、JDBC、HDFS等；Processors可以实现对每个字段的过滤、更改、编码、聚合等操作；Destinations跟Origins差不多，可以写入Kafka、Flume、JDBC、HDFS、Redis等。</p>
-<h4 id="POC-需求"><a href="#POC-需求" class="headerlink" title="POC 需求"></a>POC 需求</h4><p>实现一个工作流程：</p>
-<p>1.对一个数据库中的所需要的表进行增量的抽取，从数据库到分布式文件系统上，比如从postgresql到hive上；</p>
-<p>2.有业务需求的抽取，因为数据库表中的修改时间字段不会跟随修改的数据而更新，所以需要在每次增量的抽取上次抽取时间点之前时间的数据（比如前3个月）；</p>
-<p>3.要能自动判断hive上是否存在该表，根据情况进行创建，之后进行数据载入；</p>
-<p>POC结果</p>
-<p>最后的实现方案是：</p>
-<p>   通过airflow调度streamsets的restapi实现pipeline的开启以及一些数据的获取和pipline的状态判断，筛选条件offset的设置，实现整个sdc的etl 流程，不过最后发现该实现方案存在较大的缺陷，而且还有一个时间变量的设置存在问题；</p>
-<p>streamsets的案例是: 全量抽取pipeline<br><a href="http://10.2.29.102:9230/collector/pipeline/streamsettest03byquerycopy57a756ec-6d71-4640-9fd9-40e4ce24eb46；" target="_blank" rel="noopener">http://10.2.29.102:9230/collector/pipeline/streamsettest03byquerycopy57a756ec-6d71-4640-9fd9-40e4ce24eb46；</a></p>
-<p>以及增量pipeline<br><a href="http://10.2.29.102:9230/collector/pipeline/streamsettest03byqueryincr6ce53b23-cb23-455e-b3f5-8921a1d93afa；" target="_blank" rel="noopener">http://10.2.29.102:9230/collector/pipeline/streamsettest03byqueryincr6ce53b23-cb23-455e-b3f5-8921a1d93afa；</a></p>
-<p>全量<br><img src="../../../../images/post-images/10224563-e5747904c91a11a1.png" alt="img.png"></p>
-<p>增量<br><img src="../../../../images/post-images/10224563-1b359d9207f8e2e2.png" alt="img.png"></p>
-<p>airflow调度脚本案例是：<a href="http://10.2.29.102:9210/admin/airflow/code?dag_id=test_my_http；" target="_blank" rel="noopener">http://10.2.29.102:9210/admin/airflow/code?dag_id=test_my_http；</a></p>
-<p>airflow调度<br><img src="../../../../images/post-images/10224563-6f993055d421c0f5.png" alt="img.png"></p>
-<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><h5 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h5><p>1.使用拖拽的方式减少了手动etl各种繁琐的代码编写，并且实时即开即用，可以实现UI界面的etl的简单操作，运行时候的可视化界面可以了解数据载入的各个过程情况，并且有rest的api可以实现其他进程的调用，比如调度程序airflow的调度，实现定时任务自动化etl，减少每次人工操作的繁琐，实现自动化智能化，适合大数据下的使用；</p>
-<h5 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h5><p>1.因为设计的时候是定制普通的etl，某些根据业务要求的etl无法实现，比如本次poc中的案例，还有pipeline 之间的依赖，包括restapi在airflow调度后的异步问题导致的etl流程顺序紊乱 ，比如本例中的conditional_task1根据实际情况进行判断，假如全量抽取之前不存在的话，会调用SimpleHttpOperator进行一次全量的抽取，但是通过restapi返回的response并不是pipeline执行完成后才返回的，执行表明已经调用成功，但是运行的状态未知，这样可能在load_crm_goods_full还没跑完的情况下（数据量大的情况下），conditional_task2开始执行，去拿load_crm_goods_full对应的pipeline的id的offset去对增量表的offset进行设置，有可能导致拿不到的结果，而导致整个etl流程失败；除此之外，run_hive_query对2表的数据进行合并的时候要拿到一个判断值去进行表的数据merge,是根据上一个job,load_crm_goods_incr的offset来取值的，但是load_crm_goods_incr要根据reset_crm_goods1，reset_crm_goods2的其中一个结果来决定，所以在定义sql的时候需要动态定义时间的值，这在整个airflow脚本中是很难实现的，暂时没有想到解决的方案。</p>
-]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>etl</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>flink 理解</title>
-    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
-    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
-<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
-<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
-]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>flink</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>hive跨集群迁移表</title>
-    <url>/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/</url>
-    <content><![CDATA[<h4 id="1-export-table-xxx-to-‘-tmp-xxxx’"><a href="#1-export-table-xxx-to-‘-tmp-xxxx’" class="headerlink" title="1.export table xxx to ‘/tmp/xxxx’;"></a>1.export table xxx to ‘/tmp/xxxx’;</h4><h4 id="2-hadoop-fs-get-tmp-xxx-tmp-xxx"><a href="#2-hadoop-fs-get-tmp-xxx-tmp-xxx" class="headerlink" title="2.hadoop fs - get /tmp/xxx /tmp/xxx"></a>2.hadoop fs - get /tmp/xxx /tmp/xxx</h4><h4 id="3-scp文件。。。"><a href="#3-scp文件。。。" class="headerlink" title="3.scp文件。。。"></a>3.scp文件。。。</h4><h4 id="4-zip-r-tmp-xxxx-zip-tmp-xxx"><a href="#4-zip-r-tmp-xxxx-zip-tmp-xxx" class="headerlink" title="4.zip -r /tmp/xxxx.zip /tmp/xxx"></a>4.zip -r /tmp/xxxx.zip /tmp/xxx</h4><h4 id="5-unzip-xxx-zip-tmp"><a href="#5-unzip-xxx-zip-tmp" class="headerlink" title="5.unzip xxx.zip /tmp/"></a>5.unzip xxx.zip /tmp/</h4><h4 id="6-hadoop-fs-put-tmp-xxxx-tmp-xxxx"><a href="#6-hadoop-fs-put-tmp-xxxx-tmp-xxxx" class="headerlink" title="6.hadoop fs -put /tmp/xxxx /tmp/xxxx"></a>6.hadoop fs -put /tmp/xxxx /tmp/xxxx</h4><h4 id="7-import-table-xxx-from-‘-tmp-xxx’"><a href="#7-import-table-xxx-from-‘-tmp-xxx’" class="headerlink" title="7.import table xxx from ‘/tmp/xxx’__"></a>7.import table xxx from ‘/tmp/xxx’__</h4>]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>hive</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>java之静态代码块与构造方法加载次序</title>
     <url>/2021/06/17/java%E4%B9%8B%E9%9D%99%E6%80%81%E4%BB%A3%E7%A0%81%E5%9D%97%E4%B8%8E%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95%E5%8A%A0%E8%BD%BD%E6%AC%A1%E5%BA%8F/</url>
     <content><![CDATA[<ul>
@@ -396,6 +325,22 @@ public class B extends A {
       </tags>
   </entry>
   <entry>
+    <title>mysql 连接</title>
+    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
+    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
+<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
+<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
+<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+        <tag>SQL</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>idea2017 搭建ssm框架过程</title>
     <url>/2021/06/17/idea2017-%E6%90%AD%E5%BB%BAssm%E6%A1%86%E6%9E%B6%E8%BF%87%E7%A8%8B/</url>
     <content><![CDATA[<p>环境：</p>
@@ -422,19 +367,484 @@ dao层
       </tags>
   </entry>
   <entry>
-    <title>mysql 连接</title>
-    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
-    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
-<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
-<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
-<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
+    <title>java实现多线程的6种方式</title>
+    <url>/2021/06/17/java%E5%AE%9E%E7%8E%B0%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%846%E7%A7%8D%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<p>java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。</p>
+<h4 id="1-基于继承Thread类的实现"><a href="#1-基于继承Thread类的实现" class="headerlink" title="1.基于继承Thread类的实现"></a>1.基于继承Thread类的实现</h4><blockquote>
+<pre><code>/**
+* @Author: Cyy
+* @Description: 使用继承Thread实现线程的方式
+* @Date:Created in 23:33 2018/7/27
+*/
+public class Thread01 extends Thread {
+
+@Override
+ public void run() {
+    super.run();
+    System.out.println(&quot;使用继承Thread实现线程的方式。。。&quot;);
+    int i=0;
+    while (true) {
+
+        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException  e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+public Thread01(String name){
+    super(name);
+}
+public static void main(String[] args) {
+    Thread01 thread_1=new Thread01(&quot;t1&quot;);
+    Thread01 thread_2=new Thread01(&quot;t2&quot;);
+    thread_1.start();
+    thread_2.start();
+    while (true) {
+            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException  e) {
+            e.printStackTrace();
+        }
+    }
+ }
+}
+</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-88d736905e9966c0.png" alt="image.png"></p>
+</blockquote>
+<h4 id="2-基于实现Runnable接口的实现"><a href="#2-基于实现Runnable接口的实现" class="headerlink" title="2.基于实现Runnable接口的实现"></a>2.基于实现Runnable接口的实现</h4><blockquote>
+<pre><code>/**
+* @Author: Cyy
+* @Description:基于实现Runnable接口的实现
+* @Date:Created in 23:46 2018/7/27
+*/
+public class Thread02 implements Runnable {
+@Override
+public void run() {
+    System.out.println(&quot;使用实现Runnable实现线程的方式。。。&quot;);
+    while(true){
+            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try{
+            Thread.sleep(1000);
+        }catch (InterruptedException  e){
+            e.printStackTrace();
+        }
+    }
+}
+public static void main(String[] args) {
+    Thread02 thread01=new Thread02();
+    Thread02 thread02=new Thread02();
+    Thread thread1=new Thread(thread01,&quot;t1&quot;);
+    thread1.start();
+    Thread thread2=new Thread(thread02,&quot;t2&quot;);
+    thread2.start();
+    while (true) {
+        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException  e) {
+            e.printStackTrace();
+        }
+    }
+  }
+ }
+</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-f166fcf2937e4e63.png" alt="image.png"></p>
+</blockquote>
+<h4 id="3-基于内部类的实现"><a href="#3-基于内部类的实现" class="headerlink" title="3.基于内部类的实现"></a>3.基于内部类的实现</h4><blockquote>
+<pre><code>public class Thread00 {
+
+    public static void main(String[] args) {
+
+        //基于子类的实现
+        new Thread(&quot;t_t&quot;){
+            @Override
+            public void run() {
+                super.run();
+                while (true) {
+                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+
+        //基于接口的实现
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        },&quot;t_r&quot;){}.start();
+
+        while (true) {
+                System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-4551d8c4def647f6.png" alt="image.png"><br>另外，还有同时实现基于子类和接口的实现的情况：</p>
+<blockquote>
+<pre><code>/**
+ * @Author: Cyy
+ * @Description: 同时基于子类和内部类
+ * @Date:Created in 10:11 2018/7/28
+ */
+public class Thread03 {
+
+    public static void main(String args[]){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    System.out.println(&quot;Runnable is running...&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }){
+            @Override
+            public void run() {
+//                super.run();
+                while (true) {
+                    System.out.println(&quot;sub is running...&quot;);
+                    try {
+                            Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-61a1e5b9bb26d736.png" alt="image.png"><br>这里运行结果只有子类线程的打印，原因是虽然实现了Thread类构造办法里Runnable接口的实例，但是子类已经将父类的run方法进行重写了，所以只会执行子类的办法。</p>
+<h4 id="4-基于带返回值的线程实现方式"><a href="#4-基于带返回值的线程实现方式" class="headerlink" title="4.基于带返回值的线程实现方式"></a>4.基于带返回值的线程实现方式</h4><blockquote>
+<pre><code>import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 10:35 2018/7/28
+ */
+public class Thread04 {
+
+    public static void main(String args[]) throws ExecutionException, InterruptedException {
+        Callable&lt;Integer&gt; call=new Callable&lt;Integer&gt;() {
+            @Override
+            public Integer call() throws Exception {
+                System.out.println(&quot;thread start...&quot;);
+                Thread.sleep(2000);
+                return 520;
+            }
+        };
+
+        FutureTask&lt;Integer&gt; task=new FutureTask&lt;&gt;(call);
+        Thread t=new Thread(task);
+        t.start();
+        System.out.println(&quot;线程的执行结果 &quot;+task.get());
+
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-13077b7fb6481123.png" alt="image.png"></p>
+<h4 id="5-基于线程池的方式。"><a href="#5-基于线程池的方式。" class="headerlink" title="5.基于线程池的方式。"></a>5.基于线程池的方式。</h4><blockquote>
+<pre><code>import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 13:02 2018/7/28
+ */
+public class Thread05 {
+
+    public static void main(String[] args) {
+
+        ExecutorService threadPool= Executors.newFixedThreadPool(5);
+
+        while (true) {
+            threadPool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println(Thread.currentThread().getName() + &quot; is running...&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-2133e7d7e0cd6a0e.png" alt="image.png"></p>
+<ul>
+<li>可以基于ExecutorService、Callable、Future实现有返回结果的多线程。</li>
+</ul>
+<blockquote>
+<pre><code>import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.*;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 13:16 2018/7/28
+ */
+public class Thread06 {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        System.out.println(&quot;----程序开始运行-----&quot;);
+
+        Date date1=new Date();
+        int taskSize=5;
+
+        ExecutorService threadPool= Executors.newFixedThreadPool(taskSize);
+        List&lt;Future&gt; list=new ArrayList&lt;Future&gt;();
+        for (int i=0;i&lt;taskSize;i++) {
+            Callable c=new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    Date dateTmp1 = new Date();
+                    Thread.sleep(2000);
+                    Date dateTmp2 = new Date();
+                    long time = dateTmp2.getTime() - dateTmp1.getTime();
+                    return time;
+                }
+            };
+            Future f = threadPool.submit(c);
+            list.add(f);
+        }
+        threadPool.shutdown();
+        for (Future f : list) {
+            System.out.println(&quot;&gt;&gt;&gt;&quot;+f.get().toString());
+        }
+        Date date2=new Date();
+        System.out.println(&quot;-----程序结束运行-----，程序运行时间【&quot;+(date2.getTime()-date1.getTime())+&quot;毫秒】&quot;);
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-77c92e58f3e72d7b.png" alt="image.png"></p>
+<h4 id="6-基于定时任务实现的多线程"><a href="#6-基于定时任务实现的多线程" class="headerlink" title="6.基于定时任务实现的多线程"></a>6.基于定时任务实现的多线程</h4><blockquote>
+<pre><code>import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 16:43 2018/7/28
+ */
+public class Thread07 {
+
+    private static final SimpleDateFormat format=new SimpleDateFormat(&quot;yyyy-MM-dd hh:mm:ss&quot;);
+
+    //定时任务
+    public static void timeLapse() throws ParseException {
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println(&quot;定时任务开始执行。。。。。&quot;);
+            }
+        },format.parse(&quot;2018-07-28 16:51:00&quot;));
+
+    }
+    public static void timeLapseBySomeTimes(){
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println(Thread.currentThread().getName()+&quot; is Running...&quot;);
+            }
+        },new Date(),1000);
+    }
+    public static void main(String[] args) throws ParseException {
+//        timeLapse();
+        timeLapseBySomeTimes();
+        timeLapseBySomeTimes();
+        while (true) {
+            System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：</p>
+<p><img src="../../../../images/post-images/10224563-a872cc0e4d4c4047.png" alt="image.png"></p>
 ]]></content>
       <categories>
         <category>后端</category>
       </categories>
       <tags>
-        <tag>mysql</tag>
-        <tag>SQL</tag>
+        <tag>java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>python-时间序列处理</title>
+    <url>/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</url>
+    <content><![CDATA[<p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
+<p>要求：</p>
+<p>1.利用已有的记录数据进行建模，将缺失值填充完整，评估指标采用RMSE、MAE和；</p>
+<p>2.尝试多种方法进行建模，对比各种模型的性能;</p>
+<p>3.希望你不要直接用中值、均值、前一时刻、后一时刻等常数填充法进行填充（方法对比中可用做简单对比，如表 2所示）；</p>
+<p>4.将数据填充完整后保存至’pm25_predicted.csv’文件（只保存缺失时刻的数据，不按要求则作废），数据格式如表 3所示（列名、文件名不按要求则作废）。</p>
+<p>题解：</p>
+<p>（1）完成时间序列缺失数据填充，一般来说有如下几种方式：常数填充有均值填充，中位数填充，众数填充，前一时刻和后一时刻填充，传统回归模型方式有自回归模型，移动平均模型，自回归移动平均模型和差分自回归移动平均模型，一般采用插值法填充数据，插值办法一般有滑动平均插值，线性插值，拉格朗日多项式插值；</p>
+<p>（2）每个函数对应一种办法，先将数据用pandas从csv文件中读取为df,然后进行数据插值的算法操作，最后将插值后的数据集用matplotlib呈现出来，最后将插值的数据转化为df，用pandas重新写回csv之中；</p>
+<p>代码：</p>
+<p>1.time_series_fill.py</p>
+<blockquote>
+<p># -<em>- coding:utf-8 -</em>-<br>from pandas.compat import reduce<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>from scipy.interpolate import lagrange<br># from fbprophet import Prophet<br>#</p>
+</blockquote>
+<h1 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h1><blockquote>
+<p>def load_data():<br>df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)</p>
+<h1 id="return-df-head-100"><a href="#return-df-head-100" class="headerlink" title="return df.head(100)"></a>return df.head(100)</h1><p>return df</p>
+</blockquote>
+<h1 id="画散点图"><a href="#画散点图" class="headerlink" title="画散点图"></a>画散点图</h1><blockquote>
+<p>def draw_scatte_diagram(df):<br>plt.plot(df[‘index’].to_list(), df[‘PM2.5’].to_list())<br>plt.show()</p>
+</blockquote>
+<h1 id="均值填充"><a href="#均值填充" class="headerlink" title="均值填充"></a>均值填充</h1><blockquote>
+<p>def mean_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mean(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="中位数填充"><a href="#中位数填充" class="headerlink" title="中位数填充"></a>中位数填充</h1><blockquote>
+<p>def median_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].median(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="众数填充"><a href="#众数填充" class="headerlink" title="众数填充"></a>众数填充</h1><blockquote>
+<p>def mode_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mode(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="前一时刻填充"><a href="#前一时刻填充" class="headerlink" title="前一时刻填充"></a>前一时刻填充</h1><blockquote>
+<p>def ffill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’ffill’, inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="后一时刻填充"><a href="#后一时刻填充" class="headerlink" title="后一时刻填充"></a>后一时刻填充</h1><blockquote>
+<p>def bfill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’bfill’, inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="前后时刻平均值插值"><a href="#前后时刻平均值插值" class="headerlink" title="前后时刻平均值插值"></a>前后时刻平均值插值</h1><blockquote>
+<p>def mean_by_before_after_method():<br>df = load_data()</p>
+<h1 id="data-index-df-‘index’-to-list"><a href="#data-index-df-‘index’-to-list" class="headerlink" title="data_index = df[‘index’].to_list()"></a>data_index = df[‘index’].to_list()</h1><h1 id="data-value-df-‘PM2-5’-to-list"><a href="#data-value-df-‘PM2-5’-to-list" class="headerlink" title="data_value = df[‘PM2.5’].to_list()"></a>data_value = df[‘PM2.5’].to_list()</h1><p>fill = []<br>for i in range(len(df)):<br>if np.math.isnan(df.iloc[i - 1][1]):<br>left = df.iloc[i - 2][1]<br>for j in range(i, len(df)):<br>if np.math.isnan(df.iloc[j][1]):<br>continue<br>else:<br>right = df.iloc[j][1]<br>break<br>df.iloc[i - 1, 1] = (left + right) / 2<br>fill_tuple = i, df.iloc[i - 1][1]<br>fill.append(fill_tuple)<br>draw_scatte_diagram(df)<br>    df = pd.DataFrame(fill, columns=[‘index’, ‘PM2.5’])<br>    df.to_csv(‘pm25_predicted_mean.csv’, index=False)</p>
+</blockquote>
+<h1 id="线性插值详细"><a href="#线性插值详细" class="headerlink" title="线性插值详细"></a>线性插值详细</h1><blockquote>
+<p>def linear_detail(x1, y1, x2, y2):<br>    k = (y2 - y1) / (x2 - x1)<br>    b = y1 - k <em> x1<br>    return lambda x: b + k </em> x</p>
+</blockquote>
+<h1 id="线性插值"><a href="#线性插值" class="headerlink" title="线性插值"></a>线性插值</h1><blockquote>
+<p>def linear_method():</p>
+</blockquote>
+<pre><code># global j
+df = load_data()
+fill = []
+for i in range(len(df)):
+    if np.isnan(df.iloc[i][1]):
+        for j in range(i, len(df)):
+            if np.isnan(df.iloc[j][1]):
+                continue
+            else:
+                break
+        df.iloc[i, 1] = (linear_detail(i, df.iloc[i - 1][1], j + 1, df.iloc[j][1]))(i + 1)
+        fill_tuple = i + 1, df.iloc[i][1]
+        fill.append(fill_tuple)
+draw_scatte_diagram(df)
+df = pd.DataFrame(fill, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+df.to_csv(&apos;pm25_predicted_linear.csv&apos;, index=False)
+</code></pre><h1 id="平滑插值详细"><a href="#平滑插值详细" class="headerlink" title="平滑插值详细"></a>平滑插值详细</h1><blockquote>
+<p>def smooth_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]<br>    return reduce(lambda a, b: a + b, y) / len(y)</p>
+</blockquote>
+<h1 id="平滑插值"><a href="#平滑插值" class="headerlink" title="平滑插值"></a>平滑插值</h1><blockquote>
+<p>def smooth_method(show=1):<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = smooth_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
+</blockquote>
+<pre><code>        # print(j, df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;])
+        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
+        full.append(full_tuple)
+if show:
+    draw_scatte_diagram(df_raw)
+    df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+    df.to_csv(&apos;pm25_predicted_smooth.csv&apos;, index=False)
+return df_raw
+</code></pre><h1 id="拉格朗日插值详细"><a href="#拉格朗日插值详细" class="headerlink" title="拉格朗日插值详细"></a>拉格朗日插值详细</h1><blockquote>
+<p>def lagrange_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]  # 剔除空值<br>    return lagrange(y.index, list(y))(pos)  # 插值并返回插值结果</p>
+</blockquote>
+<h1 id="拉格朗日插值"><a href="#拉格朗日插值" class="headerlink" title="拉格朗日插值"></a>拉格朗日插值</h1><blockquote>
+<p>def lagrange_method():<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = lagrange_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
+</blockquote>
+<pre><code>        # print(j, df.loc[j, &apos;index&apos;], df[j])
+        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
+        full.append(full_tuple)
+draw_scatte_diagram(df_raw)
+df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+df.to_csv(&apos;pm25_predicted_lagrange.csv&apos;, index=False)
+</code></pre><h1 id="计算RMSE"><a href="#计算RMSE" class="headerlink" title="计算RMSE"></a>计算RMSE</h1><blockquote>
+<p>def calculate_RMSE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return (sum([n * n for n in error]) / len(error)) ** 0.5</p>
+</blockquote>
+<h1 id="计算MAE"><a href="#计算MAE" class="headerlink" title="计算MAE"></a>计算MAE</h1><blockquote>
+<p>def calculate_MAE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return sum([abs(n) for n in error]) / len(error)</p>
+</blockquote>
+<h1 id="计算R-square"><a href="#计算R-square" class="headerlink" title="计算R-square"></a>计算R-square</h1><blockquote>
+<p>def calculate_R_Square(target, prediction):<br>    error = []<br>    a = calculate_MAE(target, prediction) <em> len(error)<br>    mean = np.mean(np.array(target))<br>    for i in range(len(target)):<br>        error.append(prediction[i] - mean)<br>    b = sum([n </em> n for n in error])<br>    return 1 - a / b</p>
+</blockquote>
+<blockquote>
+<p>if <strong>name</strong> == ‘<strong>main</strong>‘:</p>
+</blockquote>
+<pre><code># mean_method()
+# median_method()
+# mode_method()
+# ffill_method()
+# bfill_method()
+# mean_by_before_after_method()
+# linear_method()
+# lagrange_method()
+smooth_method()
+</code></pre><p>2.fbprophet_fill.py</p>
+<blockquote>
+<p># -<em>- coding:utf-8 -</em>-<br>from pandas.io.sas.sas7bdat import _column<br>from time_series_fill import smooth_method<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>import datetime<br>from fbprophet import Prophet<br>if <strong>name</strong> == ‘<strong>main</strong>‘:<br>    def load_data():<br>        # df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)<br>        # return df.head(100)<br>        df = smooth_method(0)<br>        return df.head(3129)<br>    df = load_data()<br>    first_value = datetime.datetime.strptime(‘2017-01-01 00:00:00’, ‘%Y-%m-%d %H:%M:%S’)<br>    for i in range(len(df)):<br>        df.iloc[i, 0] = (first_value + datetime.timedelta(hours=i)).strftime(“%Y-%m-%d %H:%M:%S”)<br>    # df = pd.DataFrame(, columns=[‘ds’, ‘y’])<br>    # df.to_csv(‘pm25_predicted_mean.csv’, index=False)<br>    # print(df.iloc[1,0])<br>    df.rename(columns={‘index’: ‘ds’, ‘PM2.5’: ‘y’}, inplace=True)<br>    m = Prophet()<br>    # df[‘y’] = np.log(df[‘y’])<br>    df = m.fit(df)<br>    future = m.make_future_dataframe(freq=’H’, periods=5428)<br>    future.tail()<br>    forecast = m.predict(future)<br>    forecast[[‘ds’, ‘yhat’, ‘yhat_lower’, ‘yhat_upper’]].tail()<br>    fig1 = m.plot(forecast)<br>    fig2 = m.plot_components(forecast)<br>    plt.show()</p>
+</blockquote>
+<p>运行结果图：<br><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
+<p><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
+<p>Mean</p>
+<p>Median</p>
+<p>Ffill_method</p>
+<p>Bfill_method</p>
+<p>Linear_method</p>
+<p>lagrange_method</p>
+<p>smooth_method</p>
+<p>Fbprophet实现</p>
+<p>日，周，月的趋势<br>未完待续。。。</p>
+]]></content>
+      <categories>
+        <category>数据分析</category>
+      </categories>
+      <tags>
+        <tag>python</tag>
+        <tag>时间序列处理</tag>
       </tags>
   </entry>
   <entry>
@@ -793,348 +1203,44 @@ proxy.save();
       </tags>
   </entry>
   <entry>
-    <title>java实现多线程的6种方式</title>
-    <url>/2021/06/17/java%E5%AE%9E%E7%8E%B0%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%846%E7%A7%8D%E6%96%B9%E5%BC%8F/</url>
-    <content><![CDATA[<p>java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。</p>
-<h4 id="1-基于继承Thread类的实现"><a href="#1-基于继承Thread类的实现" class="headerlink" title="1.基于继承Thread类的实现"></a>1.基于继承Thread类的实现</h4><blockquote>
-<pre><code>/**
-* @Author: Cyy
-* @Description: 使用继承Thread实现线程的方式
-* @Date:Created in 23:33 2018/7/27
-*/
-public class Thread01 extends Thread {
-
-@Override
- public void run() {
-    super.run();
-    System.out.println(&quot;使用继承Thread实现线程的方式。。。&quot;);
-    int i=0;
-    while (true) {
-
-        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException  e) {
-            e.printStackTrace();
-        }
-    }
-}
-
-public Thread01(String name){
-    super(name);
-}
-public static void main(String[] args) {
-    Thread01 thread_1=new Thread01(&quot;t1&quot;);
-    Thread01 thread_2=new Thread01(&quot;t2&quot;);
-    thread_1.start();
-    thread_2.start();
-    while (true) {
-            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException  e) {
-            e.printStackTrace();
-        }
-    }
- }
-}
-</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-88d736905e9966c0.png" alt="image.png"></p>
-</blockquote>
-<h4 id="2-基于实现Runnable接口的实现"><a href="#2-基于实现Runnable接口的实现" class="headerlink" title="2.基于实现Runnable接口的实现"></a>2.基于实现Runnable接口的实现</h4><blockquote>
-<pre><code>/**
-* @Author: Cyy
-* @Description:基于实现Runnable接口的实现
-* @Date:Created in 23:46 2018/7/27
-*/
-public class Thread02 implements Runnable {
-@Override
-public void run() {
-    System.out.println(&quot;使用实现Runnable实现线程的方式。。。&quot;);
-    while(true){
-            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try{
-            Thread.sleep(1000);
-        }catch (InterruptedException  e){
-            e.printStackTrace();
-        }
-    }
-}
-public static void main(String[] args) {
-    Thread02 thread01=new Thread02();
-    Thread02 thread02=new Thread02();
-    Thread thread1=new Thread(thread01,&quot;t1&quot;);
-    thread1.start();
-    Thread thread2=new Thread(thread02,&quot;t2&quot;);
-    thread2.start();
-    while (true) {
-        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException  e) {
-            e.printStackTrace();
-        }
-    }
-  }
- }
-</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-f166fcf2937e4e63.png" alt="image.png"></p>
-</blockquote>
-<h4 id="3-基于内部类的实现"><a href="#3-基于内部类的实现" class="headerlink" title="3.基于内部类的实现"></a>3.基于内部类的实现</h4><blockquote>
-<pre><code>public class Thread00 {
-
-    public static void main(String[] args) {
-
-        //基于子类的实现
-        new Thread(&quot;t_t&quot;){
-            @Override
-            public void run() {
-                super.run();
-                while (true) {
-                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-
-        //基于接口的实现
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        },&quot;t_r&quot;){}.start();
-
-        while (true) {
-                System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-4551d8c4def647f6.png" alt="image.png"><br>另外，还有同时实现基于子类和接口的实现的情况：</p>
-<blockquote>
-<pre><code>/**
- * @Author: Cyy
- * @Description: 同时基于子类和内部类
- * @Date:Created in 10:11 2018/7/28
- */
-public class Thread03 {
-
-    public static void main(String args[]){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    System.out.println(&quot;Runnable is running...&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }){
-            @Override
-            public void run() {
-//                super.run();
-                while (true) {
-                    System.out.println(&quot;sub is running...&quot;);
-                    try {
-                            Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-61a1e5b9bb26d736.png" alt="image.png"><br>这里运行结果只有子类线程的打印，原因是虽然实现了Thread类构造办法里Runnable接口的实例，但是子类已经将父类的run方法进行重写了，所以只会执行子类的办法。</p>
-<h4 id="4-基于带返回值的线程实现方式"><a href="#4-基于带返回值的线程实现方式" class="headerlink" title="4.基于带返回值的线程实现方式"></a>4.基于带返回值的线程实现方式</h4><blockquote>
-<pre><code>import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 10:35 2018/7/28
- */
-public class Thread04 {
-
-    public static void main(String args[]) throws ExecutionException, InterruptedException {
-        Callable&lt;Integer&gt; call=new Callable&lt;Integer&gt;() {
-            @Override
-            public Integer call() throws Exception {
-                System.out.println(&quot;thread start...&quot;);
-                Thread.sleep(2000);
-                return 520;
-            }
-        };
-
-        FutureTask&lt;Integer&gt; task=new FutureTask&lt;&gt;(call);
-        Thread t=new Thread(task);
-        t.start();
-        System.out.println(&quot;线程的执行结果 &quot;+task.get());
-
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-13077b7fb6481123.png" alt="image.png"></p>
-<h4 id="5-基于线程池的方式。"><a href="#5-基于线程池的方式。" class="headerlink" title="5.基于线程池的方式。"></a>5.基于线程池的方式。</h4><blockquote>
-<pre><code>import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 13:02 2018/7/28
- */
-public class Thread05 {
-
-    public static void main(String[] args) {
-
-        ExecutorService threadPool= Executors.newFixedThreadPool(5);
-
-        while (true) {
-            threadPool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    System.out.println(Thread.currentThread().getName() + &quot; is running...&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-        }
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-2133e7d7e0cd6a0e.png" alt="image.png"></p>
-<ul>
-<li>可以基于ExecutorService、Callable、Future实现有返回结果的多线程。</li>
-</ul>
-<blockquote>
-<pre><code>import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.*;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 13:16 2018/7/28
- */
-public class Thread06 {
-
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
-        System.out.println(&quot;----程序开始运行-----&quot;);
-
-        Date date1=new Date();
-        int taskSize=5;
-
-        ExecutorService threadPool= Executors.newFixedThreadPool(taskSize);
-        List&lt;Future&gt; list=new ArrayList&lt;Future&gt;();
-        for (int i=0;i&lt;taskSize;i++) {
-            Callable c=new Callable() {
-                @Override
-                public Object call() throws Exception {
-                    Date dateTmp1 = new Date();
-                    Thread.sleep(2000);
-                    Date dateTmp2 = new Date();
-                    long time = dateTmp2.getTime() - dateTmp1.getTime();
-                    return time;
-                }
-            };
-            Future f = threadPool.submit(c);
-            list.add(f);
-        }
-        threadPool.shutdown();
-        for (Future f : list) {
-            System.out.println(&quot;&gt;&gt;&gt;&quot;+f.get().toString());
-        }
-        Date date2=new Date();
-        System.out.println(&quot;-----程序结束运行-----，程序运行时间【&quot;+(date2.getTime()-date1.getTime())+&quot;毫秒】&quot;);
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-77c92e58f3e72d7b.png" alt="image.png"></p>
-<h4 id="6-基于定时任务实现的多线程"><a href="#6-基于定时任务实现的多线程" class="headerlink" title="6.基于定时任务实现的多线程"></a>6.基于定时任务实现的多线程</h4><blockquote>
-<pre><code>import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 16:43 2018/7/28
- */
-public class Thread07 {
-
-    private static final SimpleDateFormat format=new SimpleDateFormat(&quot;yyyy-MM-dd hh:mm:ss&quot;);
-
-    //定时任务
-    public static void timeLapse() throws ParseException {
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                System.out.println(&quot;定时任务开始执行。。。。。&quot;);
-            }
-        },format.parse(&quot;2018-07-28 16:51:00&quot;));
-
-    }
-    public static void timeLapseBySomeTimes(){
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                System.out.println(Thread.currentThread().getName()+&quot; is Running...&quot;);
-            }
-        },new Date(),1000);
-    }
-    public static void main(String[] args) throws ParseException {
-//        timeLapse();
-        timeLapseBySomeTimes();
-        timeLapseBySomeTimes();
-        while (true) {
-            System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：</p>
-<p><img src="../../../../images/post-images/10224563-a872cc0e4d4c4047.png" alt="image.png"></p>
+    <title>一个你不会认识的陌生人</title>
+    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
+    <content><![CDATA[<p>漫长的时光里</p>
+<p>你独自一个人度过</p>
+<p>生命总是孤独</p>
+<p>你总是默默承受</p>
+<p>即使每一个过客</p>
+<p>终究有谢幕离场的时分</p>
+<p>我是一个你不会认识的陌生人</p>
+<p>你是一道我永远也遇不上的彩虹</p>
+<p>没有遇上方知有</p>
+<p>好在花有清香月有阴</p>
+<p>我们在不同的世界</p>
+<p>演绎着类似的人生</p>
+<p>陌生的旧情人</p>
+<p>你是谁的新欢和旧爱</p>
+<p>而我只是一个</p>
+<p>你不会认识的陌生人</p>
 ]]></content>
       <categories>
-        <category>后端</category>
+        <category>现代诗</category>
       </categories>
       <tags>
-        <tag>java</tag>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>新辞</title>
+    <url>/2021/06/17/%E6%96%B0%E8%BE%9E/</url>
+    <content><![CDATA[<p>歌管楼台声细细，秋千院落夜沉沉。</p>
+<p>徒有斜阳与人语，不念故乡念旧人。</p>
+<p><img src="../../../../images/post-images/10224563-bb430fb614396c21.jpg" alt="img.jpg"></p>
+]]></content>
+      <categories>
+        <category>古风拾迹</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
       </tags>
   </entry>
   <entry>
@@ -1196,6 +1302,328 @@ public class Thread07 {
       <tags>
         <tag>事务</tag>
         <tag>spring</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>spring之aop配置与springboot aop配置</title>
+    <url>/2021/06/17/spring%E4%B9%8Baop%E9%85%8D%E7%BD%AE%E4%B8%8Espringboot-aop%E9%85%8D%E7%BD%AE/</url>
+    <content><![CDATA[<p>spring的面向切面编程，即aop编程是有3种作用的：</p>
+<ul>
+<li><p>日志记录</p>
+</li>
+<li><p>安全验证</p>
+</li>
+<li><p>数据库事务管理</p>
+</li>
+</ul>
+<p>这里简单的先讲述下日志的记录体现。</p>
+<h4 id="1-spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https-gitee-com-lonelygin-ssm"><a href="#1-spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https-gitee-com-lonelygin-ssm" class="headerlink" title="1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/lonelygin/ssm"></a>1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址<a href="https://gitee.com/lonelygin/ssm" target="_blank" rel="noopener">https://gitee.com/lonelygin/ssm</a></h4><p>（1）基于xml的spring aop配置</p>
+<pre><code>新建包Aspect，在下面新建织入类LoggingAspect：
+</code></pre><p>package com.cyy.maven.core.Aspect;</p>
+<p>import org.aspectj.lang.JoinPoint;</p>
+<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
+<p>import org.aspectj.lang.annotation.*;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 织入类</p>
+</li>
+<li><p>@Date:Created in 16:00 2018/7/22</p>
+</li>
+</ul>
+<p>*/</p>
+<p>@Slf4j</p>
+<p>public class LoggingAspect {</p>
+<pre><code>public void beforeMethod(JoinPoint joinPoint){
+
+String methodName = joinPoint.getSignature().getName();
+
+    Object [] args = joinPoint.getArgs();
+
+   log.info(&quot;The method={} begins with={}&quot;,methodName,Arrays.asList(args));
+
+}
+</code></pre><p>public void afterMethod(JoinPoint joinPoint){</p>
+<pre><code>String methodName = joinPoint.getSignature().getName();
+
+log.info(&quot;The method={} ends&quot;,methodName);
+
+}
+</code></pre><p>  public void afterReturning(JoinPoint joinPoint, Object result){</p>
+<pre><code>String methodName = joinPoint.getSignature().getName();
+
+   log.info(&quot;The method={},ends with={}&quot;,methodName,result);
+
+}
+</code></pre><p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
+<pre><code>String methodName = joinPoint.getSignature().getName();
+
+  log.error(&quot;The method={},occurs excetion:={}&quot;,methodName,e);
+
+}
+</code></pre><p>  public Object aroundMethod(ProceedingJoinPoint pjd){</p>
+<pre><code>Object result =null;
+
+    String methodName = pjd.getSignature().getName();
+
+    try {
+
+        //前置通知
+
+      log.info(&quot;The method={},begins with={}&quot;, methodName, Arrays.asList(pjd.getArgs()));
+
+        //执行目标方法
+
+        result = pjd.proceed();
+
+        //返回通知
+
+      log.info(&quot;The method={},ends with={}&quot;,methodName ,result);
+
+    }catch (Throwable e) {
+
+        //异常通知
+
+       log.error(&quot;The method={}，occurs exception:={}&quot;,methodName,e);
+
+        throw new RuntimeException(e);
+
+    }
+</code></pre><p>//后置通知</p>
+<pre><code>   log.info(&quot;The method={},ends&quot;,methodName);
+
+    return result;
+
+}
+</code></pre><p>}<br>在spring的配置文件spring-context.xml中配置基于aop的事务增强。</p>
+<bean id="loggingAspect" class="com.cyy.maven.core.Aspect.LoggingAspect">
+
+<p><a href="aop:config" target="_blank" rel="noopener">aop:config</a></p>
+<p>&lt;aop:pointcut id=”serviceOpearation” expression=”execution(<em> com.cyy.maven.core.service.impl.</em>.*(..))”/&gt;</p>
+<p>&lt;aop:aspect ref=”loggingAspect”&gt;</p>
+<pre><code>&lt;aop:before method=&quot;beforeMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
+
+&lt;aop:after method=&quot;afterMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
+
+&lt;aop:after-returning method=&quot;afterReturning&quot; pointcut-ref=&quot;serviceOpearation&quot; returning=&quot;result&quot;/&gt;
+
+&lt;aop:after-throwing method=&quot;afterThrowing&quot; pointcut-ref=&quot;serviceOpearation&quot; throwing=&quot;e&quot;/&gt;
+</code></pre><p>&lt;/aop:aspect&gt;</p>
+<!--<aop:advisor advice-ref=""/>-->
+<p>&lt;/aop:config&gt;<br>测试结果：</p>
+<p>beforeMethod</p>
+<p>afterMethod&amp;afterReturning<br>在spring-context.xml中其实可以直接配置&lt;aop:around method=”aroundMethod” pointcut-ref=”serviceOpearation”/&gt;环绕通知，等价于前面3个办法的功能。</p>
+<p>（2）基于注解的spring aop配置</p>
+<p>LoggingAspect的配置改为如下：</p>
+<p>package com.cyy.maven.core.Aspect;</p>
+<p>import org.aspectj.lang.JoinPoint;</p>
+<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
+<p>import org.aspectj.lang.annotation.*;</p>
+<p>import org.springframework.stereotype.Component;</p>
+<p>import java.util.Arrays;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description:</p>
+</li>
+<li><p>@Date:Created in 16:00 2018/7/22</p>
+</li>
+</ul>
+<p>*/</p>
+<p>@Slf4j</p>
+<p>@Aspect</p>
+<p>@Component</p>
+<p>public class LoggingAspect {</p>
+<p>@Pointcut(“execution(<em> com.cyy.maven.core.service.impl.</em>.*(..))”)</p>
+<p>private void log(){}</p>
+<p>@Before(“log()”)</p>
+<p>public void beforeMethod(JoinPoint joinPoint){</p>
+<p>String methodName = joinPoint.getSignature().getName();</p>
+<pre><code>    Object [] args = joinPoint.getArgs();
+
+     log.info(&quot;The method={},begins with={}&quot;,methodName,Arrays.asList(args));
+
+}
+</code></pre><p>@After(“log()”)</p>
+<p>public void afterMethod(JoinPoint joinPoint){</p>
+<p>String methodName = joinPoint.getSignature().getName();</p>
+<pre><code>    log.info(&quot;The method={},ends&quot;,methodName);
+
+}
+</code></pre><p>@AfterReturning(pointcut =”log()”,returning =”result”)</p>
+<p>public void afterReturning(JoinPoint joinPoint, Object result){</p>
+<p>String methodName = joinPoint.getSignature().getName();</p>
+<pre><code>  log.info(&quot;The method={},ends with={}&quot;,methodName,result);
+
+}
+</code></pre><p>@AfterThrowing(pointcut =”log()”,throwing =”e”)</p>
+<p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
+<p>String methodName = joinPoint.getSignature().getName();</p>
+<pre><code>   log.error(&quot;The method={},occurs excetion:={}&quot;,methodName,e);
+
+}
+</code></pre><p>//    @Around(“log()”)</p>
+<pre><code>public ObjectaroundMethod(ProceedingJoinPoint pjd){
+</code></pre><p>Object result =null;</p>
+<pre><code>String methodName = pjd.getSignature().getName();
+
+try {
+</code></pre><p>//前置通知</p>
+<pre><code>   log.info(&quot;The method={},begins with={}&quot;, methodName, Arrays.asList(pjd.getArgs()));
+
+    //执行目标方法
+
+    result = pjd.proceed();
+
+    //返回通知
+
+   log.info(&quot;The method={},ends with={}&quot;,methodName ,result);
+
+}catch (Throwable e) {
+</code></pre><p>//异常通知</p>
+<pre><code>    log.error(&quot;The method={}，occurs exception:={}&quot;,methodName,e);
+
+    throw new RuntimeException(e);
+
+}
+</code></pre><p>//后置通知</p>
+<pre><code>  log.info(&quot;The method={},ends&quot;,methodName);
+
+    return result;
+
+}
+</code></pre><p>}</p>
+<p>spring配置文件spring-context.xml的配置如下：</p>
+<!-- 配置自动扫描-->
+<p>&lt;context:component-scan base-package=”com.cyy.maven.core.Aspect”/&gt;</p>
+<!--告诉JVM 我们用了aspectj的 annotation -->
+<p><a href="aop:aspectj-autoproxy/" target="_blank" rel="noopener">aop:aspectj-autoproxy/</a><br>测试结果如图：</p>
+<p>beforeMethod</p>
+<p>afterMethod&amp;afterReturning<br>在aroundMethod加上@Around(“log()”)，注释掉其他的注解，可以实现相同的功能。</p>
+<p>2.springboot的aop配置不用基于xml，是完全基于注解的配置，和spring的注解配置很相似。</p>
+<p>这里也直接用以前搭建的springboot框架来测试，码云地址为<a href="https://gitee.com/lonelygin/girl.git。" target="_blank" rel="noopener">https://gitee.com/lonelygin/girl.git。</a></p>
+<p>新建Aspect包，下面新建HttpAspect织入类：</p>
+<p>package com.cyy.Aspect;</p>
+<p>import lombok.extern.slf4j.Slf4j;</p>
+<p>import org.apache.catalina.servlet4preview.http.HttpServletRequest;</p>
+<p>import org.aspectj.lang.JoinPoint;</p>
+<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
+<p>import org.aspectj.lang.annotation.*;</p>
+<p>import org.springframework.stereotype.Component;</p>
+<p>import org.springframework.web.context.request.RequestContextHolder;</p>
+<p>import org.springframework.web.context.request.ServletRequestAttributes;</p>
+<p>@Slf4j</p>
+<p>@Aspect</p>
+<p>@Component</p>
+<p>public class HttpAspect {</p>
+<p>@Pointcut(“execution(public <em> com.cyy.controller.GirlController.</em>(..))”)</p>
+<p>public void log(){}</p>
+<p>@Before(“log()”)</p>
+<p>public void doBefore(JoinPoint joinPoint){</p>
+<p>ServletRequestAttributes attributes= (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();</p>
+<pre><code>    HttpServletRequest request= (HttpServletRequest) attributes.getRequest();
+
+    log.info(&quot;执行事务之前。。。&quot;);
+
+    log.info(&quot;url={}&quot;,request.getRequestURI());
+
+    log.info(&quot;method={}&quot;,request.getMethod());
+
+    log.info(&quot;ip={}&quot;,request.getRemoteAddr());
+
+    log.info(&quot;class-method={}&quot;,joinPoint.getSignature().getDeclaringTypeName()+&quot;.&quot;+joinPoint.getSignature().getName());
+
+    log.info(&quot;args={}&quot;,joinPoint.getArgs());
+
+}
+</code></pre><p>@After(“log()”)</p>
+<p>public void doAfter(){</p>
+<p>log.info(“执行事务之后。。。”);</p>
+<pre><code>}
+</code></pre><p>@AfterReturning(returning =”object”, pointcut =”log()”)</p>
+<p>public void doAfterReturning(Object object) {</p>
+<p>log.info(“response={}”, object.toString());</p>
+<pre><code>}
+</code></pre><p>@AfterThrowing(pointcut =”log()”,throwing =”e”)</p>
+<p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
+<p>String methodName = joinPoint.getSignature().getName();</p>
+<pre><code>  log.info(&quot;The method={}&quot; + methodName +&quot; occurs excetion:={}&quot; + e);
+
+}
+</code></pre><p>//    @Around(“log()”)</p>
+<pre><code>public ObjectaroundMethod(ProceedingJoinPoint pjd){
+</code></pre><p>Object object =null;</p>
+<pre><code>String methodName = pjd.getSignature().getName();
+
+try {
+</code></pre><p>//前置通知</p>
+<pre><code>    ServletRequestAttributes attributes= (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+    HttpServletRequest request= (HttpServletRequest) attributes.getRequest();
+
+    log.info(&quot;执行事务之前。。。&quot;);
+
+    log.info(&quot;url={}&quot;,request.getRequestURI());
+
+    log.info(&quot;method={}&quot;,request.getMethod());
+
+    log.info(&quot;ip={}&quot;,request.getRemoteAddr());
+
+    log.info(&quot;class-method={}&quot;,pjd.getSignature().getDeclaringTypeName()+&quot;.&quot;+pjd.getSignature().getName());
+
+    log.info(&quot;args={}&quot;,pjd.getArgs());
+
+    //执行目标方法
+
+    object = pjd.proceed();
+
+    //返回通知
+
+    log.info(&quot;response={}&quot;, object.toString());
+
+}catch (Throwable e) {
+</code></pre><p>//异常通知</p>
+<pre><code>  log.info(&quot;The method={},occurs exception:={}&quot;,methodName,e);
+
+    throw new RuntimeException(e);
+
+}
+</code></pre><p>//后置通知</p>
+<pre><code>    log.info(&quot;执行事务之后。。。&quot;);
+
+    return object;
+
+}
+</code></pre><p>}<br>测试结果：</p>
+<p>同样的， 将@Around(“log()”)加上，将其他注解注释掉，运行也是同样的结果。</p>
+</bean>]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>java</tag>
+        <tag>spring</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>正则表达式</title>
+    <url>/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</url>
+    <content><![CDATA[<p>? 通配符匹配文件名中的 0 个或 1 个字符</p>
+<p>* 通配符匹配零个或多个字符</p>
+<p>^ 为匹配输入字符串的开始位置。</p>
+<p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p>
+<p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p>
+<p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p>
+<p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
+<p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>正则匹配</tag>
       </tags>
   </entry>
   <entry>
@@ -1652,509 +2080,74 @@ public void demo02(){
       </tags>
   </entry>
   <entry>
-    <title>python-时间序列处理</title>
-    <url>/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</url>
-    <content><![CDATA[<p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
-<p>要求：</p>
-<p>1.利用已有的记录数据进行建模，将缺失值填充完整，评估指标采用RMSE、MAE和；</p>
-<p>2.尝试多种方法进行建模，对比各种模型的性能;</p>
-<p>3.希望你不要直接用中值、均值、前一时刻、后一时刻等常数填充法进行填充（方法对比中可用做简单对比，如表 2所示）；</p>
-<p>4.将数据填充完整后保存至’pm25_predicted.csv’文件（只保存缺失时刻的数据，不按要求则作废），数据格式如表 3所示（列名、文件名不按要求则作废）。</p>
-<p>题解：</p>
-<p>（1）完成时间序列缺失数据填充，一般来说有如下几种方式：常数填充有均值填充，中位数填充，众数填充，前一时刻和后一时刻填充，传统回归模型方式有自回归模型，移动平均模型，自回归移动平均模型和差分自回归移动平均模型，一般采用插值法填充数据，插值办法一般有滑动平均插值，线性插值，拉格朗日多项式插值；</p>
-<p>（2）每个函数对应一种办法，先将数据用pandas从csv文件中读取为df,然后进行数据插值的算法操作，最后将插值后的数据集用matplotlib呈现出来，最后将插值的数据转化为df，用pandas重新写回csv之中；</p>
-<p>代码：</p>
-<p>1.time_series_fill.py</p>
-<blockquote>
-<p># -<em>- coding:utf-8 -</em>-<br>from pandas.compat import reduce<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>from scipy.interpolate import lagrange<br># from fbprophet import Prophet<br>#</p>
-</blockquote>
-<h1 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h1><blockquote>
-<p>def load_data():<br>df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)</p>
-<h1 id="return-df-head-100"><a href="#return-df-head-100" class="headerlink" title="return df.head(100)"></a>return df.head(100)</h1><p>return df</p>
-</blockquote>
-<h1 id="画散点图"><a href="#画散点图" class="headerlink" title="画散点图"></a>画散点图</h1><blockquote>
-<p>def draw_scatte_diagram(df):<br>plt.plot(df[‘index’].to_list(), df[‘PM2.5’].to_list())<br>plt.show()</p>
-</blockquote>
-<h1 id="均值填充"><a href="#均值填充" class="headerlink" title="均值填充"></a>均值填充</h1><blockquote>
-<p>def mean_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mean(), inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="中位数填充"><a href="#中位数填充" class="headerlink" title="中位数填充"></a>中位数填充</h1><blockquote>
-<p>def median_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].median(), inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="众数填充"><a href="#众数填充" class="headerlink" title="众数填充"></a>众数填充</h1><blockquote>
-<p>def mode_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mode(), inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="前一时刻填充"><a href="#前一时刻填充" class="headerlink" title="前一时刻填充"></a>前一时刻填充</h1><blockquote>
-<p>def ffill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’ffill’, inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="后一时刻填充"><a href="#后一时刻填充" class="headerlink" title="后一时刻填充"></a>后一时刻填充</h1><blockquote>
-<p>def bfill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’bfill’, inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="前后时刻平均值插值"><a href="#前后时刻平均值插值" class="headerlink" title="前后时刻平均值插值"></a>前后时刻平均值插值</h1><blockquote>
-<p>def mean_by_before_after_method():<br>df = load_data()</p>
-<h1 id="data-index-df-‘index’-to-list"><a href="#data-index-df-‘index’-to-list" class="headerlink" title="data_index = df[‘index’].to_list()"></a>data_index = df[‘index’].to_list()</h1><h1 id="data-value-df-‘PM2-5’-to-list"><a href="#data-value-df-‘PM2-5’-to-list" class="headerlink" title="data_value = df[‘PM2.5’].to_list()"></a>data_value = df[‘PM2.5’].to_list()</h1><p>fill = []<br>for i in range(len(df)):<br>if np.math.isnan(df.iloc[i - 1][1]):<br>left = df.iloc[i - 2][1]<br>for j in range(i, len(df)):<br>if np.math.isnan(df.iloc[j][1]):<br>continue<br>else:<br>right = df.iloc[j][1]<br>break<br>df.iloc[i - 1, 1] = (left + right) / 2<br>fill_tuple = i, df.iloc[i - 1][1]<br>fill.append(fill_tuple)<br>draw_scatte_diagram(df)<br>    df = pd.DataFrame(fill, columns=[‘index’, ‘PM2.5’])<br>    df.to_csv(‘pm25_predicted_mean.csv’, index=False)</p>
-</blockquote>
-<h1 id="线性插值详细"><a href="#线性插值详细" class="headerlink" title="线性插值详细"></a>线性插值详细</h1><blockquote>
-<p>def linear_detail(x1, y1, x2, y2):<br>    k = (y2 - y1) / (x2 - x1)<br>    b = y1 - k <em> x1<br>    return lambda x: b + k </em> x</p>
-</blockquote>
-<h1 id="线性插值"><a href="#线性插值" class="headerlink" title="线性插值"></a>线性插值</h1><blockquote>
-<p>def linear_method():</p>
-</blockquote>
-<pre><code># global j
-df = load_data()
-fill = []
-for i in range(len(df)):
-    if np.isnan(df.iloc[i][1]):
-        for j in range(i, len(df)):
-            if np.isnan(df.iloc[j][1]):
-                continue
-            else:
-                break
-        df.iloc[i, 1] = (linear_detail(i, df.iloc[i - 1][1], j + 1, df.iloc[j][1]))(i + 1)
-        fill_tuple = i + 1, df.iloc[i][1]
-        fill.append(fill_tuple)
-draw_scatte_diagram(df)
-df = pd.DataFrame(fill, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-df.to_csv(&apos;pm25_predicted_linear.csv&apos;, index=False)
-</code></pre><h1 id="平滑插值详细"><a href="#平滑插值详细" class="headerlink" title="平滑插值详细"></a>平滑插值详细</h1><blockquote>
-<p>def smooth_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]<br>    return reduce(lambda a, b: a + b, y) / len(y)</p>
-</blockquote>
-<h1 id="平滑插值"><a href="#平滑插值" class="headerlink" title="平滑插值"></a>平滑插值</h1><blockquote>
-<p>def smooth_method(show=1):<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = smooth_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
-</blockquote>
-<pre><code>        # print(j, df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;])
-        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
-        full.append(full_tuple)
-if show:
-    draw_scatte_diagram(df_raw)
-    df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-    df.to_csv(&apos;pm25_predicted_smooth.csv&apos;, index=False)
-return df_raw
-</code></pre><h1 id="拉格朗日插值详细"><a href="#拉格朗日插值详细" class="headerlink" title="拉格朗日插值详细"></a>拉格朗日插值详细</h1><blockquote>
-<p>def lagrange_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]  # 剔除空值<br>    return lagrange(y.index, list(y))(pos)  # 插值并返回插值结果</p>
-</blockquote>
-<h1 id="拉格朗日插值"><a href="#拉格朗日插值" class="headerlink" title="拉格朗日插值"></a>拉格朗日插值</h1><blockquote>
-<p>def lagrange_method():<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = lagrange_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
-</blockquote>
-<pre><code>        # print(j, df.loc[j, &apos;index&apos;], df[j])
-        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
-        full.append(full_tuple)
-draw_scatte_diagram(df_raw)
-df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-df.to_csv(&apos;pm25_predicted_lagrange.csv&apos;, index=False)
-</code></pre><h1 id="计算RMSE"><a href="#计算RMSE" class="headerlink" title="计算RMSE"></a>计算RMSE</h1><blockquote>
-<p>def calculate_RMSE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return (sum([n * n for n in error]) / len(error)) ** 0.5</p>
-</blockquote>
-<h1 id="计算MAE"><a href="#计算MAE" class="headerlink" title="计算MAE"></a>计算MAE</h1><blockquote>
-<p>def calculate_MAE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return sum([abs(n) for n in error]) / len(error)</p>
-</blockquote>
-<h1 id="计算R-square"><a href="#计算R-square" class="headerlink" title="计算R-square"></a>计算R-square</h1><blockquote>
-<p>def calculate_R_Square(target, prediction):<br>    error = []<br>    a = calculate_MAE(target, prediction) <em> len(error)<br>    mean = np.mean(np.array(target))<br>    for i in range(len(target)):<br>        error.append(prediction[i] - mean)<br>    b = sum([n </em> n for n in error])<br>    return 1 - a / b</p>
-</blockquote>
-<blockquote>
-<p>if <strong>name</strong> == ‘<strong>main</strong>‘:</p>
-</blockquote>
-<pre><code># mean_method()
-# median_method()
-# mode_method()
-# ffill_method()
-# bfill_method()
-# mean_by_before_after_method()
-# linear_method()
-# lagrange_method()
-smooth_method()
-</code></pre><p>2.fbprophet_fill.py</p>
-<blockquote>
-<p># -<em>- coding:utf-8 -</em>-<br>from pandas.io.sas.sas7bdat import _column<br>from time_series_fill import smooth_method<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>import datetime<br>from fbprophet import Prophet<br>if <strong>name</strong> == ‘<strong>main</strong>‘:<br>    def load_data():<br>        # df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)<br>        # return df.head(100)<br>        df = smooth_method(0)<br>        return df.head(3129)<br>    df = load_data()<br>    first_value = datetime.datetime.strptime(‘2017-01-01 00:00:00’, ‘%Y-%m-%d %H:%M:%S’)<br>    for i in range(len(df)):<br>        df.iloc[i, 0] = (first_value + datetime.timedelta(hours=i)).strftime(“%Y-%m-%d %H:%M:%S”)<br>    # df = pd.DataFrame(, columns=[‘ds’, ‘y’])<br>    # df.to_csv(‘pm25_predicted_mean.csv’, index=False)<br>    # print(df.iloc[1,0])<br>    df.rename(columns={‘index’: ‘ds’, ‘PM2.5’: ‘y’}, inplace=True)<br>    m = Prophet()<br>    # df[‘y’] = np.log(df[‘y’])<br>    df = m.fit(df)<br>    future = m.make_future_dataframe(freq=’H’, periods=5428)<br>    future.tail()<br>    forecast = m.predict(future)<br>    forecast[[‘ds’, ‘yhat’, ‘yhat_lower’, ‘yhat_upper’]].tail()<br>    fig1 = m.plot(forecast)<br>    fig2 = m.plot_components(forecast)<br>    plt.show()</p>
-</blockquote>
-<p>运行结果图：<br><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
-<p><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
-<p>Mean</p>
-<p>Median</p>
-<p>Ffill_method</p>
-<p>Bfill_method</p>
-<p>Linear_method</p>
-<p>lagrange_method</p>
-<p>smooth_method</p>
-<p>Fbprophet实现</p>
-<p>日，周，月的趋势<br>未完待续。。。</p>
+    <title>Griffin POC</title>
+    <url>/2021/06/17/Griffin-POC/</url>
+    <content><![CDATA[<pre><code>Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。
+</code></pre><p>Apache Griffin填补了开源世界里在大数据质量领域的空白。就像空气质量，水和食品安全等无时不刻地在影响人类的生命一样，数据质量在数据科学领域是至关重要的。在大数据时代，企业决策调整，商机发现等越来越依赖于大数据的数据分析和数据挖掘，而数据质量的保证是所有一切数据分析和数据挖掘的基础。</p>
+<h6 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h6><p><img src="../../../../images/post-images/10224563-4cdc01da7a0a285c.png" alt="img.png"></p>
+<p>Griffin架构图</p>
+<p>1.apache griffin  安装配置；</p>
+<p>从官网下载最新版本<a href="http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；" target="_blank" rel="noopener">http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；</a></p>
+<p>2.(1)配置measure组件；</p>
+<pre><code>配置env-batch.json中hdfs和es的path,分别为&quot;hdfs://10.2.29.101:8020/griffin/batch/persist&quot;,&quot;http://10.2.29.102:9200/griffin/accuracy&quot;,env-streaming.json类似，env-streaming.json还要配置zk的host为“10.2.29.101:2181“，其他默认；
+
+配置config-batch.json，config-streaming.json其中的sinks至少要有es，配置config-batch-advanced.json[&quot;HDFS&quot;,&quot;ELASTICSEARCH&quot;,&quot;CONSOLE&quot;]，运行maven命令，mvn clean package -Dmaven.test.skip=true;
+</code></pre><p>   (2)配置service组件；</p>
+<pre><code>配置env下env_streaming.json，env_batch.json，配置同measure;
+
+配置application.properties，配置端口为9270，server.port=9270；
+
+配置quartz数据库，进入postgres用户下bin目录下，createdb -O &lt;username&gt; quartz，将项目中的Init_quartz_postgres.sql quartz拷贝到一个目录，psql -p &lt;port&gt; -h &lt;host address&gt; -U &lt;username&gt; -f Init_quartz_postgres.sql quartz；
+
+配置spring.datasource为相应的数据库quartz，设置用户名密码，设置相应数据库驱动，设置hive.metastore.uris=thrift://en1-dev1-tbdp.trendy-global.com:9083，hive.metastore.dbname=default，kafka.schema.registry.url=http://en1- dev1-tbdp.trendy-global.com:6667，fs.defaultFS=hdfs://nn1-dev1-tbdp.trendy-global.com:8020，elasticsearch.host=10.2.29.102，elasticsearch.port=9200，livy.uri=http://en1-dev1-tbdp.trendy-global.com:8999/batches，yarn.uri=http://en1-dev1-tbdp.trendy-global.com:8088；
+
+配置sparkProperties.json，如下：
+</code></pre><p>{</p>
+<p>   “file”: “hdfs:///griffin/griffin-measure.jar”,</p>
+<p>   “className”: “org.apache.griffin.measure.Application”,</p>
+<p>   “name”: “griffin”,</p>
+<p>   “queue”: “default”,</p>
+<p>   “numExecutors”: 3,</p>
+<p>   “executorCores”: 1,</p>
+<p>   “driverMemory”: “1g”,</p>
+<p>   “executorMemory”: “1g”,</p>
+<p>   “files”: [ “hdfs:///livy/hive-site.xml” ]</p>
+<p>}；</p>
+<pre><code>然后在service根目录下运行maven命令，mvn clean package -Dmaven.test.skip=true;
+
+将measure组件按照sparkProperties.json配置的丢到hdfs上；
+</code></pre><p>   (3)配置ui组件；</p>
+<pre><code>配置ui/angular/src/app/service/service.service.ts文件public BACKEND_SERVER = &apos;http://localhost:9270&apos;;为之前service的端口；
+
+在angular下运行命令npm run build 
+</code></pre><p>3.运行；</p>
+<p>  （1）启动service组件，命令：</p>
+<p>java -jar -Dserver.port=9270 -Dfs.defaultFS=hdfs:///griffin/persist service-0.3.0-incubating.jar；</p>
+<p>  （2）启动ui 组件，命令：</p>
+<pre><code>在angular下运行命令npm run start或者
+
+cd ui/angular 
+
+../angular/node_modules/.bin/ng serve --port 9280
+</code></pre><p><img src="../../../../images/post-images/10224563-b1e4fcbdee632715.png" alt="img.png"><br>griffin运行界面</p>
+<p>4.建立数据质量检测方案poc；</p>
+<pre><code>（1）建立accuracy类型检测，点击create measure 按钮，按照操作步骤进行设置，注意设置分区要相对应或者不设置；
+
+（2）建立data profiling类型检测，同样按照步骤操作；
+
+（3）点击create job根据提示创建job;
+
+ 结果如图：
+</code></pre><h6 id="job界面"><a href="#job界面" class="headerlink" title="job界面"></a>job界面</h6><p><img src="../../../../images/post-images/10224563-a7e84c6a56d5f3a4.png" alt="img.png"></p>
+<h6 id="job详解界面"><a href="#job详解界面" class="headerlink" title="job详解界面"></a>job详解界面</h6><p><img src="../../../../images/post-images/10224563-aa9b60841926f0a0.png" alt="img.png"></p>
+<h6 id="job4"><a href="#job4" class="headerlink" title="job4"></a>job4</h6><p><img src="../../../../images/post-images/10224563-cd9a5aaafb910e22.png" alt="img.png"></p>
+<h6 id="mea-job1"><a href="#mea-job1" class="headerlink" title="mea-job1"></a>mea-job1</h6><p><img src="../../../../images/post-images/10224563-577da07c46b740dd.png" alt="img.png"></p>
 ]]></content>
       <categories>
-        <category>数据分析</category>
+        <category>数据开发</category>
       </categories>
       <tags>
-        <tag>python</tag>
-        <tag>时间序列处理</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>正则表达式</title>
-    <url>/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</url>
-    <content><![CDATA[<p>? 通配符匹配文件名中的 0 个或 1 个字符</p>
-<p>* 通配符匹配零个或多个字符</p>
-<p>^ 为匹配输入字符串的开始位置。</p>
-<p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p>
-<p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p>
-<p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p>
-<p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
-<p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>正则匹配</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>新辞</title>
-    <url>/2021/06/17/%E6%96%B0%E8%BE%9E/</url>
-    <content><![CDATA[<p>歌管楼台声细细，秋千院落夜沉沉。</p>
-<p>徒有斜阳与人语，不念故乡念旧人。</p>
-<p><img src="../../../../images/post-images/10224563-bb430fb614396c21.jpg" alt="img.jpg"></p>
-]]></content>
-      <categories>
-        <category>古风拾迹</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>spring之aop配置与springboot aop配置</title>
-    <url>/2021/06/17/spring%E4%B9%8Baop%E9%85%8D%E7%BD%AE%E4%B8%8Espringboot-aop%E9%85%8D%E7%BD%AE/</url>
-    <content><![CDATA[<p>spring的面向切面编程，即aop编程是有3种作用的：</p>
-<ul>
-<li><p>日志记录</p>
-</li>
-<li><p>安全验证</p>
-</li>
-<li><p>数据库事务管理</p>
-</li>
-</ul>
-<p>这里简单的先讲述下日志的记录体现。</p>
-<h4 id="1-spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https-gitee-com-lonelygin-ssm"><a href="#1-spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https-gitee-com-lonelygin-ssm" class="headerlink" title="1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/lonelygin/ssm"></a>1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址<a href="https://gitee.com/lonelygin/ssm" target="_blank" rel="noopener">https://gitee.com/lonelygin/ssm</a></h4><p>（1）基于xml的spring aop配置</p>
-<pre><code>新建包Aspect，在下面新建织入类LoggingAspect：
-</code></pre><p>package com.cyy.maven.core.Aspect;</p>
-<p>import org.aspectj.lang.JoinPoint;</p>
-<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
-<p>import org.aspectj.lang.annotation.*;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 织入类</p>
-</li>
-<li><p>@Date:Created in 16:00 2018/7/22</p>
-</li>
-</ul>
-<p>*/</p>
-<p>@Slf4j</p>
-<p>public class LoggingAspect {</p>
-<pre><code>public void beforeMethod(JoinPoint joinPoint){
-
-String methodName = joinPoint.getSignature().getName();
-
-    Object [] args = joinPoint.getArgs();
-
-   log.info(&quot;The method={} begins with={}&quot;,methodName,Arrays.asList(args));
-
-}
-</code></pre><p>public void afterMethod(JoinPoint joinPoint){</p>
-<pre><code>String methodName = joinPoint.getSignature().getName();
-
-log.info(&quot;The method={} ends&quot;,methodName);
-
-}
-</code></pre><p>  public void afterReturning(JoinPoint joinPoint, Object result){</p>
-<pre><code>String methodName = joinPoint.getSignature().getName();
-
-   log.info(&quot;The method={},ends with={}&quot;,methodName,result);
-
-}
-</code></pre><p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
-<pre><code>String methodName = joinPoint.getSignature().getName();
-
-  log.error(&quot;The method={},occurs excetion:={}&quot;,methodName,e);
-
-}
-</code></pre><p>  public Object aroundMethod(ProceedingJoinPoint pjd){</p>
-<pre><code>Object result =null;
-
-    String methodName = pjd.getSignature().getName();
-
-    try {
-
-        //前置通知
-
-      log.info(&quot;The method={},begins with={}&quot;, methodName, Arrays.asList(pjd.getArgs()));
-
-        //执行目标方法
-
-        result = pjd.proceed();
-
-        //返回通知
-
-      log.info(&quot;The method={},ends with={}&quot;,methodName ,result);
-
-    }catch (Throwable e) {
-
-        //异常通知
-
-       log.error(&quot;The method={}，occurs exception:={}&quot;,methodName,e);
-
-        throw new RuntimeException(e);
-
-    }
-</code></pre><p>//后置通知</p>
-<pre><code>   log.info(&quot;The method={},ends&quot;,methodName);
-
-    return result;
-
-}
-</code></pre><p>}<br>在spring的配置文件spring-context.xml中配置基于aop的事务增强。</p>
-<bean id="loggingAspect" class="com.cyy.maven.core.Aspect.LoggingAspect">
-
-<p><a href="aop:config" target="_blank" rel="noopener">aop:config</a></p>
-<p>&lt;aop:pointcut id=”serviceOpearation” expression=”execution(<em> com.cyy.maven.core.service.impl.</em>.*(..))”/&gt;</p>
-<p>&lt;aop:aspect ref=”loggingAspect”&gt;</p>
-<pre><code>&lt;aop:before method=&quot;beforeMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
-
-&lt;aop:after method=&quot;afterMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
-
-&lt;aop:after-returning method=&quot;afterReturning&quot; pointcut-ref=&quot;serviceOpearation&quot; returning=&quot;result&quot;/&gt;
-
-&lt;aop:after-throwing method=&quot;afterThrowing&quot; pointcut-ref=&quot;serviceOpearation&quot; throwing=&quot;e&quot;/&gt;
-</code></pre><p>&lt;/aop:aspect&gt;</p>
-<!--<aop:advisor advice-ref=""/>-->
-<p>&lt;/aop:config&gt;<br>测试结果：</p>
-<p>beforeMethod</p>
-<p>afterMethod&amp;afterReturning<br>在spring-context.xml中其实可以直接配置&lt;aop:around method=”aroundMethod” pointcut-ref=”serviceOpearation”/&gt;环绕通知，等价于前面3个办法的功能。</p>
-<p>（2）基于注解的spring aop配置</p>
-<p>LoggingAspect的配置改为如下：</p>
-<p>package com.cyy.maven.core.Aspect;</p>
-<p>import org.aspectj.lang.JoinPoint;</p>
-<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
-<p>import org.aspectj.lang.annotation.*;</p>
-<p>import org.springframework.stereotype.Component;</p>
-<p>import java.util.Arrays;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description:</p>
-</li>
-<li><p>@Date:Created in 16:00 2018/7/22</p>
-</li>
-</ul>
-<p>*/</p>
-<p>@Slf4j</p>
-<p>@Aspect</p>
-<p>@Component</p>
-<p>public class LoggingAspect {</p>
-<p>@Pointcut(“execution(<em> com.cyy.maven.core.service.impl.</em>.*(..))”)</p>
-<p>private void log(){}</p>
-<p>@Before(“log()”)</p>
-<p>public void beforeMethod(JoinPoint joinPoint){</p>
-<p>String methodName = joinPoint.getSignature().getName();</p>
-<pre><code>    Object [] args = joinPoint.getArgs();
-
-     log.info(&quot;The method={},begins with={}&quot;,methodName,Arrays.asList(args));
-
-}
-</code></pre><p>@After(“log()”)</p>
-<p>public void afterMethod(JoinPoint joinPoint){</p>
-<p>String methodName = joinPoint.getSignature().getName();</p>
-<pre><code>    log.info(&quot;The method={},ends&quot;,methodName);
-
-}
-</code></pre><p>@AfterReturning(pointcut =”log()”,returning =”result”)</p>
-<p>public void afterReturning(JoinPoint joinPoint, Object result){</p>
-<p>String methodName = joinPoint.getSignature().getName();</p>
-<pre><code>  log.info(&quot;The method={},ends with={}&quot;,methodName,result);
-
-}
-</code></pre><p>@AfterThrowing(pointcut =”log()”,throwing =”e”)</p>
-<p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
-<p>String methodName = joinPoint.getSignature().getName();</p>
-<pre><code>   log.error(&quot;The method={},occurs excetion:={}&quot;,methodName,e);
-
-}
-</code></pre><p>//    @Around(“log()”)</p>
-<pre><code>public ObjectaroundMethod(ProceedingJoinPoint pjd){
-</code></pre><p>Object result =null;</p>
-<pre><code>String methodName = pjd.getSignature().getName();
-
-try {
-</code></pre><p>//前置通知</p>
-<pre><code>   log.info(&quot;The method={},begins with={}&quot;, methodName, Arrays.asList(pjd.getArgs()));
-
-    //执行目标方法
-
-    result = pjd.proceed();
-
-    //返回通知
-
-   log.info(&quot;The method={},ends with={}&quot;,methodName ,result);
-
-}catch (Throwable e) {
-</code></pre><p>//异常通知</p>
-<pre><code>    log.error(&quot;The method={}，occurs exception:={}&quot;,methodName,e);
-
-    throw new RuntimeException(e);
-
-}
-</code></pre><p>//后置通知</p>
-<pre><code>  log.info(&quot;The method={},ends&quot;,methodName);
-
-    return result;
-
-}
-</code></pre><p>}</p>
-<p>spring配置文件spring-context.xml的配置如下：</p>
-<!-- 配置自动扫描-->
-<p>&lt;context:component-scan base-package=”com.cyy.maven.core.Aspect”/&gt;</p>
-<!--告诉JVM 我们用了aspectj的 annotation -->
-<p><a href="aop:aspectj-autoproxy/" target="_blank" rel="noopener">aop:aspectj-autoproxy/</a><br>测试结果如图：</p>
-<p>beforeMethod</p>
-<p>afterMethod&amp;afterReturning<br>在aroundMethod加上@Around(“log()”)，注释掉其他的注解，可以实现相同的功能。</p>
-<p>2.springboot的aop配置不用基于xml，是完全基于注解的配置，和spring的注解配置很相似。</p>
-<p>这里也直接用以前搭建的springboot框架来测试，码云地址为<a href="https://gitee.com/lonelygin/girl.git。" target="_blank" rel="noopener">https://gitee.com/lonelygin/girl.git。</a></p>
-<p>新建Aspect包，下面新建HttpAspect织入类：</p>
-<p>package com.cyy.Aspect;</p>
-<p>import lombok.extern.slf4j.Slf4j;</p>
-<p>import org.apache.catalina.servlet4preview.http.HttpServletRequest;</p>
-<p>import org.aspectj.lang.JoinPoint;</p>
-<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
-<p>import org.aspectj.lang.annotation.*;</p>
-<p>import org.springframework.stereotype.Component;</p>
-<p>import org.springframework.web.context.request.RequestContextHolder;</p>
-<p>import org.springframework.web.context.request.ServletRequestAttributes;</p>
-<p>@Slf4j</p>
-<p>@Aspect</p>
-<p>@Component</p>
-<p>public class HttpAspect {</p>
-<p>@Pointcut(“execution(public <em> com.cyy.controller.GirlController.</em>(..))”)</p>
-<p>public void log(){}</p>
-<p>@Before(“log()”)</p>
-<p>public void doBefore(JoinPoint joinPoint){</p>
-<p>ServletRequestAttributes attributes= (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();</p>
-<pre><code>    HttpServletRequest request= (HttpServletRequest) attributes.getRequest();
-
-    log.info(&quot;执行事务之前。。。&quot;);
-
-    log.info(&quot;url={}&quot;,request.getRequestURI());
-
-    log.info(&quot;method={}&quot;,request.getMethod());
-
-    log.info(&quot;ip={}&quot;,request.getRemoteAddr());
-
-    log.info(&quot;class-method={}&quot;,joinPoint.getSignature().getDeclaringTypeName()+&quot;.&quot;+joinPoint.getSignature().getName());
-
-    log.info(&quot;args={}&quot;,joinPoint.getArgs());
-
-}
-</code></pre><p>@After(“log()”)</p>
-<p>public void doAfter(){</p>
-<p>log.info(“执行事务之后。。。”);</p>
-<pre><code>}
-</code></pre><p>@AfterReturning(returning =”object”, pointcut =”log()”)</p>
-<p>public void doAfterReturning(Object object) {</p>
-<p>log.info(“response={}”, object.toString());</p>
-<pre><code>}
-</code></pre><p>@AfterThrowing(pointcut =”log()”,throwing =”e”)</p>
-<p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
-<p>String methodName = joinPoint.getSignature().getName();</p>
-<pre><code>  log.info(&quot;The method={}&quot; + methodName +&quot; occurs excetion:={}&quot; + e);
-
-}
-</code></pre><p>//    @Around(“log()”)</p>
-<pre><code>public ObjectaroundMethod(ProceedingJoinPoint pjd){
-</code></pre><p>Object object =null;</p>
-<pre><code>String methodName = pjd.getSignature().getName();
-
-try {
-</code></pre><p>//前置通知</p>
-<pre><code>    ServletRequestAttributes attributes= (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-
-    HttpServletRequest request= (HttpServletRequest) attributes.getRequest();
-
-    log.info(&quot;执行事务之前。。。&quot;);
-
-    log.info(&quot;url={}&quot;,request.getRequestURI());
-
-    log.info(&quot;method={}&quot;,request.getMethod());
-
-    log.info(&quot;ip={}&quot;,request.getRemoteAddr());
-
-    log.info(&quot;class-method={}&quot;,pjd.getSignature().getDeclaringTypeName()+&quot;.&quot;+pjd.getSignature().getName());
-
-    log.info(&quot;args={}&quot;,pjd.getArgs());
-
-    //执行目标方法
-
-    object = pjd.proceed();
-
-    //返回通知
-
-    log.info(&quot;response={}&quot;, object.toString());
-
-}catch (Throwable e) {
-</code></pre><p>//异常通知</p>
-<pre><code>  log.info(&quot;The method={},occurs exception:={}&quot;,methodName,e);
-
-    throw new RuntimeException(e);
-
-}
-</code></pre><p>//后置通知</p>
-<pre><code>    log.info(&quot;执行事务之后。。。&quot;);
-
-    return object;
-
-}
-</code></pre><p>}<br>测试结果：</p>
-<p>同样的， 将@Around(“log()”)加上，将其他注解注释掉，运行也是同样的结果。</p>
-</bean>]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>java</tag>
-        <tag>spring</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>無題</title>
-    <url>/2021/06/17/%E7%84%A1%E9%A1%8C/</url>
-    <content><![CDATA[<p>就像没说完的一段故事</p>
-<p>就像断了的弦</p>
-<p>孤寂在夜空盘旋</p>
-<p>旅人在灯下行走</p>
-<p>车辆穿梭于漆黑的夜</p>
-<p>喧嚣隐去于沉睡的异世界</p>
-<p>圆月下的立交桥路面</p>
-<p>水银镜一般映射光华</p>
-<p>深夜的路灯</p>
-<p>独自闷不吭声</p>
-<p>光线四处逃窜</p>
-<p>疲惫不堪的倒在地上</p>
-<p>摸索着所有能触及的黑暗</p>
-<p>潮水在离森林不远处翻滚声息</p>
-<p>萤火虫于溪岸跃动身影</p>
-<p>追寻</p>
-<p>自黄昏到黑夜</p>
-<p>流动的城市灯火</p>
-<p>停留于指尖瞬间</p>
-<p>抑或</p>
-<p>雨中潮湿的羽翼</p>
-<p>在遥远的空中挥动</p>
-<p>在视野中渐行渐远</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
+        <tag>数据质量监控</tag>
       </tags>
   </entry>
   <entry>
@@ -2274,24 +2267,58 @@ try {
       </tags>
   </entry>
   <entry>
-    <title>一个你不会认识的陌生人</title>
-    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
-    <content><![CDATA[<p>漫长的时光里</p>
-<p>你独自一个人度过</p>
-<p>生命总是孤独</p>
-<p>你总是默默承受</p>
-<p>即使每一个过客</p>
-<p>终究有谢幕离场的时分</p>
-<p>我是一个你不会认识的陌生人</p>
-<p>你是一道我永远也遇不上的彩虹</p>
-<p>没有遇上方知有</p>
-<p>好在花有清香月有阴</p>
-<p>我们在不同的世界</p>
-<p>演绎着类似的人生</p>
-<p>陌生的旧情人</p>
-<p>你是谁的新欢和旧爱</p>
-<p>而我只是一个</p>
-<p>你不会认识的陌生人</p>
+    <title>無題</title>
+    <url>/2021/06/17/%E7%84%A1%E9%A1%8C/</url>
+    <content><![CDATA[<p>就像没说完的一段故事</p>
+<p>就像断了的弦</p>
+<p>孤寂在夜空盘旋</p>
+<p>旅人在灯下行走</p>
+<p>车辆穿梭于漆黑的夜</p>
+<p>喧嚣隐去于沉睡的异世界</p>
+<p>圆月下的立交桥路面</p>
+<p>水银镜一般映射光华</p>
+<p>深夜的路灯</p>
+<p>独自闷不吭声</p>
+<p>光线四处逃窜</p>
+<p>疲惫不堪的倒在地上</p>
+<p>摸索着所有能触及的黑暗</p>
+<p>潮水在离森林不远处翻滚声息</p>
+<p>萤火虫于溪岸跃动身影</p>
+<p>追寻</p>
+<p>自黄昏到黑夜</p>
+<p>流动的城市灯火</p>
+<p>停留于指尖瞬间</p>
+<p>抑或</p>
+<p>雨中潮湿的羽翼</p>
+<p>在遥远的空中挥动</p>
+<p>在视野中渐行渐远</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>鄉愁</title>
+    <url>/2021/06/17/%E9%84%89%E6%84%81/</url>
+    <content><![CDATA[<p>芦苇飘荡的季节﻿</p>
+<p>少年将沉沉的离别披在肩上﻿</p>
+<p>乡愁像芦苇荡里的水一样柔﻿</p>
+<p>遗忘的日子里﻿</p>
+<p>心中总是若有所思﻿</p>
+<p>乡愁像渔家的灯火一样引人入眠﻿</p>
+<p>岁月像车轮一般轧过如路面荒芜的日子﻿</p>
+<p>远处月台橘黄色的站台灯碰弯了旅人的思绪﻿</p>
+<p>恍惚流失的光阴迷失在记忆的岔道口﻿</p>
+<p>春日大海的阳光照耀着北回归线﻿</p>
+<p>视野里的芦苇叶子眯成一线﻿</p>
+<p>蓝的海黑的海 逐渐缩成点的海鸥﻿</p>
+<p>露水闪透着晶莹的清晨﻿</p>
+<p>列车经过铁轨吸进一个个影子后逝去﻿</p>
+<p>乡愁像一曲永不停息的曲子﻿</p>
+<p>在风尘苦旅的夜里奏起</p>
 ]]></content>
       <categories>
         <category>现代诗</category>
@@ -2409,33 +2436,6 @@ try {
       </categories>
       <tags>
         <tag>面试</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>鄉愁</title>
-    <url>/2021/06/17/%E9%84%89%E6%84%81/</url>
-    <content><![CDATA[<p>芦苇飘荡的季节﻿</p>
-<p>少年将沉沉的离别披在肩上﻿</p>
-<p>乡愁像芦苇荡里的水一样柔﻿</p>
-<p>遗忘的日子里﻿</p>
-<p>心中总是若有所思﻿</p>
-<p>乡愁像渔家的灯火一样引人入眠﻿</p>
-<p>岁月像车轮一般轧过如路面荒芜的日子﻿</p>
-<p>远处月台橘黄色的站台灯碰弯了旅人的思绪﻿</p>
-<p>恍惚流失的光阴迷失在记忆的岔道口﻿</p>
-<p>春日大海的阳光照耀着北回归线﻿</p>
-<p>视野里的芦苇叶子眯成一线﻿</p>
-<p>蓝的海黑的海 逐渐缩成点的海鸥﻿</p>
-<p>露水闪透着晶莹的清晨﻿</p>
-<p>列车经过铁轨吸进一个个影子后逝去﻿</p>
-<p>乡愁像一曲永不停息的曲子﻿</p>
-<p>在风尘苦旅的夜里奏起</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
       </tags>
   </entry>
 </search>
