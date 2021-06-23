@@ -6,7 +6,7 @@
   <link href="https://seasand1024.github.io/atom.xml" rel="self"/>
   
   <link href="https://seasand1024.github.io/"/>
-  <updated>2021-06-17T14:15:26.333Z</updated>
+  <updated>2021-06-23T13:05:15.206Z</updated>
   <id>https://seasand1024.github.io/</id>
   
   <author>
@@ -15,6 +15,70 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>挪威的森林</title>
+    <link href="https://seasand1024.github.io/2021/06/23/%E6%8C%AA%E5%A8%81%E7%9A%84%E6%A3%AE%E6%9E%97/"/>
+    <id>https://seasand1024.github.io/2021/06/23/%E6%8C%AA%E5%A8%81%E7%9A%84%E6%A3%AE%E6%9E%97/</id>
+    <published>2021-06-23T12:55:18.000Z</published>
+    <updated>2021-06-23T13:05:15.206Z</updated>
+    
+    <content type="html"><![CDATA[<p>与你的相遇</p><p>像是夜里与一颗流星的邂逅</p><p>在望不到尽头的山野里</p><p>彼此相守</p><p>往后的岁月里</p><p>我们各自奔流</p><p>在远方时空里</p><p>演绎每一场都市夜景下的灯火通明</p><p><br><br>夜里游动，黑猫流窜的小区</p><p>给予记忆无声的催眠</p><p>彼时年轻人的欢声笑语与热血</p><p>都融化做深夜里的一杯杯清酒</p><p>随夜色褪去</p><p>你是否将我遗憾</p><p>如同曾经千千万万个挪威的森林</p><p>而终究独身于无人之境</p><p><br></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;与你的相遇&lt;/p&gt;
+&lt;p&gt;像是夜里与一颗流星的邂逅&lt;/p&gt;
+&lt;p&gt;在望不到尽头的山野里&lt;/p&gt;
+&lt;p&gt;彼此相守&lt;/p&gt;
+&lt;p&gt;往后的岁月里&lt;/p&gt;
+&lt;p&gt;我们各自奔流&lt;/p&gt;
+&lt;p&gt;在远方时空里&lt;/p&gt;
+&lt;p&gt;演绎每一场都市夜景下的灯火通明&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;br&gt;夜</summary>
+      
+    
+    
+    
+    <category term="现代诗" scheme="https://seasand1024.github.io/categories/现代诗/"/>
+    
+    
+    <category term="诗歌" scheme="https://seasand1024.github.io/tags/诗歌/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>意难平</title>
+    <link href="https://seasand1024.github.io/2021/06/23/%E6%84%8F%E9%9A%BE%E5%B9%B3/"/>
+    <id>https://seasand1024.github.io/2021/06/23/%E6%84%8F%E9%9A%BE%E5%B9%B3/</id>
+    <published>2021-06-23T12:43:21.000Z</published>
+    <updated>2021-06-23T13:50:05.862Z</updated>
+    
+    <content type="html"><![CDATA[<p>风起意难平</p><p>我终究是你故事里的一个配角</p><p>风起意难平</p><p>我终于将所有遗憾慢慢填满心间</p><p>风起意难平</p><p>我终究还是一个你不会认识的陌生人</p><p><br></p><p>层楼终身误</p><p>你终究是人间里的一介过客</p><p>层楼终身误</p><p>你终究还是神游太虚的一场梦境</p><p>层楼终生误</p><p>你终将成为谁的新欢与旧爱</p><p><br></p><p>到底意难平</p><p>我们也注定分离</p><p><br></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;p&gt;风起意难平&lt;/p&gt;
+&lt;p&gt;我终究是你故事里的一个配角&lt;/p&gt;
+&lt;p&gt;风起意难平&lt;/p&gt;
+&lt;p&gt;我终于将所有遗憾慢慢填满心间&lt;/p&gt;
+&lt;p&gt;风起意难平&lt;/p&gt;
+&lt;p&gt;我终究还是一个你不会认识的陌生人&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;层楼终身误&lt;/p&gt;
+&lt;p&gt;你终究是人间</summary>
+      
+    
+    
+    
+    <category term="现代诗" scheme="https://seasand1024.github.io/categories/现代诗/"/>
+    
+    
+    <category term="诗歌" scheme="https://seasand1024.github.io/tags/诗歌/"/>
+    
+  </entry>
   
   <entry>
     <title>一个你不会认识的陌生人</title>
@@ -520,55 +584,6 @@ maven 3.5.0
     
     
     <category term="正则匹配" scheme="https://seasand1024.github.io/tags/正则匹配/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>flink 理解</title>
-    <link href="https://seasand1024.github.io/2021/06/17/flink-%E7%90%86%E8%A7%A3/"/>
-    <id>https://seasand1024.github.io/2021/06/17/flink-%E7%90%86%E8%A7%A3/</id>
-    <published>2021-06-17T13:27:00.000Z</published>
-    <updated>2021-06-19T08:31:09.391Z</updated>
-    
-    <content type="html"><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p><p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p><p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;h4 id=&quot;统一的批处理与流处理系统&quot;&gt;&lt;a href=&quot;#统一的批处理与流处理系统&quot; class=&quot;headerlink&quot; title=&quot;统一的批处理与流处理系统&quot;&gt;&lt;/a&gt;统一的批处理与流处理系统&lt;/h4&gt;&lt;p&gt;在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同</summary>
-      
-    
-    
-    
-    <category term="数据开发" scheme="https://seasand1024.github.io/categories/数据开发/"/>
-    
-    
-    <category term="flink" scheme="https://seasand1024.github.io/tags/flink/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Griffin POC</title>
-    <link href="https://seasand1024.github.io/2021/06/17/Griffin-POC/"/>
-    <id>https://seasand1024.github.io/2021/06/17/Griffin-POC/</id>
-    <published>2021-06-17T13:18:00.000Z</published>
-    <updated>2021-06-19T09:13:27.874Z</updated>
-    
-    <content type="html"><![CDATA[<pre><code>Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。</code></pre><p>Apache Griffin填补了开源世界里在大数据质量领域的空白。就像空气质量，水和食品安全等无时不刻地在影响人类的生命一样，数据质量在数据科学领域是至关重要的。在大数据时代，企业决策调整，商机发现等越来越依赖于大数据的数据分析和数据挖掘，而数据质量的保证是所有一切数据分析和数据挖掘的基础。</p><h6 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h6><p><img src="../../../../images/post-images/10224563-4cdc01da7a0a285c.png" alt="img.png"></p><p>Griffin架构图</p><p>1.apache griffin  安装配置；</p><p>从官网下载最新版本<a href="http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；" target="_blank" rel="noopener">http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；</a></p><p>2.(1)配置measure组件；</p><pre><code>配置env-batch.json中hdfs和es的path,分别为&quot;hdfs://10.2.29.101:8020/griffin/batch/persist&quot;,&quot;http://10.2.29.102:9200/griffin/accuracy&quot;,env-streaming.json类似，env-streaming.json还要配置zk的host为“10.2.29.101:2181“，其他默认；配置config-batch.json，config-streaming.json其中的sinks至少要有es，配置config-batch-advanced.json[&quot;HDFS&quot;,&quot;ELASTICSEARCH&quot;,&quot;CONSOLE&quot;]，运行maven命令，mvn clean package -Dmaven.test.skip=true;</code></pre><p>   (2)配置service组件；</p><pre><code>配置env下env_streaming.json，env_batch.json，配置同measure;配置application.properties，配置端口为9270，server.port=9270；配置quartz数据库，进入postgres用户下bin目录下，createdb -O &lt;username&gt; quartz，将项目中的Init_quartz_postgres.sql quartz拷贝到一个目录，psql -p &lt;port&gt; -h &lt;host address&gt; -U &lt;username&gt; -f Init_quartz_postgres.sql quartz；配置spring.datasource为相应的数据库quartz，设置用户名密码，设置相应数据库驱动，设置hive.metastore.uris=thrift://en1-dev1-tbdp.trendy-global.com:9083，hive.metastore.dbname=default，kafka.schema.registry.url=http://en1- dev1-tbdp.trendy-global.com:6667，fs.defaultFS=hdfs://nn1-dev1-tbdp.trendy-global.com:8020，elasticsearch.host=10.2.29.102，elasticsearch.port=9200，livy.uri=http://en1-dev1-tbdp.trendy-global.com:8999/batches，yarn.uri=http://en1-dev1-tbdp.trendy-global.com:8088；配置sparkProperties.json，如下：</code></pre><p>{</p><p>   “file”: “hdfs:///griffin/griffin-measure.jar”,</p><p>   “className”: “org.apache.griffin.measure.Application”,</p><p>   “name”: “griffin”,</p><p>   “queue”: “default”,</p><p>   “numExecutors”: 3,</p><p>   “executorCores”: 1,</p><p>   “driverMemory”: “1g”,</p><p>   “executorMemory”: “1g”,</p><p>   “files”: [ “hdfs:///livy/hive-site.xml” ]</p><p>}；</p><pre><code>然后在service根目录下运行maven命令，mvn clean package -Dmaven.test.skip=true;将measure组件按照sparkProperties.json配置的丢到hdfs上；</code></pre><p>   (3)配置ui组件；</p><pre><code>配置ui/angular/src/app/service/service.service.ts文件public BACKEND_SERVER = &apos;http://localhost:9270&apos;;为之前service的端口；在angular下运行命令npm run build </code></pre><p>3.运行；</p><p>  （1）启动service组件，命令：</p><p>java -jar -Dserver.port=9270 -Dfs.defaultFS=hdfs:///griffin/persist service-0.3.0-incubating.jar；</p><p>  （2）启动ui 组件，命令：</p><pre><code>在angular下运行命令npm run start或者cd ui/angular ../angular/node_modules/.bin/ng serve --port 9280</code></pre><p><img src="../../../../images/post-images/10224563-b1e4fcbdee632715.png" alt="img.png"><br>griffin运行界面</p><p>4.建立数据质量检测方案poc；</p><pre><code>（1）建立accuracy类型检测，点击create measure 按钮，按照操作步骤进行设置，注意设置分区要相对应或者不设置；（2）建立data profiling类型检测，同样按照步骤操作；（3）点击create job根据提示创建job; 结果如图：</code></pre><h6 id="job界面"><a href="#job界面" class="headerlink" title="job界面"></a>job界面</h6><p><img src="../../../../images/post-images/10224563-a7e84c6a56d5f3a4.png" alt="img.png"></p><h6 id="job详解界面"><a href="#job详解界面" class="headerlink" title="job详解界面"></a>job详解界面</h6><p><img src="../../../../images/post-images/10224563-aa9b60841926f0a0.png" alt="img.png"></p><h6 id="job4"><a href="#job4" class="headerlink" title="job4"></a>job4</h6><p><img src="../../../../images/post-images/10224563-cd9a5aaafb910e22.png" alt="img.png"></p><h6 id="mea-job1"><a href="#mea-job1" class="headerlink" title="mea-job1"></a>mea-job1</h6><p><img src="../../../../images/post-images/10224563-577da07c46b740dd.png" alt="img.png"></p>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;pre&gt;&lt;code&gt;Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Apache Griff</summary>
-      
-    
-    
-    
-    <category term="数据开发" scheme="https://seasand1024.github.io/categories/数据开发/"/>
-    
-    
-    <category term="数据质量监控" scheme="https://seasand1024.github.io/tags/数据质量监控/"/>
     
   </entry>
   

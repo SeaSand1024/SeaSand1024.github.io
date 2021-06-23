@@ -1,52 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Mysql之索引的基本概念语法</title>
-    <url>/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</url>
-    <content><![CDATA[<p>####1.Mysql中索引的概念<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
-<p>######索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p>
-<p>####2.索引的基本创建，删除以及数据库表的修改</p>
-<p>#####单列索引的基本创建格式是：<br>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p>
-<p>#####修改表结构的方式创建索引：<br>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
-<p>#####或者也可以创建表的时候指明：<br>    CREATE TABLE sys_user(<br>    id INT NOT NULL primary key,<br>    account VARCHAR(16) NOT NULL,<br>    password VARCHAR(32) NOT NULL,<br>    INDEX ac (account (16))<br>    );  </p>
-<p>#####删除索引的语法：<br>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
-<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
+    <title>Griffin POC</title>
+    <url>/2021/06/17/Griffin-POC/</url>
+    <content><![CDATA[<pre><code>Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。
+</code></pre><p>Apache Griffin填补了开源世界里在大数据质量领域的空白。就像空气质量，水和食品安全等无时不刻地在影响人类的生命一样，数据质量在数据科学领域是至关重要的。在大数据时代，企业决策调整，商机发现等越来越依赖于大数据的数据分析和数据挖掘，而数据质量的保证是所有一切数据分析和数据挖掘的基础。</p>
+<h6 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h6><p><img src="../../../../images/post-images/10224563-4cdc01da7a0a285c.png" alt="img.png"></p>
+<p>Griffin架构图</p>
+<p>1.apache griffin  安装配置；</p>
+<p>从官网下载最新版本<a href="http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；" target="_blank" rel="noopener">http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；</a></p>
+<p>2.(1)配置measure组件；</p>
+<pre><code>配置env-batch.json中hdfs和es的path,分别为&quot;hdfs://10.2.29.101:8020/griffin/batch/persist&quot;,&quot;http://10.2.29.102:9200/griffin/accuracy&quot;,env-streaming.json类似，env-streaming.json还要配置zk的host为“10.2.29.101:2181“，其他默认；
+
+配置config-batch.json，config-streaming.json其中的sinks至少要有es，配置config-batch-advanced.json[&quot;HDFS&quot;,&quot;ELASTICSEARCH&quot;,&quot;CONSOLE&quot;]，运行maven命令，mvn clean package -Dmaven.test.skip=true;
+</code></pre><p>   (2)配置service组件；</p>
+<pre><code>配置env下env_streaming.json，env_batch.json，配置同measure;
+
+配置application.properties，配置端口为9270，server.port=9270；
+
+配置quartz数据库，进入postgres用户下bin目录下，createdb -O &lt;username&gt; quartz，将项目中的Init_quartz_postgres.sql quartz拷贝到一个目录，psql -p &lt;port&gt; -h &lt;host address&gt; -U &lt;username&gt; -f Init_quartz_postgres.sql quartz；
+
+配置spring.datasource为相应的数据库quartz，设置用户名密码，设置相应数据库驱动，设置hive.metastore.uris=thrift://en1-dev1-tbdp.trendy-global.com:9083，hive.metastore.dbname=default，kafka.schema.registry.url=http://en1- dev1-tbdp.trendy-global.com:6667，fs.defaultFS=hdfs://nn1-dev1-tbdp.trendy-global.com:8020，elasticsearch.host=10.2.29.102，elasticsearch.port=9200，livy.uri=http://en1-dev1-tbdp.trendy-global.com:8999/batches，yarn.uri=http://en1-dev1-tbdp.trendy-global.com:8088；
+
+配置sparkProperties.json，如下：
+</code></pre><p>{</p>
+<p>   “file”: “hdfs:///griffin/griffin-measure.jar”,</p>
+<p>   “className”: “org.apache.griffin.measure.Application”,</p>
+<p>   “name”: “griffin”,</p>
+<p>   “queue”: “default”,</p>
+<p>   “numExecutors”: 3,</p>
+<p>   “executorCores”: 1,</p>
+<p>   “driverMemory”: “1g”,</p>
+<p>   “executorMemory”: “1g”,</p>
+<p>   “files”: [ “hdfs:///livy/hive-site.xml” ]</p>
+<p>}；</p>
+<pre><code>然后在service根目录下运行maven命令，mvn clean package -Dmaven.test.skip=true;
+
+将measure组件按照sparkProperties.json配置的丢到hdfs上；
+</code></pre><p>   (3)配置ui组件；</p>
+<pre><code>配置ui/angular/src/app/service/service.service.ts文件public BACKEND_SERVER = &apos;http://localhost:9270&apos;;为之前service的端口；
+
+在angular下运行命令npm run build 
+</code></pre><p>3.运行；</p>
+<p>  （1）启动service组件，命令：</p>
+<p>java -jar -Dserver.port=9270 -Dfs.defaultFS=hdfs:///griffin/persist service-0.3.0-incubating.jar；</p>
+<p>  （2）启动ui 组件，命令：</p>
+<pre><code>在angular下运行命令npm run start或者
+
+cd ui/angular 
+
+../angular/node_modules/.bin/ng serve --port 9280
+</code></pre><p><img src="../../../../images/post-images/10224563-b1e4fcbdee632715.png" alt="img.png"><br>griffin运行界面</p>
+<p>4.建立数据质量检测方案poc；</p>
+<pre><code>（1）建立accuracy类型检测，点击create measure 按钮，按照操作步骤进行设置，注意设置分区要相对应或者不设置；
+
+（2）建立data profiling类型检测，同样按照步骤操作；
+
+（3）点击create job根据提示创建job;
+
+ 结果如图：
+</code></pre><h6 id="job界面"><a href="#job界面" class="headerlink" title="job界面"></a>job界面</h6><p><img src="../../../../images/post-images/10224563-a7e84c6a56d5f3a4.png" alt="img.png"></p>
+<h6 id="job详解界面"><a href="#job详解界面" class="headerlink" title="job详解界面"></a>job详解界面</h6><p><img src="../../../../images/post-images/10224563-aa9b60841926f0a0.png" alt="img.png"></p>
+<h6 id="job4"><a href="#job4" class="headerlink" title="job4"></a>job4</h6><p><img src="../../../../images/post-images/10224563-cd9a5aaafb910e22.png" alt="img.png"></p>
+<h6 id="mea-job1"><a href="#mea-job1" class="headerlink" title="mea-job1"></a>mea-job1</h6><p><img src="../../../../images/post-images/10224563-577da07c46b740dd.png" alt="img.png"></p>
 ]]></content>
       <categories>
-        <category>后端</category>
+        <category>数据开发</category>
       </categories>
       <tags>
-        <tag>mysql</tag>
-        <tag>索引</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MySQL中exists和in的区别及使用场景</title>
-    <url>/2021/06/17/MySQL%E4%B8%ADexists%E5%92%8Cin%E7%9A%84%E5%8C%BA%E5%88%AB%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/</url>
-    <content><![CDATA[<blockquote>
-<p>1.对B查询涉及id，使用索引，故B表效率高，可用大表 –&gt;外小内大<br>select <em> from A where exists (select </em> from B where A.id=B.id);</p>
-</blockquote>
-<blockquote>
-<p>2.对A查询涉及id，使用索引，故A表效率高，可用大表 –&gt;外大内小<br>select * from A where A.id in (select id from B);</p>
-</blockquote>
-<h5 id="1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"><a href="#1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；" class="headerlink" title="1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"></a>1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；</h5><h5 id="2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"><a href="#2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。" class="headerlink" title="2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"></a>2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。</h5><h5 id="3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。"><a href="#3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。" class="headerlink" title="3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。"></a>3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。</h5><p>　　此外，新近遇到的坑，mysql版本问题：</p>
-<p>　　MySQL版本问题：5.6.5优化了子查询，引入物化子查询(针对where clause的subquery)，子查询物化将子查询结果存入临时表，确保子查询只执行一次，该表不记录重复数据且采用哈希索引查找;</p>
-<p>而之前的版本则会把非相关子查询转化为相关子查询，导致效率低下（尤其是子查询是小表，外表是大表的情况下，效率变慢许多）。　</p>
-<p>　相关子查询：子查询依赖外层连接的返回值；</p>
-<p>　　非相关子查询：子查询不依赖外层连接的返回值；</p>
-<p>　　子查询分两种，from语句（派生表）和where语句（子查询），派生表的效率要高一些，5.6的优化就是把where语句变成from语句。</p>
-<p>　　本来是内表小，用的in，但是据说5.6之前的版本会把非相关子查询改为相关子查询，就是把in的语句改成了exists的，结果效率超低。</p>
-<p>　　实验说明：派生表join比派生表的速度还要快。而使用in查询需要很多分钟还没有查出来。　</p>
-<blockquote>
-<p>#使用派生表 4.68秒<br>SELECT id FROM la WHERE cardid IN (<br>SELECT cardid FROM (<br>select cardid from la group by cardid having count(1)&gt;50) a) ;<br>#使用派生表的内连接 1.26秒<br>SELECT id FROM la JOIN (<br>select cardid from la group by cardid having count(1)&gt;50) a ON la.cardid=a.cardid;</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-        <tag>SQL</tag>
+        <tag>数据质量监控</tag>
       </tags>
   </entry>
   <entry>
@@ -183,32 +205,53 @@
       </tags>
   </entry>
   <entry>
-    <title>flink 理解</title>
-    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
-    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
-<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
-<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
+    <title>MySQL中exists和in的区别及使用场景</title>
+    <url>/2021/06/17/MySQL%E4%B8%ADexists%E5%92%8Cin%E7%9A%84%E5%8C%BA%E5%88%AB%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/</url>
+    <content><![CDATA[<blockquote>
+<p>1.对B查询涉及id，使用索引，故B表效率高，可用大表 –&gt;外小内大<br>select <em> from A where exists (select </em> from B where A.id=B.id);</p>
+</blockquote>
+<blockquote>
+<p>2.对A查询涉及id，使用索引，故A表效率高，可用大表 –&gt;外大内小<br>select * from A where A.id in (select id from B);</p>
+</blockquote>
+<h5 id="1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"><a href="#1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；" class="headerlink" title="1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"></a>1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；</h5><h5 id="2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"><a href="#2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。" class="headerlink" title="2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"></a>2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。</h5><h5 id="3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。"><a href="#3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。" class="headerlink" title="3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。"></a>3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。</h5><p>　　此外，新近遇到的坑，mysql版本问题：</p>
+<p>　　MySQL版本问题：5.6.5优化了子查询，引入物化子查询(针对where clause的subquery)，子查询物化将子查询结果存入临时表，确保子查询只执行一次，该表不记录重复数据且采用哈希索引查找;</p>
+<p>而之前的版本则会把非相关子查询转化为相关子查询，导致效率低下（尤其是子查询是小表，外表是大表的情况下，效率变慢许多）。　</p>
+<p>　相关子查询：子查询依赖外层连接的返回值；</p>
+<p>　　非相关子查询：子查询不依赖外层连接的返回值；</p>
+<p>　　子查询分两种，from语句（派生表）和where语句（子查询），派生表的效率要高一些，5.6的优化就是把where语句变成from语句。</p>
+<p>　　本来是内表小，用的in，但是据说5.6之前的版本会把非相关子查询改为相关子查询，就是把in的语句改成了exists的，结果效率超低。</p>
+<p>　　实验说明：派生表join比派生表的速度还要快。而使用in查询需要很多分钟还没有查出来。　</p>
+<blockquote>
+<p>#使用派生表 4.68秒<br>SELECT id FROM la WHERE cardid IN (<br>SELECT cardid FROM (<br>select cardid from la group by cardid having count(1)&gt;50) a) ;<br>#使用派生表的内连接 1.26秒<br>SELECT id FROM la JOIN (<br>select cardid from la group by cardid having count(1)&gt;50) a ON la.cardid=a.cardid;</p>
+</blockquote>
 ]]></content>
       <categories>
-        <category>数据开发</category>
+        <category>后端</category>
       </categories>
       <tags>
-        <tag>flink</tag>
+        <tag>mysql</tag>
+        <tag>SQL</tag>
       </tags>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2018/06/28/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
+    <title>Mysql之索引的基本概念语法</title>
+    <url>/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</url>
+    <content><![CDATA[<p>####1.Mysql中索引的概念<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
+<p>######索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p>
+<p>####2.索引的基本创建，删除以及数据库表的修改</p>
+<p>#####单列索引的基本创建格式是：<br>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p>
+<p>#####修改表结构的方式创建索引：<br>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
+<p>#####或者也可以创建表的时候指明：<br>    CREATE TABLE sys_user(<br>    id INT NOT NULL primary key,<br>    account VARCHAR(16) NOT NULL,<br>    password VARCHAR(32) NOT NULL,<br>    INDEX ac (account (16))<br>    );  </p>
+<p>#####删除索引的语法：<br>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
+<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
 ]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+        <tag>索引</tag>
+      </tags>
   </entry>
   <entry>
     <title>Streamsets POC总结</title>
@@ -241,6 +284,34 @@
       <tags>
         <tag>etl</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>flink 理解</title>
+    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
+    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
+<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
+<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
+]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>flink</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2018/06/28/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
+]]></content>
   </entry>
   <entry>
     <title>idea2017 搭建ssm框架过程</title>
@@ -277,6 +348,77 @@ dao层
       </categories>
       <tags>
         <tag>hive</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>java之静态代码块与构造方法加载次序</title>
+    <url>/2021/06/17/java%E4%B9%8B%E9%9D%99%E6%80%81%E4%BB%A3%E7%A0%81%E5%9D%97%E4%B8%8E%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95%E5%8A%A0%E8%BD%BD%E6%AC%A1%E5%BA%8F/</url>
+    <content><![CDATA[<ul>
+<li>java中的静态代码块，非静态块，构造办法的加载顺序是这样的：<br>静态代码块 （程序加载时一次）—&gt;非静态块（每次实例化一次）—&gt; 构造方法（每次实例化一次），废话不多说，上代码。</li>
+</ul>
+<p>#####A类：</p>
+<blockquote>
+<pre><code>public class A {
+
+    static {
+        System.out.print(&quot;1&quot;);
+    }
+     {
+        System.out.print(&quot;#&quot;);
+    }
+
+    public A(){
+        System.out.print(&quot;a&quot;);
+    }
+
+
+}
+</code></pre></blockquote>
+<p>#####B类：</p>
+<blockquote>
+<pre><code>/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 16:08 2018/7/28
+ */
+public class B extends A {
+
+    static {
+        System.out.print(&quot;2&quot;);
+    }
+     {
+        System.out.print(&quot;*&quot;);
+    }
+
+    public B(){
+        System.out.print(&quot;b&quot;);
+    }
+    {
+        System.out.print(&quot;c&quot;);
+    }
+
+    public static void main(String[] args) {
+//        A a=new A();//结果12a,执行一次2个静态区代码，执行非静态代码块，再执行A的构造办法
+//        B b=new B();//结果12ab,执行一次2个静态区代码，执行非静态代码块，再依次执行A和B的构造办法
+        A ab=new B();//同上
+
+        ab=new B();//此时静态代码块已经加载,只加载一次，执行非静态代码块，是每次实例化都一次，跟构造方法一样，比构造办法先，输出非静态代码和构造办法的部分
+
+    }
+}
+</code></pre></blockquote>
+<p>我们尝试运行，看看结果：<br><img src="../../../../images/post-images/10224563-039c5928d44ca760.png" alt="image.png"><br>结果是12#a*b#a*b,来分析下整个流程：</p>
+<ul>
+<li>第一步按顺序加载2个类的静态代码块，程序载入时，只会执行一次，输出12；</li>
+<li>第二步按顺序分别加载A类和B类的非静态代码块以及构造方法，输出#a*b;</li>
+<li>第三步，再次实例化B类的时候，不在静态代码块了，只会加载非静态代码块和构造方法，再次输出结果#a*b;</li>
+</ul>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>java</tag>
       </tags>
   </entry>
   <entry>
@@ -616,77 +758,6 @@ public class Thread07 {
 </code></pre></blockquote>
 <p>运行结果：</p>
 <p><img src="../../../../images/post-images/10224563-a872cc0e4d4c4047.png" alt="image.png"></p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>java之静态代码块与构造方法加载次序</title>
-    <url>/2021/06/17/java%E4%B9%8B%E9%9D%99%E6%80%81%E4%BB%A3%E7%A0%81%E5%9D%97%E4%B8%8E%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95%E5%8A%A0%E8%BD%BD%E6%AC%A1%E5%BA%8F/</url>
-    <content><![CDATA[<ul>
-<li>java中的静态代码块，非静态块，构造办法的加载顺序是这样的：<br>静态代码块 （程序加载时一次）—&gt;非静态块（每次实例化一次）—&gt; 构造方法（每次实例化一次），废话不多说，上代码。</li>
-</ul>
-<p>#####A类：</p>
-<blockquote>
-<pre><code>public class A {
-
-    static {
-        System.out.print(&quot;1&quot;);
-    }
-     {
-        System.out.print(&quot;#&quot;);
-    }
-
-    public A(){
-        System.out.print(&quot;a&quot;);
-    }
-
-
-}
-</code></pre></blockquote>
-<p>#####B类：</p>
-<blockquote>
-<pre><code>/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 16:08 2018/7/28
- */
-public class B extends A {
-
-    static {
-        System.out.print(&quot;2&quot;);
-    }
-     {
-        System.out.print(&quot;*&quot;);
-    }
-
-    public B(){
-        System.out.print(&quot;b&quot;);
-    }
-    {
-        System.out.print(&quot;c&quot;);
-    }
-
-    public static void main(String[] args) {
-//        A a=new A();//结果12a,执行一次2个静态区代码，执行非静态代码块，再执行A的构造办法
-//        B b=new B();//结果12ab,执行一次2个静态区代码，执行非静态代码块，再依次执行A和B的构造办法
-        A ab=new B();//同上
-
-        ab=new B();//此时静态代码块已经加载,只加载一次，执行非静态代码块，是每次实例化都一次，跟构造方法一样，比构造办法先，输出非静态代码和构造办法的部分
-
-    }
-}
-</code></pre></blockquote>
-<p>我们尝试运行，看看结果：<br><img src="../../../../images/post-images/10224563-039c5928d44ca760.png" alt="image.png"><br>结果是12#a*b#a*b,来分析下整个流程：</p>
-<ul>
-<li>第一步按顺序加载2个类的静态代码块，程序载入时，只会执行一次，输出12；</li>
-<li>第二步按顺序分别加载A类和B类的非静态代码块以及构造方法，输出#a*b;</li>
-<li>第三步，再次实例化B类的时候，不在静态代码块了，只会加载非静态代码块和构造方法，再次输出结果#a*b;</li>
-</ul>
 ]]></content>
       <categories>
         <category>后端</category>
@@ -1051,6 +1122,22 @@ proxy.save();
       </tags>
   </entry>
   <entry>
+    <title>mysql 连接</title>
+    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
+    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
+<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
+<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
+<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+        <tag>SQL</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>python-时间序列处理</title>
     <url>/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</url>
     <content><![CDATA[<p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
@@ -1245,120 +1332,6 @@ smooth_method()
       <tags>
         <tag>事务</tag>
         <tag>spring</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>mysql 连接</title>
-    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
-    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
-<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
-<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
-<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-        <tag>SQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Griffin POC</title>
-    <url>/2021/06/17/Griffin-POC/</url>
-    <content><![CDATA[<pre><code>Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。
-</code></pre><p>Apache Griffin填补了开源世界里在大数据质量领域的空白。就像空气质量，水和食品安全等无时不刻地在影响人类的生命一样，数据质量在数据科学领域是至关重要的。在大数据时代，企业决策调整，商机发现等越来越依赖于大数据的数据分析和数据挖掘，而数据质量的保证是所有一切数据分析和数据挖掘的基础。</p>
-<h6 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h6><p><img src="../../../../images/post-images/10224563-4cdc01da7a0a285c.png" alt="img.png"></p>
-<p>Griffin架构图</p>
-<p>1.apache griffin  安装配置；</p>
-<p>从官网下载最新版本<a href="http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；" target="_blank" rel="noopener">http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；</a></p>
-<p>2.(1)配置measure组件；</p>
-<pre><code>配置env-batch.json中hdfs和es的path,分别为&quot;hdfs://10.2.29.101:8020/griffin/batch/persist&quot;,&quot;http://10.2.29.102:9200/griffin/accuracy&quot;,env-streaming.json类似，env-streaming.json还要配置zk的host为“10.2.29.101:2181“，其他默认；
-
-配置config-batch.json，config-streaming.json其中的sinks至少要有es，配置config-batch-advanced.json[&quot;HDFS&quot;,&quot;ELASTICSEARCH&quot;,&quot;CONSOLE&quot;]，运行maven命令，mvn clean package -Dmaven.test.skip=true;
-</code></pre><p>   (2)配置service组件；</p>
-<pre><code>配置env下env_streaming.json，env_batch.json，配置同measure;
-
-配置application.properties，配置端口为9270，server.port=9270；
-
-配置quartz数据库，进入postgres用户下bin目录下，createdb -O &lt;username&gt; quartz，将项目中的Init_quartz_postgres.sql quartz拷贝到一个目录，psql -p &lt;port&gt; -h &lt;host address&gt; -U &lt;username&gt; -f Init_quartz_postgres.sql quartz；
-
-配置spring.datasource为相应的数据库quartz，设置用户名密码，设置相应数据库驱动，设置hive.metastore.uris=thrift://en1-dev1-tbdp.trendy-global.com:9083，hive.metastore.dbname=default，kafka.schema.registry.url=http://en1- dev1-tbdp.trendy-global.com:6667，fs.defaultFS=hdfs://nn1-dev1-tbdp.trendy-global.com:8020，elasticsearch.host=10.2.29.102，elasticsearch.port=9200，livy.uri=http://en1-dev1-tbdp.trendy-global.com:8999/batches，yarn.uri=http://en1-dev1-tbdp.trendy-global.com:8088；
-
-配置sparkProperties.json，如下：
-</code></pre><p>{</p>
-<p>   “file”: “hdfs:///griffin/griffin-measure.jar”,</p>
-<p>   “className”: “org.apache.griffin.measure.Application”,</p>
-<p>   “name”: “griffin”,</p>
-<p>   “queue”: “default”,</p>
-<p>   “numExecutors”: 3,</p>
-<p>   “executorCores”: 1,</p>
-<p>   “driverMemory”: “1g”,</p>
-<p>   “executorMemory”: “1g”,</p>
-<p>   “files”: [ “hdfs:///livy/hive-site.xml” ]</p>
-<p>}；</p>
-<pre><code>然后在service根目录下运行maven命令，mvn clean package -Dmaven.test.skip=true;
-
-将measure组件按照sparkProperties.json配置的丢到hdfs上；
-</code></pre><p>   (3)配置ui组件；</p>
-<pre><code>配置ui/angular/src/app/service/service.service.ts文件public BACKEND_SERVER = &apos;http://localhost:9270&apos;;为之前service的端口；
-
-在angular下运行命令npm run build 
-</code></pre><p>3.运行；</p>
-<p>  （1）启动service组件，命令：</p>
-<p>java -jar -Dserver.port=9270 -Dfs.defaultFS=hdfs:///griffin/persist service-0.3.0-incubating.jar；</p>
-<p>  （2）启动ui 组件，命令：</p>
-<pre><code>在angular下运行命令npm run start或者
-
-cd ui/angular 
-
-../angular/node_modules/.bin/ng serve --port 9280
-</code></pre><p><img src="../../../../images/post-images/10224563-b1e4fcbdee632715.png" alt="img.png"><br>griffin运行界面</p>
-<p>4.建立数据质量检测方案poc；</p>
-<pre><code>（1）建立accuracy类型检测，点击create measure 按钮，按照操作步骤进行设置，注意设置分区要相对应或者不设置；
-
-（2）建立data profiling类型检测，同样按照步骤操作；
-
-（3）点击create job根据提示创建job;
-
- 结果如图：
-</code></pre><h6 id="job界面"><a href="#job界面" class="headerlink" title="job界面"></a>job界面</h6><p><img src="../../../../images/post-images/10224563-a7e84c6a56d5f3a4.png" alt="img.png"></p>
-<h6 id="job详解界面"><a href="#job详解界面" class="headerlink" title="job详解界面"></a>job详解界面</h6><p><img src="../../../../images/post-images/10224563-aa9b60841926f0a0.png" alt="img.png"></p>
-<h6 id="job4"><a href="#job4" class="headerlink" title="job4"></a>job4</h6><p><img src="../../../../images/post-images/10224563-cd9a5aaafb910e22.png" alt="img.png"></p>
-<h6 id="mea-job1"><a href="#mea-job1" class="headerlink" title="mea-job1"></a>mea-job1</h6><p><img src="../../../../images/post-images/10224563-577da07c46b740dd.png" alt="img.png"></p>
-]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>数据质量监控</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>一个你不会认识的陌生人</title>
-    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
-    <content><![CDATA[<p>漫长的时光里</p>
-<p>你独自一个人度过</p>
-<p>生命总是孤独</p>
-<p>你总是默默承受</p>
-<p>即使每一个过客</p>
-<p>终究有谢幕离场的时分</p>
-<p>我是一个你不会认识的陌生人</p>
-<p>你是一道我永远也遇不上的彩虹</p>
-<p>没有遇上方知有</p>
-<p>好在花有清香月有阴</p>
-<p>我们在不同的世界</p>
-<p>演绎着类似的人生</p>
-<p>陌生的旧情人</p>
-<p>你是谁的新欢和旧爱</p>
-<p>而我只是一个</p>
-<p>你不会认识的陌生人</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
       </tags>
   </entry>
   <entry>
@@ -2118,6 +2091,34 @@ try {
       </tags>
   </entry>
   <entry>
+    <title>意难平</title>
+    <url>/2021/06/23/%E6%84%8F%E9%9A%BE%E5%B9%B3/</url>
+    <content><![CDATA[<p>风起意难平</p>
+<p>我终究是你故事里的一个配角</p>
+<p>风起意难平</p>
+<p>我终于将所有遗憾慢慢填满心间</p>
+<p>风起意难平</p>
+<p>我终究还是一个你不会认识的陌生人</p>
+<p><br></p>
+<p>层楼终身误</p>
+<p>你终究是人间里的一介过客</p>
+<p>层楼终身误</p>
+<p>你终究还是神游太虚的一场梦境</p>
+<p>层楼终生误</p>
+<p>你终将成为谁的新欢与旧爱</p>
+<p><br></p>
+<p>到底意难平</p>
+<p>我们也注定分离</p>
+<p><br></p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>新辞</title>
     <url>/2021/06/17/%E6%96%B0%E8%BE%9E/</url>
     <content><![CDATA[<p>歌管楼台声细细，秋千院落夜沉沉。</p>
@@ -2126,6 +2127,61 @@ try {
 ]]></content>
       <categories>
         <category>古风拾迹</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>一个你不会认识的陌生人</title>
+    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
+    <content><![CDATA[<p>漫长的时光里</p>
+<p>你独自一个人度过</p>
+<p>生命总是孤独</p>
+<p>你总是默默承受</p>
+<p>即使每一个过客</p>
+<p>终究有谢幕离场的时分</p>
+<p>我是一个你不会认识的陌生人</p>
+<p>你是一道我永远也遇不上的彩虹</p>
+<p>没有遇上方知有</p>
+<p>好在花有清香月有阴</p>
+<p>我们在不同的世界</p>
+<p>演绎着类似的人生</p>
+<p>陌生的旧情人</p>
+<p>你是谁的新欢和旧爱</p>
+<p>而我只是一个</p>
+<p>你不会认识的陌生人</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>挪威的森林</title>
+    <url>/2021/06/23/%E6%8C%AA%E5%A8%81%E7%9A%84%E6%A3%AE%E6%9E%97/</url>
+    <content><![CDATA[<p>与你的相遇</p>
+<p>像是夜里与一颗流星的邂逅</p>
+<p>在望不到尽头的山野里</p>
+<p>彼此相守</p>
+<p>往后的岁月里</p>
+<p>我们各自奔流</p>
+<p>在远方时空里</p>
+<p>演绎每一场都市夜景下的灯火通明</p>
+<p><br><br>夜里游动，黑猫流窜的小区</p>
+<p>给予记忆无声的催眠</p>
+<p>彼时年轻人的欢声笑语与热血</p>
+<p>都融化做深夜里的一杯杯清酒</p>
+<p>随夜色褪去</p>
+<p>你是否将我遗憾</p>
+<p>如同曾经千千万万个挪威的森林</p>
+<p>而终究独身于无人之境</p>
+<p><br></p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
       </categories>
       <tags>
         <tag>诗歌</tag>
@@ -2182,117 +2238,6 @@ try {
       </categories>
       <tags>
         <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>记一次阿里巴巴电面经历</title>
-    <url>/2021/06/17/%E8%AE%B0%E4%B8%80%E6%AC%A1%E9%98%BF%E9%87%8C%E5%B7%B4%E5%B7%B4%E7%94%B5%E9%9D%A2%E7%BB%8F%E5%8E%86/</url>
-    <content><![CDATA[<p><strong>前言</strong>：本人有幸在boss直聘上获得一次阿里巴巴国际技术事业部的电话面试机会，由于太突然，大部分问题都没有发挥原来的水平，诶，决定痛下决心好好总结，还有就是坚定下自己的目标=_=。<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上来先做了个自我介绍，由于要找个信号好的地方，爬到了楼顶，结果气喘吁吁的=_=，下面就开始提问一些专业的问题。</p>
-<h4 id="1-面向对象的封装，继承，多态的含义"><a href="#1-面向对象的封装，继承，多态的含义" class="headerlink" title="1.面向对象的封装，继承，多态的含义"></a>1.面向对象的封装，继承，多态的含义</h4><ul>
-<li>封装是指将对象的细节隐藏起来，然后通过公共的方法来向外暴露该对象的功能；<br>一般来说封装是使用private修饰符对属性进行包装，使用getter/setter对属性进行获取与修改，但是也可以使用setter对属性进行更加深层次的设置，包括你可以对设置的格式做转化，对数据的要求；</li>
-<li>继承是面向对象实现软件复用的重要手段，子类继承父类，子类就拥有父类的成员属性和成员办法，可以拥有父类的功能，也可以对父类的方法进行重写（覆盖）；缺点是违背了高内聚，低耦合的编程思想，耦合程度比较高，并且破坏了封装的特性，可见部分功能的丧失来换取另一部功能的完整。</li>
-<li><p>多态可以理解为同一个行为有不同的表达形式或者形态的能力，举个例子，父类可以是Animals类，具有say()方法行为，但是对于不同种类动物手说的话是不同的，比如Cat类，可能说”喵喵喵”，Dog类说”汪汪汪”之类的；多态实现的条件是上具备一些以上的条件的：<br>1）继承；2）重写；3）向上转型；</p>
-<h4 id="2-抽象类和接口的区别"><a href="#2-抽象类和接口的区别" class="headerlink" title="2.抽象类和接口的区别"></a>2.抽象类和接口的区别</h4></li>
-<li><p>这个算是老生常谈的问题了，大概有以下几点：</p>
-</li>
-<li>抽象类中可以有普通的方法和成员变量，而接口中的办法必须是抽象的，变量也必须是static final类型的（其实就是常量），必须被初始化，接口中只有常量，没有变量；</li>
-<li>抽象类中的方法可以不全为抽象方法，子类继承可以不必全部实现，全部实现为普通类，不全部实现还是抽象类，而实现接口的类必须实现其中的方法；</li>
-<li>抽象类拥有类的特性，单继承，而接口多继承；</li>
-<li>Java8 中接口中会有 default 方法，即方法可以被实现。</li>
-</ul>
-<h4 id="3-内存溢出和内存泄露的含义，举例说明，不超过10行代码；"><a href="#3-内存溢出和内存泄露的含义，举例说明，不超过10行代码；" class="headerlink" title="3.内存溢出和内存泄露的含义，举例说明，不超过10行代码；"></a>3.内存溢出和内存泄露的含义，举例说明，不超过10行代码；</h4><ul>
-<li><p>内存泄露的概念是指对象可达，但是没用了，就是本该被CG回收的那些没有被回收；内存泄露的原因有以下2点：<br>1）长周期对象引用短周期对象；<br>2）没有将无用对象置为null；<br>举一个第一个情况的例子：</p>
-<blockquote>
-<p>Static Vector v = new Vector(10);<br>  for (int i = 1; i&lt;100; i++)<br>  {<br>  &nbsp;&nbsp;Object o = new Object();<br>  &nbsp;&nbsp;v.add(o);<br>  &nbsp;&nbsp;o = null;<br>  }</p>
-</blockquote>
-</li>
-</ul>
-<p>内存泄露可以造成内存溢出，是造成内存溢出的一种情况，内存泄露积累起来将导致内存溢出。</p>
-<h4 id="4-对Spring-IOC的理解"><a href="#4-对Spring-IOC的理解" class="headerlink" title="4.对Spring IOC的理解"></a>4.对Spring IOC的理解</h4><p>spring IOC 的ioc是inverse of controller的英文缩写，意思是控制反转的意思，spring ioc有3种注入方式：</p>
-<ul>
-<li>基于属性的注入；<br>eg:<bean>标签下配置&lt;property name=”xxxx(属性名称)” value/ref=”xxxx(属性值/依赖注入的bean)”&gt;<br>这种注入前提是注入的bean要有默认实现的setter方法；</bean></li>
-<li><p>基于构造器的注入；<br>eg:<bean> 标签下配置<constructor-arg ref="引用的bean id"><br>前提是该bean注入的值是引用的bean对象类型，另外还可以是基本数据类型的注入，包括集合；<br>eg:<br><strong>基本数据类型</strong>:</constructor-arg></bean></p>
-<pre><code>&lt;constructor-arg index=&quot;0&quot; type=&quot;java.lang.String&quot; value=&quot;1&quot;/&gt;&lt;/constructor-arg&gt;
-&lt;constructor-arg index=&quot;1&quot; type=&quot;java.lang.Integer&quot; value=&quot;2&quot;&gt;&lt;/constructor-arg&gt;
-</code></pre></li>
-</ul>
-<p><strong>集合</strong>:</p>
-<pre><code>&lt;bean id=&quot;xxxx&quot; class=&quot;com.xxxx.xxxx&quot; &gt;
-        &lt;property name=&quot;arrayData&quot;&gt;
-            &lt;array/list/set&gt;
-                &lt;value&gt;xxx&lt;/value&gt;
-                &lt;value&gt;aaa&lt;/value&gt;
-                &lt;value&gt;bbb&lt;/value&gt;
-                &lt;value&gt;ccc&lt;/value&gt;
-            &lt;/array/list/set&gt;
-        &lt;/property&gt;
-&lt;/bean&gt;
-&lt;property name=&quot;mapData&quot;&gt;
-    &lt;map&gt;
-        &lt;entry key=&quot;jack&quot; value=&quot;杰克&quot;&gt;&lt;/entry&gt;
-        &lt;entry&gt;
-            &lt;key&gt;&lt;value&gt;rose&lt;/value&gt;&lt;/key&gt;
-            &lt;value&gt;肉丝&lt;/value&gt;
-        &lt;/entry&gt;
-    &lt;/map&gt;
-&lt;/property&gt;
-
-&lt;property name=&quot;propsData&quot;&gt;
-    &lt;props&gt;
-        &lt;prop key=&quot;xxxx&quot;&gt;xxxx&lt;/prop&gt;
-        &lt;prop key=&quot;aaaa&quot;&gt;aaaa&lt;/prop&gt;
-        &lt;prop key=&quot;bbbb&quot;&gt;bbbb&lt;/prop&gt;
-    &lt;/props&gt;
-&lt;/property&gt;
-</code></pre><ul>
-<li><p>基于注解的注入；<br>使用注解实现ioc的方法，首先记得要配置spring context 的命名空间，并且在applicationContext.xml中配置扫描的含有注解的包；<br>eg:</p>
-<pre><code>&lt;context:component-scan base-package=&quot;xxx.xxxx.xxxx&quot;/&gt;
-</code></pre></li>
-</ul>
-<h4 id="5-Spring-aop的理解，底层实现原理"><a href="#5-Spring-aop的理解，底层实现原理" class="headerlink" title="5.Spring aop的理解，底层实现原理"></a>5.Spring aop的理解，底层实现原理</h4><p>以下给出一段代码解释：<br>当实现日志控制时，</p>
-<pre><code>//将织入类交给spring bean处理
-&lt;bean id=&quot;loggingAspect&quot; class=&quot;com.cyy.maven.core.Aspect.LoggingAspect&quot;/&gt;
-&lt;aop:config&gt;
-    //定义切入点
-    &lt;aop:pointcut id=&quot;serviceOpearation&quot; expression=&quot;execution(* com.cyy.maven.core.service.impl.*.*(..))&quot;/&gt;
-    //引用切入点
-    &lt;aop:aspect  ref=&quot;loggingAspect&quot;&gt;
-    //使用切入点中的方法织入
-        &lt;aop:before method=&quot;beforeMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
-        &lt;aop:after method=&quot;afterMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
-        &lt;aop:after-returning method=&quot;afterReturning&quot; pointcut-ref=&quot;serviceOpearation&quot; returning=&quot;result&quot;/&gt;
-        &lt;aop:after-throwing method=&quot;afterThrowing&quot; pointcut-ref=&quot;serviceOpearation&quot; throwing=&quot;e&quot;/&gt;
-        //环绕方法，等价于以上4个的作用
-        &lt;aop:around method=&quot;aroundMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
-    &lt;/aop:aspect&gt;
-&lt;/aop:config&gt;
-</code></pre><h4 id="6-nbsp-Set和Map的区别"><a href="#6-nbsp-Set和Map的区别" class="headerlink" title="6.&nbsp;Set和Map的区别"></a>6.&nbsp;Set和Map的区别</h4><ul>
-<li>Set是Collection接口下的子接口，Set中的数据可以是无序的，不可以重复，Set的形式是set<type>  myset，即节点是一个type类型的数据；</type></li>
-<li>Map 是跟Collection同级别的集合接口，Map的形式是map&lt;type1,type2&gt; mymap,即节点数据是一对数据，以键值对的形式存在，key唯一，value可以重复；<br>最基础的回答可以是这样，以后会专门写一篇来对集合这种数据类型进行深入浅出的研究；</li>
-</ul>
-<h4 id="7-nbsp-对数据库索引的理解，会举例考察你"><a href="#7-nbsp-对数据库索引的理解，会举例考察你" class="headerlink" title="7.&nbsp;对数据库索引的理解，会举例考察你"></a>7.&nbsp;对数据库索引的理解，会举例考察你</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/b82f2926d9e5" target="_blank" rel="noopener">Mysql 索引的具体优化策略</a></p>
-<h4 id="8-nbsp-方法覆盖和重载的区别"><a href="#8-nbsp-方法覆盖和重载的区别" class="headerlink" title="8.&nbsp;方法覆盖和重载的区别"></a>8.&nbsp;方法覆盖和重载的区别</h4><ul>
-<li>方法覆盖又叫方法重写，是重写父类的办法，权限不能更小，抛出的异常不能更多；</li>
-<li>重载是同一个类中可以有相同名字的方法，但是由于方法参数的类型，顺序，个数不尽相同的相同名称的方法；</li>
-</ul>
-<h4 id="9-nbsp-数据库事务的4个特性，最好能说出详细的特征"><a href="#9-nbsp-数据库事务的4个特性，最好能说出详细的特征" class="headerlink" title="9.&nbsp;数据库事务的4个特性，最好能说出详细的特征"></a>9.&nbsp;数据库事务的4个特性，最好能说出详细的特征</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/3e7c12a1a2be" target="_blank" rel="noopener">spring 事务理解</a></p>
-<h4 id="10-nbsp-讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）"><a href="#10-nbsp-讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）" class="headerlink" title="10.&nbsp;讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）"></a>10.&nbsp;讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）</h4><h4 id="11-nbsp-10000个String对象的去重"><a href="#11-nbsp-10000个String对象的去重" class="headerlink" title="11.&nbsp;10000个String对象的去重"></a>11.&nbsp;10000个String对象的去重</h4><p><strong>tips</strong>: 可以使用HashSet解决；</p>
-<h4 id="12-nbsp-String对象的取值范围"><a href="#12-nbsp-String对象的取值范围" class="headerlink" title="12.&nbsp;String对象的取值范围"></a>12.&nbsp;String对象的取值范围</h4><p>定长的String数据类型占用的存储空间为字符串的长度，取值范围为1——65400个字符;</p>
-<h4 id="13-nbsp-TCP建立连接-3次握手，结束时4次挥手原理具体内容"><a href="#13-nbsp-TCP建立连接-3次握手，结束时4次挥手原理具体内容" class="headerlink" title="13&nbsp;TCP建立连接 3次握手，结束时4次挥手原理具体内容"></a>13&nbsp;TCP建立连接 3次握手，结束时4次挥手原理具体内容</h4><h4 id="14-nbsp-ThreadLocal使用过吗，你来说说对它的理解"><a href="#14-nbsp-ThreadLocal使用过吗，你来说说对它的理解" class="headerlink" title="14.&nbsp;ThreadLocal使用过吗，你来说说对它的理解"></a>14.&nbsp;ThreadLocal使用过吗，你来说说对它的理解</h4><h4 id="15-nbsp-说说数据库内连接，左外连接，右外连接的理解"><a href="#15-nbsp-说说数据库内连接，左外连接，右外连接的理解" class="headerlink" title="15.&nbsp;说说数据库内连接，左外连接，右外连接的理解"></a>15.&nbsp;说说数据库内连接，左外连接，右外连接的理解</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/83d84d7df306" target="_blank" rel="noopener">mysql 连接</a></p>
-<p>####16.&nbsp;Session和Cookie的区别</p>
-<p>####17.&nbsp;StringBuffer和StringBuild的区别和含义</p>
-<ul>
-<li>StringBuffer:每次都对对象本身进行操作，而不是生成新的对象。所以在字符串内容不断改变的情况，建议使用StringBuffer。</li>
-<li>String对象的字符串拼接其实是被JVM解释成了StringBuffer对象的拼接，所以这些时候String对象的速度并不会比StringBuffer慢。</li>
-<li>StringBuild: 区别在于,StringBuffer是线程安全的类。StringBuild不是线程安全的类，在单线程中性能要比StringBuffrer高。</li>
-</ul>
-<h4 id="18-nbsp-熟悉设计模式吗，说说你对java设计模式的了解"><a href="#18-nbsp-熟悉设计模式吗，说说你对java设计模式的了解" class="headerlink" title="18.&nbsp;熟悉设计模式吗，说说你对java设计模式的了解"></a>18.&nbsp;熟悉设计模式吗，说说你对java设计模式的了解</h4><h4 id="19-nbsp-mysql-in-和exists的区别"><a href="#19-nbsp-mysql-in-和exists的区别" class="headerlink" title="19.&nbsp;mysql  in 和exists的区别"></a>19.&nbsp;mysql  in 和exists的区别</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/2138cbdeea34" target="_blank" rel="noopener">MySQL中exists和in的区别及使用场景</a></p>
-<h4 id="20-nbsp-请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用"><a href="#20-nbsp-请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用" class="headerlink" title="20.&nbsp;请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用"></a>20.&nbsp;请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用</h4><h4 id="21-nbsp-你对我们有什么想要提问的吗"><a href="#21-nbsp-你对我们有什么想要提问的吗" class="headerlink" title="21.&nbsp;你对我们有什么想要提问的吗"></a>21.&nbsp;你对我们有什么想要提问的吗</h4>]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>面试</tag>
       </tags>
   </entry>
   <entry>
@@ -2409,6 +2354,117 @@ try {
       <tags>
         <tag>java</tag>
         <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>记一次阿里巴巴电面经历</title>
+    <url>/2021/06/17/%E8%AE%B0%E4%B8%80%E6%AC%A1%E9%98%BF%E9%87%8C%E5%B7%B4%E5%B7%B4%E7%94%B5%E9%9D%A2%E7%BB%8F%E5%8E%86/</url>
+    <content><![CDATA[<p><strong>前言</strong>：本人有幸在boss直聘上获得一次阿里巴巴国际技术事业部的电话面试机会，由于太突然，大部分问题都没有发挥原来的水平，诶，决定痛下决心好好总结，还有就是坚定下自己的目标=_=。<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上来先做了个自我介绍，由于要找个信号好的地方，爬到了楼顶，结果气喘吁吁的=_=，下面就开始提问一些专业的问题。</p>
+<h4 id="1-面向对象的封装，继承，多态的含义"><a href="#1-面向对象的封装，继承，多态的含义" class="headerlink" title="1.面向对象的封装，继承，多态的含义"></a>1.面向对象的封装，继承，多态的含义</h4><ul>
+<li>封装是指将对象的细节隐藏起来，然后通过公共的方法来向外暴露该对象的功能；<br>一般来说封装是使用private修饰符对属性进行包装，使用getter/setter对属性进行获取与修改，但是也可以使用setter对属性进行更加深层次的设置，包括你可以对设置的格式做转化，对数据的要求；</li>
+<li>继承是面向对象实现软件复用的重要手段，子类继承父类，子类就拥有父类的成员属性和成员办法，可以拥有父类的功能，也可以对父类的方法进行重写（覆盖）；缺点是违背了高内聚，低耦合的编程思想，耦合程度比较高，并且破坏了封装的特性，可见部分功能的丧失来换取另一部功能的完整。</li>
+<li><p>多态可以理解为同一个行为有不同的表达形式或者形态的能力，举个例子，父类可以是Animals类，具有say()方法行为，但是对于不同种类动物手说的话是不同的，比如Cat类，可能说”喵喵喵”，Dog类说”汪汪汪”之类的；多态实现的条件是上具备一些以上的条件的：<br>1）继承；2）重写；3）向上转型；</p>
+<h4 id="2-抽象类和接口的区别"><a href="#2-抽象类和接口的区别" class="headerlink" title="2.抽象类和接口的区别"></a>2.抽象类和接口的区别</h4></li>
+<li><p>这个算是老生常谈的问题了，大概有以下几点：</p>
+</li>
+<li>抽象类中可以有普通的方法和成员变量，而接口中的办法必须是抽象的，变量也必须是static final类型的（其实就是常量），必须被初始化，接口中只有常量，没有变量；</li>
+<li>抽象类中的方法可以不全为抽象方法，子类继承可以不必全部实现，全部实现为普通类，不全部实现还是抽象类，而实现接口的类必须实现其中的方法；</li>
+<li>抽象类拥有类的特性，单继承，而接口多继承；</li>
+<li>Java8 中接口中会有 default 方法，即方法可以被实现。</li>
+</ul>
+<h4 id="3-内存溢出和内存泄露的含义，举例说明，不超过10行代码；"><a href="#3-内存溢出和内存泄露的含义，举例说明，不超过10行代码；" class="headerlink" title="3.内存溢出和内存泄露的含义，举例说明，不超过10行代码；"></a>3.内存溢出和内存泄露的含义，举例说明，不超过10行代码；</h4><ul>
+<li><p>内存泄露的概念是指对象可达，但是没用了，就是本该被CG回收的那些没有被回收；内存泄露的原因有以下2点：<br>1）长周期对象引用短周期对象；<br>2）没有将无用对象置为null；<br>举一个第一个情况的例子：</p>
+<blockquote>
+<p>Static Vector v = new Vector(10);<br>  for (int i = 1; i&lt;100; i++)<br>  {<br>  &nbsp;&nbsp;Object o = new Object();<br>  &nbsp;&nbsp;v.add(o);<br>  &nbsp;&nbsp;o = null;<br>  }</p>
+</blockquote>
+</li>
+</ul>
+<p>内存泄露可以造成内存溢出，是造成内存溢出的一种情况，内存泄露积累起来将导致内存溢出。</p>
+<h4 id="4-对Spring-IOC的理解"><a href="#4-对Spring-IOC的理解" class="headerlink" title="4.对Spring IOC的理解"></a>4.对Spring IOC的理解</h4><p>spring IOC 的ioc是inverse of controller的英文缩写，意思是控制反转的意思，spring ioc有3种注入方式：</p>
+<ul>
+<li>基于属性的注入；<br>eg:<bean>标签下配置&lt;property name=”xxxx(属性名称)” value/ref=”xxxx(属性值/依赖注入的bean)”&gt;<br>这种注入前提是注入的bean要有默认实现的setter方法；</bean></li>
+<li><p>基于构造器的注入；<br>eg:<bean> 标签下配置<constructor-arg ref="引用的bean id"><br>前提是该bean注入的值是引用的bean对象类型，另外还可以是基本数据类型的注入，包括集合；<br>eg:<br><strong>基本数据类型</strong>:</constructor-arg></bean></p>
+<pre><code>&lt;constructor-arg index=&quot;0&quot; type=&quot;java.lang.String&quot; value=&quot;1&quot;/&gt;&lt;/constructor-arg&gt;
+&lt;constructor-arg index=&quot;1&quot; type=&quot;java.lang.Integer&quot; value=&quot;2&quot;&gt;&lt;/constructor-arg&gt;
+</code></pre></li>
+</ul>
+<p><strong>集合</strong>:</p>
+<pre><code>&lt;bean id=&quot;xxxx&quot; class=&quot;com.xxxx.xxxx&quot; &gt;
+        &lt;property name=&quot;arrayData&quot;&gt;
+            &lt;array/list/set&gt;
+                &lt;value&gt;xxx&lt;/value&gt;
+                &lt;value&gt;aaa&lt;/value&gt;
+                &lt;value&gt;bbb&lt;/value&gt;
+                &lt;value&gt;ccc&lt;/value&gt;
+            &lt;/array/list/set&gt;
+        &lt;/property&gt;
+&lt;/bean&gt;
+&lt;property name=&quot;mapData&quot;&gt;
+    &lt;map&gt;
+        &lt;entry key=&quot;jack&quot; value=&quot;杰克&quot;&gt;&lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;&lt;value&gt;rose&lt;/value&gt;&lt;/key&gt;
+            &lt;value&gt;肉丝&lt;/value&gt;
+        &lt;/entry&gt;
+    &lt;/map&gt;
+&lt;/property&gt;
+
+&lt;property name=&quot;propsData&quot;&gt;
+    &lt;props&gt;
+        &lt;prop key=&quot;xxxx&quot;&gt;xxxx&lt;/prop&gt;
+        &lt;prop key=&quot;aaaa&quot;&gt;aaaa&lt;/prop&gt;
+        &lt;prop key=&quot;bbbb&quot;&gt;bbbb&lt;/prop&gt;
+    &lt;/props&gt;
+&lt;/property&gt;
+</code></pre><ul>
+<li><p>基于注解的注入；<br>使用注解实现ioc的方法，首先记得要配置spring context 的命名空间，并且在applicationContext.xml中配置扫描的含有注解的包；<br>eg:</p>
+<pre><code>&lt;context:component-scan base-package=&quot;xxx.xxxx.xxxx&quot;/&gt;
+</code></pre></li>
+</ul>
+<h4 id="5-Spring-aop的理解，底层实现原理"><a href="#5-Spring-aop的理解，底层实现原理" class="headerlink" title="5.Spring aop的理解，底层实现原理"></a>5.Spring aop的理解，底层实现原理</h4><p>以下给出一段代码解释：<br>当实现日志控制时，</p>
+<pre><code>//将织入类交给spring bean处理
+&lt;bean id=&quot;loggingAspect&quot; class=&quot;com.cyy.maven.core.Aspect.LoggingAspect&quot;/&gt;
+&lt;aop:config&gt;
+    //定义切入点
+    &lt;aop:pointcut id=&quot;serviceOpearation&quot; expression=&quot;execution(* com.cyy.maven.core.service.impl.*.*(..))&quot;/&gt;
+    //引用切入点
+    &lt;aop:aspect  ref=&quot;loggingAspect&quot;&gt;
+    //使用切入点中的方法织入
+        &lt;aop:before method=&quot;beforeMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
+        &lt;aop:after method=&quot;afterMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
+        &lt;aop:after-returning method=&quot;afterReturning&quot; pointcut-ref=&quot;serviceOpearation&quot; returning=&quot;result&quot;/&gt;
+        &lt;aop:after-throwing method=&quot;afterThrowing&quot; pointcut-ref=&quot;serviceOpearation&quot; throwing=&quot;e&quot;/&gt;
+        //环绕方法，等价于以上4个的作用
+        &lt;aop:around method=&quot;aroundMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
+    &lt;/aop:aspect&gt;
+&lt;/aop:config&gt;
+</code></pre><h4 id="6-nbsp-Set和Map的区别"><a href="#6-nbsp-Set和Map的区别" class="headerlink" title="6.&nbsp;Set和Map的区别"></a>6.&nbsp;Set和Map的区别</h4><ul>
+<li>Set是Collection接口下的子接口，Set中的数据可以是无序的，不可以重复，Set的形式是set<type>  myset，即节点是一个type类型的数据；</type></li>
+<li>Map 是跟Collection同级别的集合接口，Map的形式是map&lt;type1,type2&gt; mymap,即节点数据是一对数据，以键值对的形式存在，key唯一，value可以重复；<br>最基础的回答可以是这样，以后会专门写一篇来对集合这种数据类型进行深入浅出的研究；</li>
+</ul>
+<h4 id="7-nbsp-对数据库索引的理解，会举例考察你"><a href="#7-nbsp-对数据库索引的理解，会举例考察你" class="headerlink" title="7.&nbsp;对数据库索引的理解，会举例考察你"></a>7.&nbsp;对数据库索引的理解，会举例考察你</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/b82f2926d9e5" target="_blank" rel="noopener">Mysql 索引的具体优化策略</a></p>
+<h4 id="8-nbsp-方法覆盖和重载的区别"><a href="#8-nbsp-方法覆盖和重载的区别" class="headerlink" title="8.&nbsp;方法覆盖和重载的区别"></a>8.&nbsp;方法覆盖和重载的区别</h4><ul>
+<li>方法覆盖又叫方法重写，是重写父类的办法，权限不能更小，抛出的异常不能更多；</li>
+<li>重载是同一个类中可以有相同名字的方法，但是由于方法参数的类型，顺序，个数不尽相同的相同名称的方法；</li>
+</ul>
+<h4 id="9-nbsp-数据库事务的4个特性，最好能说出详细的特征"><a href="#9-nbsp-数据库事务的4个特性，最好能说出详细的特征" class="headerlink" title="9.&nbsp;数据库事务的4个特性，最好能说出详细的特征"></a>9.&nbsp;数据库事务的4个特性，最好能说出详细的特征</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/3e7c12a1a2be" target="_blank" rel="noopener">spring 事务理解</a></p>
+<h4 id="10-nbsp-讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）"><a href="#10-nbsp-讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）" class="headerlink" title="10.&nbsp;讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）"></a>10.&nbsp;讲讲数据结构中的栈，堆，队列的理解（就是对各种数据结构的理解）</h4><h4 id="11-nbsp-10000个String对象的去重"><a href="#11-nbsp-10000个String对象的去重" class="headerlink" title="11.&nbsp;10000个String对象的去重"></a>11.&nbsp;10000个String对象的去重</h4><p><strong>tips</strong>: 可以使用HashSet解决；</p>
+<h4 id="12-nbsp-String对象的取值范围"><a href="#12-nbsp-String对象的取值范围" class="headerlink" title="12.&nbsp;String对象的取值范围"></a>12.&nbsp;String对象的取值范围</h4><p>定长的String数据类型占用的存储空间为字符串的长度，取值范围为1——65400个字符;</p>
+<h4 id="13-nbsp-TCP建立连接-3次握手，结束时4次挥手原理具体内容"><a href="#13-nbsp-TCP建立连接-3次握手，结束时4次挥手原理具体内容" class="headerlink" title="13&nbsp;TCP建立连接 3次握手，结束时4次挥手原理具体内容"></a>13&nbsp;TCP建立连接 3次握手，结束时4次挥手原理具体内容</h4><h4 id="14-nbsp-ThreadLocal使用过吗，你来说说对它的理解"><a href="#14-nbsp-ThreadLocal使用过吗，你来说说对它的理解" class="headerlink" title="14.&nbsp;ThreadLocal使用过吗，你来说说对它的理解"></a>14.&nbsp;ThreadLocal使用过吗，你来说说对它的理解</h4><h4 id="15-nbsp-说说数据库内连接，左外连接，右外连接的理解"><a href="#15-nbsp-说说数据库内连接，左外连接，右外连接的理解" class="headerlink" title="15.&nbsp;说说数据库内连接，左外连接，右外连接的理解"></a>15.&nbsp;说说数据库内连接，左外连接，右外连接的理解</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/83d84d7df306" target="_blank" rel="noopener">mysql 连接</a></p>
+<p>####16.&nbsp;Session和Cookie的区别</p>
+<p>####17.&nbsp;StringBuffer和StringBuild的区别和含义</p>
+<ul>
+<li>StringBuffer:每次都对对象本身进行操作，而不是生成新的对象。所以在字符串内容不断改变的情况，建议使用StringBuffer。</li>
+<li>String对象的字符串拼接其实是被JVM解释成了StringBuffer对象的拼接，所以这些时候String对象的速度并不会比StringBuffer慢。</li>
+<li>StringBuild: 区别在于,StringBuffer是线程安全的类。StringBuild不是线程安全的类，在单线程中性能要比StringBuffrer高。</li>
+</ul>
+<h4 id="18-nbsp-熟悉设计模式吗，说说你对java设计模式的了解"><a href="#18-nbsp-熟悉设计模式吗，说说你对java设计模式的了解" class="headerlink" title="18.&nbsp;熟悉设计模式吗，说说你对java设计模式的了解"></a>18.&nbsp;熟悉设计模式吗，说说你对java设计模式的了解</h4><h4 id="19-nbsp-mysql-in-和exists的区别"><a href="#19-nbsp-mysql-in-和exists的区别" class="headerlink" title="19.&nbsp;mysql  in 和exists的区别"></a>19.&nbsp;mysql  in 和exists的区别</h4><p>这个可以参考我之前写过的一篇文章<a href="https://www.jianshu.com/p/2138cbdeea34" target="_blank" rel="noopener">MySQL中exists和in的区别及使用场景</a></p>
+<h4 id="20-nbsp-请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用"><a href="#20-nbsp-请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用" class="headerlink" title="20.&nbsp;请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用"></a>20.&nbsp;请介绍你参与的印象最深刻的一个项目，为什么？并且介绍你在项目中的角色和发挥的作用</h4><h4 id="21-nbsp-你对我们有什么想要提问的吗"><a href="#21-nbsp-你对我们有什么想要提问的吗" class="headerlink" title="21.&nbsp;你对我们有什么想要提问的吗"></a>21.&nbsp;你对我们有什么想要提问的吗</h4>]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>面试</tag>
       </tags>
   </entry>
   <entry>
