@@ -1,6 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>MySQL中exists和in的区别及使用场景</title>
+    <url>/2021/06/17/MySQL%E4%B8%ADexists%E5%92%8Cin%E7%9A%84%E5%8C%BA%E5%88%AB%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/</url>
+    <content><![CDATA[<blockquote>
+<p>1.对B查询涉及id，使用索引，故B表效率高，可用大表 –&gt;外小内大<br>select <em> from A where exists (select </em> from B where A.id=B.id);</p>
+</blockquote>
+<blockquote>
+<p>2.对A查询涉及id，使用索引，故A表效率高，可用大表 –&gt;外大内小<br>select * from A where A.id in (select id from B);</p>
+</blockquote>
+<h5 id="1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"><a href="#1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；" class="headerlink" title="1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"></a>1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；</h5><h5 id="2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"><a href="#2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。" class="headerlink" title="2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"></a>2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。</h5><h5 id="3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。"><a href="#3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。" class="headerlink" title="3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。"></a>3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。</h5><p>　　此外，新近遇到的坑，mysql版本问题：</p>
+<p>　　MySQL版本问题：5.6.5优化了子查询，引入物化子查询(针对where clause的subquery)，子查询物化将子查询结果存入临时表，确保子查询只执行一次，该表不记录重复数据且采用哈希索引查找;</p>
+<p>而之前的版本则会把非相关子查询转化为相关子查询，导致效率低下（尤其是子查询是小表，外表是大表的情况下，效率变慢许多）。　</p>
+<p>　相关子查询：子查询依赖外层连接的返回值；</p>
+<p>　　非相关子查询：子查询不依赖外层连接的返回值；</p>
+<p>　　子查询分两种，from语句（派生表）和where语句（子查询），派生表的效率要高一些，5.6的优化就是把where语句变成from语句。</p>
+<p>　　本来是内表小，用的in，但是据说5.6之前的版本会把非相关子查询改为相关子查询，就是把in的语句改成了exists的，结果效率超低。</p>
+<p>　　实验说明：派生表join比派生表的速度还要快。而使用in查询需要很多分钟还没有查出来。　</p>
+<blockquote>
+<p>#使用派生表 4.68秒<br>SELECT id FROM la WHERE cardid IN (<br>SELECT cardid FROM (<br>select cardid from la group by cardid having count(1)&gt;50) a) ;<br>#使用派生表的内连接 1.26秒<br>SELECT id FROM la JOIN (<br>select cardid from la group by cardid having count(1)&gt;50) a ON la.cardid=a.cardid;</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+        <tag>SQL</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Griffin POC</title>
     <url>/2021/06/17/Griffin-POC/</url>
     <content><![CDATA[<pre><code>Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。
@@ -69,6 +98,40 @@ cd ui/angular
       </categories>
       <tags>
         <tag>数据质量监控</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>flink 理解</title>
+    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
+    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
+<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
+<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
+]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>flink</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Mysql之索引的基本概念语法</title>
+    <url>/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</url>
+    <content><![CDATA[<p>####1.Mysql中索引的概念<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
+<p>######索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p>
+<p>####2.索引的基本创建，删除以及数据库表的修改</p>
+<p>#####单列索引的基本创建格式是：<br>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p>
+<p>#####修改表结构的方式创建索引：<br>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
+<p>#####或者也可以创建表的时候指明：<br>    CREATE TABLE sys_user(<br>    id INT NOT NULL primary key,<br>    account VARCHAR(16) NOT NULL,<br>    password VARCHAR(32) NOT NULL,<br>    INDEX ac (account (16))<br>    );  </p>
+<p>#####删除索引的语法：<br>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
+<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+        <tag>索引</tag>
       </tags>
   </entry>
   <entry>
@@ -205,55 +268,6 @@ cd ui/angular
       </tags>
   </entry>
   <entry>
-    <title>MySQL中exists和in的区别及使用场景</title>
-    <url>/2021/06/17/MySQL%E4%B8%ADexists%E5%92%8Cin%E7%9A%84%E5%8C%BA%E5%88%AB%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/</url>
-    <content><![CDATA[<blockquote>
-<p>1.对B查询涉及id，使用索引，故B表效率高，可用大表 –&gt;外小内大<br>select <em> from A where exists (select </em> from B where A.id=B.id);</p>
-</blockquote>
-<blockquote>
-<p>2.对A查询涉及id，使用索引，故A表效率高，可用大表 –&gt;外大内小<br>select * from A where A.id in (select id from B);</p>
-</blockquote>
-<h5 id="1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"><a href="#1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；" class="headerlink" title="1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"></a>1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；</h5><h5 id="2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"><a href="#2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。" class="headerlink" title="2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"></a>2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。</h5><h5 id="3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。"><a href="#3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。" class="headerlink" title="3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。"></a>3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。</h5><p>　　此外，新近遇到的坑，mysql版本问题：</p>
-<p>　　MySQL版本问题：5.6.5优化了子查询，引入物化子查询(针对where clause的subquery)，子查询物化将子查询结果存入临时表，确保子查询只执行一次，该表不记录重复数据且采用哈希索引查找;</p>
-<p>而之前的版本则会把非相关子查询转化为相关子查询，导致效率低下（尤其是子查询是小表，外表是大表的情况下，效率变慢许多）。　</p>
-<p>　相关子查询：子查询依赖外层连接的返回值；</p>
-<p>　　非相关子查询：子查询不依赖外层连接的返回值；</p>
-<p>　　子查询分两种，from语句（派生表）和where语句（子查询），派生表的效率要高一些，5.6的优化就是把where语句变成from语句。</p>
-<p>　　本来是内表小，用的in，但是据说5.6之前的版本会把非相关子查询改为相关子查询，就是把in的语句改成了exists的，结果效率超低。</p>
-<p>　　实验说明：派生表join比派生表的速度还要快。而使用in查询需要很多分钟还没有查出来。　</p>
-<blockquote>
-<p>#使用派生表 4.68秒<br>SELECT id FROM la WHERE cardid IN (<br>SELECT cardid FROM (<br>select cardid from la group by cardid having count(1)&gt;50) a) ;<br>#使用派生表的内连接 1.26秒<br>SELECT id FROM la JOIN (<br>select cardid from la group by cardid having count(1)&gt;50) a ON la.cardid=a.cardid;</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-        <tag>SQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Mysql之索引的基本概念语法</title>
-    <url>/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</url>
-    <content><![CDATA[<p>####1.Mysql中索引的概念<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
-<p>######索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p>
-<p>####2.索引的基本创建，删除以及数据库表的修改</p>
-<p>#####单列索引的基本创建格式是：<br>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p>
-<p>#####修改表结构的方式创建索引：<br>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
-<p>#####或者也可以创建表的时候指明：<br>    CREATE TABLE sys_user(<br>    id INT NOT NULL primary key,<br>    account VARCHAR(16) NOT NULL,<br>    password VARCHAR(32) NOT NULL,<br>    INDEX ac (account (16))<br>    );  </p>
-<p>#####删除索引的语法：<br>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
-<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-        <tag>索引</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Streamsets POC总结</title>
     <url>/2021/06/17/POC%E6%80%BB%E7%BB%93/</url>
     <content><![CDATA[<h4 id="Streamsets介绍"><a href="#Streamsets介绍" class="headerlink" title="Streamsets介绍"></a>Streamsets介绍</h4><p>Streamsets是一款大数据实时采集和ETL工具，可以实现不写一行代码完成数据的采集和流转。通过拖拽式的可视化界面，实现数据管道(Pipelines)的设计和定时任务调度。最大的特点有：</p>
@@ -283,20 +297,6 @@ cd ui/angular
       </categories>
       <tags>
         <tag>etl</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>flink 理解</title>
-    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
-    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
-<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
-<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
-]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>flink</tag>
       </tags>
   </entry>
   <entry>
@@ -419,6 +419,22 @@ public class B extends A {
       </categories>
       <tags>
         <tag>java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>mysql 连接</title>
+    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
+    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
+<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
+<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
+<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+        <tag>SQL</tag>
       </tags>
   </entry>
   <entry>
@@ -764,6 +780,142 @@ public class Thread07 {
       </categories>
       <tags>
         <tag>java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>python-时间序列处理</title>
+    <url>/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</url>
+    <content><![CDATA[<p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
+<p>要求：</p>
+<p>1.利用已有的记录数据进行建模，将缺失值填充完整，评估指标采用RMSE、MAE和；</p>
+<p>2.尝试多种方法进行建模，对比各种模型的性能;</p>
+<p>3.希望你不要直接用中值、均值、前一时刻、后一时刻等常数填充法进行填充（方法对比中可用做简单对比，如表 2所示）；</p>
+<p>4.将数据填充完整后保存至’pm25_predicted.csv’文件（只保存缺失时刻的数据，不按要求则作废），数据格式如表 3所示（列名、文件名不按要求则作废）。</p>
+<p>题解：</p>
+<p>（1）完成时间序列缺失数据填充，一般来说有如下几种方式：常数填充有均值填充，中位数填充，众数填充，前一时刻和后一时刻填充，传统回归模型方式有自回归模型，移动平均模型，自回归移动平均模型和差分自回归移动平均模型，一般采用插值法填充数据，插值办法一般有滑动平均插值，线性插值，拉格朗日多项式插值；</p>
+<p>（2）每个函数对应一种办法，先将数据用pandas从csv文件中读取为df,然后进行数据插值的算法操作，最后将插值后的数据集用matplotlib呈现出来，最后将插值的数据转化为df，用pandas重新写回csv之中；</p>
+<p>代码：</p>
+<p>1.time_series_fill.py</p>
+<blockquote>
+<p># -<em>- coding:utf-8 -</em>-<br>from pandas.compat import reduce<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>from scipy.interpolate import lagrange<br># from fbprophet import Prophet<br>#</p>
+</blockquote>
+<h1 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h1><blockquote>
+<p>def load_data():<br>df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)</p>
+<h1 id="return-df-head-100"><a href="#return-df-head-100" class="headerlink" title="return df.head(100)"></a>return df.head(100)</h1><p>return df</p>
+</blockquote>
+<h1 id="画散点图"><a href="#画散点图" class="headerlink" title="画散点图"></a>画散点图</h1><blockquote>
+<p>def draw_scatte_diagram(df):<br>plt.plot(df[‘index’].to_list(), df[‘PM2.5’].to_list())<br>plt.show()</p>
+</blockquote>
+<h1 id="均值填充"><a href="#均值填充" class="headerlink" title="均值填充"></a>均值填充</h1><blockquote>
+<p>def mean_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mean(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="中位数填充"><a href="#中位数填充" class="headerlink" title="中位数填充"></a>中位数填充</h1><blockquote>
+<p>def median_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].median(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="众数填充"><a href="#众数填充" class="headerlink" title="众数填充"></a>众数填充</h1><blockquote>
+<p>def mode_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mode(), inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="前一时刻填充"><a href="#前一时刻填充" class="headerlink" title="前一时刻填充"></a>前一时刻填充</h1><blockquote>
+<p>def ffill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’ffill’, inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="后一时刻填充"><a href="#后一时刻填充" class="headerlink" title="后一时刻填充"></a>后一时刻填充</h1><blockquote>
+<p>def bfill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’bfill’, inplace=True)<br>draw_scatte_diagram(df)</p>
+</blockquote>
+<h1 id="前后时刻平均值插值"><a href="#前后时刻平均值插值" class="headerlink" title="前后时刻平均值插值"></a>前后时刻平均值插值</h1><blockquote>
+<p>def mean_by_before_after_method():<br>df = load_data()</p>
+<h1 id="data-index-df-‘index’-to-list"><a href="#data-index-df-‘index’-to-list" class="headerlink" title="data_index = df[‘index’].to_list()"></a>data_index = df[‘index’].to_list()</h1><h1 id="data-value-df-‘PM2-5’-to-list"><a href="#data-value-df-‘PM2-5’-to-list" class="headerlink" title="data_value = df[‘PM2.5’].to_list()"></a>data_value = df[‘PM2.5’].to_list()</h1><p>fill = []<br>for i in range(len(df)):<br>if np.math.isnan(df.iloc[i - 1][1]):<br>left = df.iloc[i - 2][1]<br>for j in range(i, len(df)):<br>if np.math.isnan(df.iloc[j][1]):<br>continue<br>else:<br>right = df.iloc[j][1]<br>break<br>df.iloc[i - 1, 1] = (left + right) / 2<br>fill_tuple = i, df.iloc[i - 1][1]<br>fill.append(fill_tuple)<br>draw_scatte_diagram(df)<br>    df = pd.DataFrame(fill, columns=[‘index’, ‘PM2.5’])<br>    df.to_csv(‘pm25_predicted_mean.csv’, index=False)</p>
+</blockquote>
+<h1 id="线性插值详细"><a href="#线性插值详细" class="headerlink" title="线性插值详细"></a>线性插值详细</h1><blockquote>
+<p>def linear_detail(x1, y1, x2, y2):<br>    k = (y2 - y1) / (x2 - x1)<br>    b = y1 - k <em> x1<br>    return lambda x: b + k </em> x</p>
+</blockquote>
+<h1 id="线性插值"><a href="#线性插值" class="headerlink" title="线性插值"></a>线性插值</h1><blockquote>
+<p>def linear_method():</p>
+</blockquote>
+<pre><code># global j
+df = load_data()
+fill = []
+for i in range(len(df)):
+    if np.isnan(df.iloc[i][1]):
+        for j in range(i, len(df)):
+            if np.isnan(df.iloc[j][1]):
+                continue
+            else:
+                break
+        df.iloc[i, 1] = (linear_detail(i, df.iloc[i - 1][1], j + 1, df.iloc[j][1]))(i + 1)
+        fill_tuple = i + 1, df.iloc[i][1]
+        fill.append(fill_tuple)
+draw_scatte_diagram(df)
+df = pd.DataFrame(fill, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+df.to_csv(&apos;pm25_predicted_linear.csv&apos;, index=False)
+</code></pre><h1 id="平滑插值详细"><a href="#平滑插值详细" class="headerlink" title="平滑插值详细"></a>平滑插值详细</h1><blockquote>
+<p>def smooth_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]<br>    return reduce(lambda a, b: a + b, y) / len(y)</p>
+</blockquote>
+<h1 id="平滑插值"><a href="#平滑插值" class="headerlink" title="平滑插值"></a>平滑插值</h1><blockquote>
+<p>def smooth_method(show=1):<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = smooth_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
+</blockquote>
+<pre><code>        # print(j, df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;])
+        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
+        full.append(full_tuple)
+if show:
+    draw_scatte_diagram(df_raw)
+    df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+    df.to_csv(&apos;pm25_predicted_smooth.csv&apos;, index=False)
+return df_raw
+</code></pre><h1 id="拉格朗日插值详细"><a href="#拉格朗日插值详细" class="headerlink" title="拉格朗日插值详细"></a>拉格朗日插值详细</h1><blockquote>
+<p>def lagrange_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]  # 剔除空值<br>    return lagrange(y.index, list(y))(pos)  # 插值并返回插值结果</p>
+</blockquote>
+<h1 id="拉格朗日插值"><a href="#拉格朗日插值" class="headerlink" title="拉格朗日插值"></a>拉格朗日插值</h1><blockquote>
+<p>def lagrange_method():<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = lagrange_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
+</blockquote>
+<pre><code>        # print(j, df.loc[j, &apos;index&apos;], df[j])
+        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
+        full.append(full_tuple)
+draw_scatte_diagram(df_raw)
+df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
+df.to_csv(&apos;pm25_predicted_lagrange.csv&apos;, index=False)
+</code></pre><h1 id="计算RMSE"><a href="#计算RMSE" class="headerlink" title="计算RMSE"></a>计算RMSE</h1><blockquote>
+<p>def calculate_RMSE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return (sum([n * n for n in error]) / len(error)) ** 0.5</p>
+</blockquote>
+<h1 id="计算MAE"><a href="#计算MAE" class="headerlink" title="计算MAE"></a>计算MAE</h1><blockquote>
+<p>def calculate_MAE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return sum([abs(n) for n in error]) / len(error)</p>
+</blockquote>
+<h1 id="计算R-square"><a href="#计算R-square" class="headerlink" title="计算R-square"></a>计算R-square</h1><blockquote>
+<p>def calculate_R_Square(target, prediction):<br>    error = []<br>    a = calculate_MAE(target, prediction) <em> len(error)<br>    mean = np.mean(np.array(target))<br>    for i in range(len(target)):<br>        error.append(prediction[i] - mean)<br>    b = sum([n </em> n for n in error])<br>    return 1 - a / b</p>
+</blockquote>
+<blockquote>
+<p>if <strong>name</strong> == ‘<strong>main</strong>‘:</p>
+</blockquote>
+<pre><code># mean_method()
+# median_method()
+# mode_method()
+# ffill_method()
+# bfill_method()
+# mean_by_before_after_method()
+# linear_method()
+# lagrange_method()
+smooth_method()
+</code></pre><p>2.fbprophet_fill.py</p>
+<blockquote>
+<p># -<em>- coding:utf-8 -</em>-<br>from pandas.io.sas.sas7bdat import _column<br>from time_series_fill import smooth_method<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>import datetime<br>from fbprophet import Prophet<br>if <strong>name</strong> == ‘<strong>main</strong>‘:<br>    def load_data():<br>        # df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)<br>        # return df.head(100)<br>        df = smooth_method(0)<br>        return df.head(3129)<br>    df = load_data()<br>    first_value = datetime.datetime.strptime(‘2017-01-01 00:00:00’, ‘%Y-%m-%d %H:%M:%S’)<br>    for i in range(len(df)):<br>        df.iloc[i, 0] = (first_value + datetime.timedelta(hours=i)).strftime(“%Y-%m-%d %H:%M:%S”)<br>    # df = pd.DataFrame(, columns=[‘ds’, ‘y’])<br>    # df.to_csv(‘pm25_predicted_mean.csv’, index=False)<br>    # print(df.iloc[1,0])<br>    df.rename(columns={‘index’: ‘ds’, ‘PM2.5’: ‘y’}, inplace=True)<br>    m = Prophet()<br>    # df[‘y’] = np.log(df[‘y’])<br>    df = m.fit(df)<br>    future = m.make_future_dataframe(freq=’H’, periods=5428)<br>    future.tail()<br>    forecast = m.predict(future)<br>    forecast[[‘ds’, ‘yhat’, ‘yhat_lower’, ‘yhat_upper’]].tail()<br>    fig1 = m.plot(forecast)<br>    fig2 = m.plot_components(forecast)<br>    plt.show()</p>
+</blockquote>
+<p>运行结果图：<br><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
+<p><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
+<p>Mean</p>
+<p>Median</p>
+<p>Ffill_method</p>
+<p>Bfill_method</p>
+<p>Linear_method</p>
+<p>lagrange_method</p>
+<p>smooth_method</p>
+<p>Fbprophet实现</p>
+<p>日，周，月的趋势<br>未完待续。。。</p>
+]]></content>
+      <categories>
+        <category>数据分析</category>
+      </categories>
+      <tags>
+        <tag>python</tag>
+        <tag>时间序列处理</tag>
       </tags>
   </entry>
   <entry>
@@ -1119,158 +1271,6 @@ proxy.save();
       </categories>
       <tags>
         <tag>java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>mysql 连接</title>
-    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
-    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
-<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
-<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
-<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-        <tag>SQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>python-时间序列处理</title>
-    <url>/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</url>
-    <content><![CDATA[<p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
-<p>要求：</p>
-<p>1.利用已有的记录数据进行建模，将缺失值填充完整，评估指标采用RMSE、MAE和；</p>
-<p>2.尝试多种方法进行建模，对比各种模型的性能;</p>
-<p>3.希望你不要直接用中值、均值、前一时刻、后一时刻等常数填充法进行填充（方法对比中可用做简单对比，如表 2所示）；</p>
-<p>4.将数据填充完整后保存至’pm25_predicted.csv’文件（只保存缺失时刻的数据，不按要求则作废），数据格式如表 3所示（列名、文件名不按要求则作废）。</p>
-<p>题解：</p>
-<p>（1）完成时间序列缺失数据填充，一般来说有如下几种方式：常数填充有均值填充，中位数填充，众数填充，前一时刻和后一时刻填充，传统回归模型方式有自回归模型，移动平均模型，自回归移动平均模型和差分自回归移动平均模型，一般采用插值法填充数据，插值办法一般有滑动平均插值，线性插值，拉格朗日多项式插值；</p>
-<p>（2）每个函数对应一种办法，先将数据用pandas从csv文件中读取为df,然后进行数据插值的算法操作，最后将插值后的数据集用matplotlib呈现出来，最后将插值的数据转化为df，用pandas重新写回csv之中；</p>
-<p>代码：</p>
-<p>1.time_series_fill.py</p>
-<blockquote>
-<p># -<em>- coding:utf-8 -</em>-<br>from pandas.compat import reduce<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>from scipy.interpolate import lagrange<br># from fbprophet import Prophet<br>#</p>
-</blockquote>
-<h1 id="加载数据"><a href="#加载数据" class="headerlink" title="加载数据"></a>加载数据</h1><blockquote>
-<p>def load_data():<br>df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)</p>
-<h1 id="return-df-head-100"><a href="#return-df-head-100" class="headerlink" title="return df.head(100)"></a>return df.head(100)</h1><p>return df</p>
-</blockquote>
-<h1 id="画散点图"><a href="#画散点图" class="headerlink" title="画散点图"></a>画散点图</h1><blockquote>
-<p>def draw_scatte_diagram(df):<br>plt.plot(df[‘index’].to_list(), df[‘PM2.5’].to_list())<br>plt.show()</p>
-</blockquote>
-<h1 id="均值填充"><a href="#均值填充" class="headerlink" title="均值填充"></a>均值填充</h1><blockquote>
-<p>def mean_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mean(), inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="中位数填充"><a href="#中位数填充" class="headerlink" title="中位数填充"></a>中位数填充</h1><blockquote>
-<p>def median_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].median(), inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="众数填充"><a href="#众数填充" class="headerlink" title="众数填充"></a>众数填充</h1><blockquote>
-<p>def mode_method():<br>df = load_data()<br>df.fillna(df[‘PM2.5’].mode(), inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="前一时刻填充"><a href="#前一时刻填充" class="headerlink" title="前一时刻填充"></a>前一时刻填充</h1><blockquote>
-<p>def ffill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’ffill’, inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="后一时刻填充"><a href="#后一时刻填充" class="headerlink" title="后一时刻填充"></a>后一时刻填充</h1><blockquote>
-<p>def bfill_method():<br>df = load_data()<br>df[‘PM2.5’].fillna(method=’bfill’, inplace=True)<br>draw_scatte_diagram(df)</p>
-</blockquote>
-<h1 id="前后时刻平均值插值"><a href="#前后时刻平均值插值" class="headerlink" title="前后时刻平均值插值"></a>前后时刻平均值插值</h1><blockquote>
-<p>def mean_by_before_after_method():<br>df = load_data()</p>
-<h1 id="data-index-df-‘index’-to-list"><a href="#data-index-df-‘index’-to-list" class="headerlink" title="data_index = df[‘index’].to_list()"></a>data_index = df[‘index’].to_list()</h1><h1 id="data-value-df-‘PM2-5’-to-list"><a href="#data-value-df-‘PM2-5’-to-list" class="headerlink" title="data_value = df[‘PM2.5’].to_list()"></a>data_value = df[‘PM2.5’].to_list()</h1><p>fill = []<br>for i in range(len(df)):<br>if np.math.isnan(df.iloc[i - 1][1]):<br>left = df.iloc[i - 2][1]<br>for j in range(i, len(df)):<br>if np.math.isnan(df.iloc[j][1]):<br>continue<br>else:<br>right = df.iloc[j][1]<br>break<br>df.iloc[i - 1, 1] = (left + right) / 2<br>fill_tuple = i, df.iloc[i - 1][1]<br>fill.append(fill_tuple)<br>draw_scatte_diagram(df)<br>    df = pd.DataFrame(fill, columns=[‘index’, ‘PM2.5’])<br>    df.to_csv(‘pm25_predicted_mean.csv’, index=False)</p>
-</blockquote>
-<h1 id="线性插值详细"><a href="#线性插值详细" class="headerlink" title="线性插值详细"></a>线性插值详细</h1><blockquote>
-<p>def linear_detail(x1, y1, x2, y2):<br>    k = (y2 - y1) / (x2 - x1)<br>    b = y1 - k <em> x1<br>    return lambda x: b + k </em> x</p>
-</blockquote>
-<h1 id="线性插值"><a href="#线性插值" class="headerlink" title="线性插值"></a>线性插值</h1><blockquote>
-<p>def linear_method():</p>
-</blockquote>
-<pre><code># global j
-df = load_data()
-fill = []
-for i in range(len(df)):
-    if np.isnan(df.iloc[i][1]):
-        for j in range(i, len(df)):
-            if np.isnan(df.iloc[j][1]):
-                continue
-            else:
-                break
-        df.iloc[i, 1] = (linear_detail(i, df.iloc[i - 1][1], j + 1, df.iloc[j][1]))(i + 1)
-        fill_tuple = i + 1, df.iloc[i][1]
-        fill.append(fill_tuple)
-draw_scatte_diagram(df)
-df = pd.DataFrame(fill, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-df.to_csv(&apos;pm25_predicted_linear.csv&apos;, index=False)
-</code></pre><h1 id="平滑插值详细"><a href="#平滑插值详细" class="headerlink" title="平滑插值详细"></a>平滑插值详细</h1><blockquote>
-<p>def smooth_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]<br>    return reduce(lambda a, b: a + b, y) / len(y)</p>
-</blockquote>
-<h1 id="平滑插值"><a href="#平滑插值" class="headerlink" title="平滑插值"></a>平滑插值</h1><blockquote>
-<p>def smooth_method(show=1):<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = smooth_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
-</blockquote>
-<pre><code>        # print(j, df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;])
-        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
-        full.append(full_tuple)
-if show:
-    draw_scatte_diagram(df_raw)
-    df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-    df.to_csv(&apos;pm25_predicted_smooth.csv&apos;, index=False)
-return df_raw
-</code></pre><h1 id="拉格朗日插值详细"><a href="#拉格朗日插值详细" class="headerlink" title="拉格朗日插值详细"></a>拉格朗日插值详细</h1><blockquote>
-<p>def lagrange_detail(series, pos, window=5):<br>    “””<br>    :param series: 列向量<br>    :param pos: 被插值的位置<br>    :param window: 为取前后的数据个数<br>    :return:<br>    “””<br>    y = series[list(range(pos - window, pos)) + list(range(pos + 1, pos + 1 + window))]  # 取数<br>    y = y[y.notnull()]  # 剔除空值<br>    return lagrange(y.index, list(y))(pos)  # 插值并返回插值结果</p>
-</blockquote>
-<h1 id="拉格朗日插值"><a href="#拉格朗日插值" class="headerlink" title="拉格朗日插值"></a>拉格朗日插值</h1><blockquote>
-<p>def lagrange_method():<br>    df_raw = load_data()<br>    df = df_raw[‘PM2.5’].copy()<br>    full = []<br>    for j in range(len(df)):<br>        if (df.isnull())[j]:  # 如果为空即插值。<br>            df[j] = lagrange_detail(df, j)<br>            df_raw.loc[j, ‘PM2.5’] = df[j]</p>
-</blockquote>
-<pre><code>        # print(j, df.loc[j, &apos;index&apos;], df[j])
-        full_tuple = df_raw.loc[j, &apos;index&apos;], df_raw.loc[j, &apos;PM2.5&apos;]
-        full.append(full_tuple)
-draw_scatte_diagram(df_raw)
-df = pd.DataFrame(full, columns=[&apos;index&apos;, &apos;PM2.5&apos;])
-df.to_csv(&apos;pm25_predicted_lagrange.csv&apos;, index=False)
-</code></pre><h1 id="计算RMSE"><a href="#计算RMSE" class="headerlink" title="计算RMSE"></a>计算RMSE</h1><blockquote>
-<p>def calculate_RMSE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return (sum([n * n for n in error]) / len(error)) ** 0.5</p>
-</blockquote>
-<h1 id="计算MAE"><a href="#计算MAE" class="headerlink" title="计算MAE"></a>计算MAE</h1><blockquote>
-<p>def calculate_MAE(target, prediction):<br>    error = []<br>    for i in range(len(target)):<br>        error.append(target[i] - prediction[i])<br>    return sum([abs(n) for n in error]) / len(error)</p>
-</blockquote>
-<h1 id="计算R-square"><a href="#计算R-square" class="headerlink" title="计算R-square"></a>计算R-square</h1><blockquote>
-<p>def calculate_R_Square(target, prediction):<br>    error = []<br>    a = calculate_MAE(target, prediction) <em> len(error)<br>    mean = np.mean(np.array(target))<br>    for i in range(len(target)):<br>        error.append(prediction[i] - mean)<br>    b = sum([n </em> n for n in error])<br>    return 1 - a / b</p>
-</blockquote>
-<blockquote>
-<p>if <strong>name</strong> == ‘<strong>main</strong>‘:</p>
-</blockquote>
-<pre><code># mean_method()
-# median_method()
-# mode_method()
-# ffill_method()
-# bfill_method()
-# mean_by_before_after_method()
-# linear_method()
-# lagrange_method()
-smooth_method()
-</code></pre><p>2.fbprophet_fill.py</p>
-<blockquote>
-<p># -<em>- coding:utf-8 -</em>-<br>from pandas.io.sas.sas7bdat import _column<br>from time_series_fill import smooth_method<br><strong>author</strong> = ‘gin.chen’<br>import pandas as pd<br>import numpy as np<br>import matplotlib.pyplot as plt<br>import datetime<br>from fbprophet import Prophet<br>if <strong>name</strong> == ‘<strong>main</strong>‘:<br>    def load_data():<br>        # df = pd.read_csv(‘F:/muke/super_mali/data/raw/pm25.csv’)<br>        # return df.head(100)<br>        df = smooth_method(0)<br>        return df.head(3129)<br>    df = load_data()<br>    first_value = datetime.datetime.strptime(‘2017-01-01 00:00:00’, ‘%Y-%m-%d %H:%M:%S’)<br>    for i in range(len(df)):<br>        df.iloc[i, 0] = (first_value + datetime.timedelta(hours=i)).strftime(“%Y-%m-%d %H:%M:%S”)<br>    # df = pd.DataFrame(, columns=[‘ds’, ‘y’])<br>    # df.to_csv(‘pm25_predicted_mean.csv’, index=False)<br>    # print(df.iloc[1,0])<br>    df.rename(columns={‘index’: ‘ds’, ‘PM2.5’: ‘y’}, inplace=True)<br>    m = Prophet()<br>    # df[‘y’] = np.log(df[‘y’])<br>    df = m.fit(df)<br>    future = m.make_future_dataframe(freq=’H’, periods=5428)<br>    future.tail()<br>    forecast = m.predict(future)<br>    forecast[[‘ds’, ‘yhat’, ‘yhat_lower’, ‘yhat_upper’]].tail()<br>    fig1 = m.plot(forecast)<br>    fig2 = m.plot_components(forecast)<br>    plt.show()</p>
-</blockquote>
-<p>运行结果图：<br><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
-<p><img src="../../../../images/post-images/10224563-269bfb4da3288c1d.png" alt="img.png"></p>
-<p>Mean</p>
-<p>Median</p>
-<p>Ffill_method</p>
-<p>Bfill_method</p>
-<p>Linear_method</p>
-<p>lagrange_method</p>
-<p>smooth_method</p>
-<p>Fbprophet实现</p>
-<p>日，周，月的趋势<br>未完待续。。。</p>
-]]></content>
-      <categories>
-        <category>数据分析</category>
-      </categories>
-      <tags>
-        <tag>python</tag>
-        <tag>时间序列处理</tag>
       </tags>
   </entry>
   <entry>
@@ -1788,6 +1788,103 @@ public void demo02(){
       </tags>
   </entry>
   <entry>
+    <title>一个你不会认识的陌生人</title>
+    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
+    <content><![CDATA[<p>漫长的时光里</p>
+<p>你独自一个人度过</p>
+<p>生命总是孤独</p>
+<p>你总是默默承受</p>
+<p>即使每一个过客</p>
+<p>终究有谢幕离场的时分</p>
+<p>我是一个你不会认识的陌生人</p>
+<p>你是一道我永远也遇不上的彩虹</p>
+<p>没有遇上方知有</p>
+<p>好在花有清香月有阴</p>
+<p>我们在不同的世界</p>
+<p>演绎着类似的人生</p>
+<p>陌生的旧情人</p>
+<p>你是谁的新欢和旧爱</p>
+<p>而我只是一个</p>
+<p>你不会认识的陌生人</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>挪威的森林</title>
+    <url>/2021/06/23/%E6%8C%AA%E5%A8%81%E7%9A%84%E6%A3%AE%E6%9E%97/</url>
+    <content><![CDATA[<p>与你的相遇</p>
+<p>像是夜里与一颗流星的邂逅</p>
+<p>在望不到尽头的山野里</p>
+<p>彼此相守</p>
+<p>往后的岁月里</p>
+<p>我们各自奔流</p>
+<p>在远方时空里</p>
+<p>演绎每一场都市夜景下的灯火通明</p>
+<p><br><br>夜里游动，黑猫流窜的小区</p>
+<p>给予记忆无声的催眠</p>
+<p>彼时年轻人的欢声笑语与热血</p>
+<p>都融化做深夜里的一杯杯清酒</p>
+<p>随夜色褪去</p>
+<p>你是否将我遗忘</p>
+<p>如同曾经千千万万个挪威的森林</p>
+<p>而终究独身于无人之境</p>
+<p><br></p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>意难平</title>
+    <url>/2021/06/23/%E6%84%8F%E9%9A%BE%E5%B9%B3/</url>
+    <content><![CDATA[<p>风起意难平</p>
+<p>我终究是你故事里的一个配角</p>
+<p>风起意难平</p>
+<p>我终于将所有遗憾慢慢填满心间</p>
+<p>风起意难平</p>
+<p>我终究还是一个你不会认识的陌生人</p>
+<p><br></p>
+<p>层楼终身误</p>
+<p>你终究是人间里的一介过客</p>
+<p>层楼终身误</p>
+<p>你终究还是神游太虚的一场梦境</p>
+<p>层楼终生误</p>
+<p>你终将成为谁的新欢与旧爱</p>
+<p><br></p>
+<p>到底意难平</p>
+<p>我们也注定分离</p>
+<p><br></p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>新辞</title>
+    <url>/2021/06/17/%E6%96%B0%E8%BE%9E/</url>
+    <content><![CDATA[<p>歌管楼台声细细，秋千院落夜沉沉。</p>
+<p>徒有斜阳与人语，不念故乡念旧人。</p>
+<p><img src="../../../../images/post-images/10224563-bb430fb614396c21.jpg" alt="img.jpg"></p>
+]]></content>
+      <categories>
+        <category>古风拾迹</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>spring之aop配置与springboot aop配置</title>
     <url>/2021/06/17/spring%E4%B9%8Baop%E9%85%8D%E7%BD%AE%E4%B8%8Espringboot-aop%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<p>spring的面向切面编程，即aop编程是有3种作用的：</p>
@@ -2091,122 +2188,6 @@ try {
       </tags>
   </entry>
   <entry>
-    <title>意难平</title>
-    <url>/2021/06/23/%E6%84%8F%E9%9A%BE%E5%B9%B3/</url>
-    <content><![CDATA[<p>风起意难平</p>
-<p>我终究是你故事里的一个配角</p>
-<p>风起意难平</p>
-<p>我终于将所有遗憾慢慢填满心间</p>
-<p>风起意难平</p>
-<p>我终究还是一个你不会认识的陌生人</p>
-<p><br></p>
-<p>层楼终身误</p>
-<p>你终究是人间里的一介过客</p>
-<p>层楼终身误</p>
-<p>你终究还是神游太虚的一场梦境</p>
-<p>层楼终生误</p>
-<p>你终将成为谁的新欢与旧爱</p>
-<p><br></p>
-<p>到底意难平</p>
-<p>我们也注定分离</p>
-<p><br></p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>新辞</title>
-    <url>/2021/06/17/%E6%96%B0%E8%BE%9E/</url>
-    <content><![CDATA[<p>歌管楼台声细细，秋千院落夜沉沉。</p>
-<p>徒有斜阳与人语，不念故乡念旧人。</p>
-<p><img src="../../../../images/post-images/10224563-bb430fb614396c21.jpg" alt="img.jpg"></p>
-]]></content>
-      <categories>
-        <category>古风拾迹</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>一个你不会认识的陌生人</title>
-    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
-    <content><![CDATA[<p>漫长的时光里</p>
-<p>你独自一个人度过</p>
-<p>生命总是孤独</p>
-<p>你总是默默承受</p>
-<p>即使每一个过客</p>
-<p>终究有谢幕离场的时分</p>
-<p>我是一个你不会认识的陌生人</p>
-<p>你是一道我永远也遇不上的彩虹</p>
-<p>没有遇上方知有</p>
-<p>好在花有清香月有阴</p>
-<p>我们在不同的世界</p>
-<p>演绎着类似的人生</p>
-<p>陌生的旧情人</p>
-<p>你是谁的新欢和旧爱</p>
-<p>而我只是一个</p>
-<p>你不会认识的陌生人</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>挪威的森林</title>
-    <url>/2021/06/23/%E6%8C%AA%E5%A8%81%E7%9A%84%E6%A3%AE%E6%9E%97/</url>
-    <content><![CDATA[<p>与你的相遇</p>
-<p>像是夜里与一颗流星的邂逅</p>
-<p>在望不到尽头的山野里</p>
-<p>彼此相守</p>
-<p>往后的岁月里</p>
-<p>我们各自奔流</p>
-<p>在远方时空里</p>
-<p>演绎每一场都市夜景下的灯火通明</p>
-<p><br><br>夜里游动，黑猫流窜的小区</p>
-<p>给予记忆无声的催眠</p>
-<p>彼时年轻人的欢声笑语与热血</p>
-<p>都融化做深夜里的一杯杯清酒</p>
-<p>随夜色褪去</p>
-<p>你是否将我遗憾</p>
-<p>如同曾经千千万万个挪威的森林</p>
-<p>而终究独身于无人之境</p>
-<p><br></p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>正则表达式</title>
-    <url>/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</url>
-    <content><![CDATA[<p>? 通配符匹配文件名中的 0 个或 1 个字符</p>
-<p>* 通配符匹配零个或多个字符</p>
-<p>^ 为匹配输入字符串的开始位置。</p>
-<p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p>
-<p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p>
-<p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p>
-<p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
-<p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>正则匹配</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>無題</title>
     <url>/2021/06/17/%E7%84%A1%E9%A1%8C/</url>
     <content><![CDATA[<p>就像没说完的一段故事</p>
@@ -2238,6 +2219,25 @@ try {
       </categories>
       <tags>
         <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>正则表达式</title>
+    <url>/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</url>
+    <content><![CDATA[<p>? 通配符匹配文件名中的 0 个或 1 个字符</p>
+<p>* 通配符匹配零个或多个字符</p>
+<p>^ 为匹配输入字符串的开始位置。</p>
+<p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p>
+<p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p>
+<p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p>
+<p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
+<p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>正则匹配</tag>
       </tags>
   </entry>
   <entry>
@@ -2357,6 +2357,33 @@ try {
       </tags>
   </entry>
   <entry>
+    <title>鄉愁</title>
+    <url>/2021/06/17/%E9%84%89%E6%84%81/</url>
+    <content><![CDATA[<p>芦苇飘荡的季节﻿</p>
+<p>少年将沉沉的离别披在肩上﻿</p>
+<p>乡愁像芦苇荡里的水一样柔﻿</p>
+<p>遗忘的日子里﻿</p>
+<p>心中总是若有所思﻿</p>
+<p>乡愁像渔家的灯火一样引人入眠﻿</p>
+<p>岁月像车轮一般轧过如路面荒芜的日子﻿</p>
+<p>远处月台橘黄色的站台灯碰弯了旅人的思绪﻿</p>
+<p>恍惚流失的光阴迷失在记忆的岔道口﻿</p>
+<p>春日大海的阳光照耀着北回归线﻿</p>
+<p>视野里的芦苇叶子眯成一线﻿</p>
+<p>蓝的海黑的海 逐渐缩成点的海鸥﻿</p>
+<p>露水闪透着晶莹的清晨﻿</p>
+<p>列车经过铁轨吸进一个个影子后逝去﻿</p>
+<p>乡愁像一曲永不停息的曲子﻿</p>
+<p>在风尘苦旅的夜里奏起</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>记一次阿里巴巴电面经历</title>
     <url>/2021/06/17/%E8%AE%B0%E4%B8%80%E6%AC%A1%E9%98%BF%E9%87%8C%E5%B7%B4%E5%B7%B4%E7%94%B5%E9%9D%A2%E7%BB%8F%E5%8E%86/</url>
     <content><![CDATA[<p><strong>前言</strong>：本人有幸在boss直聘上获得一次阿里巴巴国际技术事业部的电话面试机会，由于太突然，大部分问题都没有发挥原来的水平，诶，决定痛下决心好好总结，还有就是坚定下自己的目标=_=。<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上来先做了个自我介绍，由于要找个信号好的地方，爬到了楼顶，结果气喘吁吁的=_=，下面就开始提问一些专业的问题。</p>
@@ -2465,33 +2492,6 @@ try {
       </categories>
       <tags>
         <tag>面试</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>鄉愁</title>
-    <url>/2021/06/17/%E9%84%89%E6%84%81/</url>
-    <content><![CDATA[<p>芦苇飘荡的季节﻿</p>
-<p>少年将沉沉的离别披在肩上﻿</p>
-<p>乡愁像芦苇荡里的水一样柔﻿</p>
-<p>遗忘的日子里﻿</p>
-<p>心中总是若有所思﻿</p>
-<p>乡愁像渔家的灯火一样引人入眠﻿</p>
-<p>岁月像车轮一般轧过如路面荒芜的日子﻿</p>
-<p>远处月台橘黄色的站台灯碰弯了旅人的思绪﻿</p>
-<p>恍惚流失的光阴迷失在记忆的岔道口﻿</p>
-<p>春日大海的阳光照耀着北回归线﻿</p>
-<p>视野里的芦苇叶子眯成一线﻿</p>
-<p>蓝的海黑的海 逐渐缩成点的海鸥﻿</p>
-<p>露水闪透着晶莹的清晨﻿</p>
-<p>列车经过铁轨吸进一个个影子后逝去﻿</p>
-<p>乡愁像一曲永不停息的曲子﻿</p>
-<p>在风尘苦旅的夜里奏起</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
       </tags>
   </entry>
 </search>
