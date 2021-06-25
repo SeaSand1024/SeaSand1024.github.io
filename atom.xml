@@ -6,7 +6,7 @@
   <link href="https://seasand1024.github.io/atom.xml" rel="self"/>
   
   <link href="https://seasand1024.github.io/"/>
-  <updated>2021-06-23T13:53:06.278Z</updated>
+  <updated>2021-06-25T13:07:00.981Z</updated>
   <id>https://seasand1024.github.io/</id>
   
   <author>
@@ -15,6 +15,34 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>hive面试常见题目</title>
+    <link href="https://seasand1024.github.io/2021/06/25/hive%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%A2%98%E7%9B%AE/"/>
+    <id>https://seasand1024.github.io/2021/06/25/hive%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%A2%98%E7%9B%AE/</id>
+    <published>2021-06-25T12:05:40.000Z</published>
+    <updated>2021-06-25T13:07:00.981Z</updated>
+    
+    <content type="html"><![CDATA[<h4 id="1-hive关联数据倾斜："><a href="#1-hive关联数据倾斜：" class="headerlink" title="1.hive关联数据倾斜："></a>1.hive关联数据倾斜：</h4><p>原因：</p><ul><li>key分布不均匀；</li><li>业务本身的特性；</li><li>建表时考虑不周；</li><li>某些SQL语句本身就有数据倾斜；</li></ul><p>解决办法：</p><ul><li>set hive.groupby.skewindata=true;</li><li>小表大表join，reduce join=&gt;map join;</li><li>大表大表join,key 前缀加随机数字；</li><li><a href="https://zhuanlan.zhihu.com/p/105987407" target="_blank" rel="noopener">知乎hive数据倾斜解决方案；</a></li><li><a href="https://tech.meituan.com/2016/05/12/spark-tuning-pro.html" target="_blank" rel="noopener">拓展：spark 数据倾斜美团处理方案；</a></li><li><a href="https://tech.meituan.com/2016/04/29/spark-tuning-basic.html" target="_blank" rel="noopener">拓展：spark调优优化；</a></li></ul><p><br></p><h4 id="2-hive架构："><a href="#2-hive架构：" class="headerlink" title="2.hive架构："></a>2.hive架构：</h4><p><img src="../../../../images/post-images/up-49a57d36a42afebe3bfcafc55c719b228b4.JPEG" alt="img.png"><br><br></p><h4 id="3-四个by-的区别："><a href="#3-四个by-的区别：" class="headerlink" title="3.四个by 的区别："></a>3.四个by 的区别：</h4><ul><li>Sort by :在数据进入reducer前完成排序,当mapred.reduce.tasks&gt;1时，只能保证每个reducer的输出有序，不保证全局有序；</li><li>Order by:全局排序,对输入的数据做排序，故此只有一个reducer(多个reducer无法保证全局有序),只有一个reducer，会导致当输入规模较大时，需要较长的计算时间；</li><li>Distribute by:按照指定的字段对数据进行划分输出到不同的reduce中，常和sort by一起使用，并且distribute by必须在sort by前面；</li><li>Cluster by:相当于distribute by+sort by，只能默认升序，不能使用倒序；<br><br></li></ul><h4 id="4-常用函数："><a href="#4-常用函数：" class="headerlink" title="4.常用函数："></a>4.常用函数：</h4><h5 id="1-行转列函数"><a href="#1-行转列函数" class="headerlink" title="(1)行转列函数"></a>(1)行转列函数</h5><ul><li>concat：连接各个字段，eg:concat( aa, ‘:’, bb)，只要其中一个是NULL，那么将返回NULL;</li><li>concat_ws：使用分隔符连接字段，分隔符尾第一个参数，eg:concat_ws(‘-‘,’a’,’b’)，只要有一个字符串不是NULL，就不会返回NULL;</li><li>collect_set(col)：函数只接受基本数据类型，它的主要作用是将某字段的值进行去重汇总，产生array类型字段;<h5 id="2-列转行函数"><a href="#2-列转行函数" class="headerlink" title="(2) 列转行函数"></a>(2) 列转行函数</h5></li><li>explode(col)：将hive某列中复杂的array或者map结构拆分成多行;</li><li>lateral view：常和UDTF函数一起使用;</li><li>解释：用于和split, explode等UDTF一起使用，它能够将一列数据拆成多行数据，在此基础上可以对拆分后的数据进行聚合;</li><li>eg:SELECT username, role FROM ods.ods_actor_data LATERAL VIEW explode(split(userrole, ‘,’)) tmpTable AS role;<br><br></li></ul><h4 id="5-Rank排名函数："><a href="#5-Rank排名函数：" class="headerlink" title="5.Rank排名函数："></a>5.Rank排名函数：</h4><ul><li>rank() : 排序相同时会重复，总数不会变；</li><li>dense_rank() : 排序相同时会重复，总数会减少;</li><li>row_number() : 排序相同时不会重复，根据排序计算排名;<br><br><strong>在实际开发中，以上三个rank函数通常是和开窗函数一起使用的。</strong></li></ul><h4 id="6-窗口函数（开窗函数）"><a href="#6-窗口函数（开窗函数）" class="headerlink" title="6.窗口函数（开窗函数）"></a>6.窗口函数（开窗函数）</h4><ul><li>over()  :用于指定分析函数工作时的数据窗口大小，这个数据窗口大小可能会随着行的变而变化； </li><li>current row :当前行；</li><li>n PRECEDING :往前n行数据；</li><li>n FOLLOWING: 往后n行数据； </li><li>UNBOUNDED：起点，UNBOUNDED PRECEDING 表示从前面的起点， UNBOUNDED FOLLOWING表示到后面的终点；</li><li>LAG(col,n,default_val)：往前第n行数据； </li><li>LEAD(col,n, default_val)：往后第n行数据；</li><li>NTILE(n)：把有序分区中的行分发到指定数据的组中，各个组有编号，编号从1开始，对于每一行，NTILE返回此行所属的组的编号。这个函数需要注意：n必须为int类型。<br><br></li></ul><h4 id="7-UDF、UDAF、UDTF的区别？"><a href="#7-UDF、UDAF、UDTF的区别？" class="headerlink" title="7.UDF、UDAF、UDTF的区别？"></a>7.UDF、UDAF、UDTF的区别？</h4><ul><li>UDF：User-Defined-Function，用户自定义函数，数据是一进一出，功能类似于大多数数学函数或者字符串处理函数；</li><li>UDAF：User-Defined Aggregation Function，用户自定义聚合函数，数据是多进一出，功能类似于 count/max/min；</li><li>UDTF：User-Defined Table-Generating Functions，用户自定义表生成函数，数据是一进多处，功能类似于lateral view explore()；<br><br></li></ul><h4 id="8-怎么自定义UDF、UDAF、UDTF函数？"><a href="#8-怎么自定义UDF、UDAF、UDTF函数？" class="headerlink" title="8.怎么自定义UDF、UDAF、UDTF函数？"></a>8.怎么自定义UDF、UDAF、UDTF函数？</h4><p><br></p><h4 id="9-hive优化相关面试题"><a href="#9-hive优化相关面试题" class="headerlink" title="9.hive优化相关面试题"></a>9.hive优化相关面试题</h4><ul><li>MapJoin：如果不指定 MapJoin 或者不符合 MapJoin 的条件，那么 Hive 解析器会将 Join 操作转换 成 Common Join，即：在 Reduce 阶段完成 join容易发生数据倾斜,可以用MapJoin把小 表全部加载到内存在 map 端进行 join，避免 reducer 处理;</li><li>行列过滤：列处理：在 SELECT 中，只拿需要的列，如果有，尽量使用分区过滤，少用 SELECT *;</li><li>行处理：在分区剪裁中，当使用外关联时，如果将副表的过滤条件写在 Where 后面，那 么就会先全表关联，之后再过滤;</li><li>使用分桶;</li><li><a href="https://zhuanlan.zhihu.com/p/80718835" target="_blank" rel="noopener">知乎hive调优</a>;</li></ul>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h4 id=&quot;1-hive关联数据倾斜：&quot;&gt;&lt;a href=&quot;#1-hive关联数据倾斜：&quot; class=&quot;headerlink&quot; title=&quot;1.hive关联数据倾斜：&quot;&gt;&lt;/a&gt;1.hive关联数据倾斜：&lt;/h4&gt;&lt;p&gt;原因：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;key分布不均匀；</summary>
+      
+    
+    
+    
+    <category term="数据开发" scheme="https://seasand1024.github.io/categories/数据开发/"/>
+    
+    
+    <category term="SQL" scheme="https://seasand1024.github.io/tags/SQL/"/>
+    
+    <category term="hive" scheme="https://seasand1024.github.io/tags/hive/"/>
+    
+  </entry>
   
   <entry>
     <title>挪威的森林</title>
@@ -229,6 +257,32 @@
   </entry>
   
   <entry>
+    <title>Mysql之索引的基本概念语法</title>
+    <link href="https://seasand1024.github.io/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/"/>
+    <id>https://seasand1024.github.io/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</id>
+    <published>2021-06-17T13:55:56.000Z</published>
+    <updated>2021-06-25T12:10:53.514Z</updated>
+    
+    <content type="html"><![CDATA[<h4 id="1-Mysql中索引的概念"><a href="#1-Mysql中索引的概念" class="headerlink" title="1.Mysql中索引的概念"></a>1.Mysql中索引的概念</h4><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p><h6 id="索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引"><a href="#索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引" class="headerlink" title="索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引"></a>索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引</h6><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p><h4 id="2-索引的基本创建，删除以及数据库表的修改"><a href="#2-索引的基本创建，删除以及数据库表的修改" class="headerlink" title="2.索引的基本创建，删除以及数据库表的修改"></a>2.索引的基本创建，删除以及数据库表的修改</h4><h5 id="单列索引的基本创建格式是："><a href="#单列索引的基本创建格式是：" class="headerlink" title="单列索引的基本创建格式是："></a>单列索引的基本创建格式是：</h5><p>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p><h5 id="修改表结构的方式创建索引："><a href="#修改表结构的方式创建索引：" class="headerlink" title="修改表结构的方式创建索引："></a>修改表结构的方式创建索引：</h5><p>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p><h5 id="或者也可以创建表的时候指明："><a href="#或者也可以创建表的时候指明：" class="headerlink" title="或者也可以创建表的时候指明："></a>或者也可以创建表的时候指明：</h5><pre><code>CREATE TABLE sys_user(  id INT NOT NULL primary key,   account VARCHAR(16) NOT NULL,  password VARCHAR(32) NOT NULL,  INDEX ac (account (16))  );  </code></pre><h5 id="删除索引的语法："><a href="#删除索引的语法：" class="headerlink" title="删除索引的语法："></a>删除索引的语法：</h5><p>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p><h5 id="显示索引信息"><a href="#显示索引信息" class="headerlink" title="显示索引信息:"></a>显示索引信息:</h5><p>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h4 id=&quot;1-Mysql中索引的概念&quot;&gt;&lt;a href=&quot;#1-Mysql中索引的概念&quot; class=&quot;headerlink&quot; title=&quot;1.Mysql中索引的概念&quot;&gt;&lt;/a&gt;1.Mysql中索引的概念&lt;/h4&gt;&lt;p&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;n</summary>
+      
+    
+    
+    
+    <category term="后端" scheme="https://seasand1024.github.io/categories/后端/"/>
+    
+    
+    <category term="mysql" scheme="https://seasand1024.github.io/tags/mysql/"/>
+    
+    <category term="索引" scheme="https://seasand1024.github.io/tags/索引/"/>
+    
+  </entry>
+  
+  <entry>
     <title>python-时间序列处理</title>
     <link href="https://seasand1024.github.io/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/"/>
     <id>https://seasand1024.github.io/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</id>
@@ -253,32 +307,6 @@
     <category term="python" scheme="https://seasand1024.github.io/tags/python/"/>
     
     <category term="时间序列处理" scheme="https://seasand1024.github.io/tags/时间序列处理/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Mysql之索引的基本概念语法</title>
-    <link href="https://seasand1024.github.io/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/"/>
-    <id>https://seasand1024.github.io/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</id>
-    <published>2021-06-17T13:55:56.000Z</published>
-    <updated>2021-06-18T17:14:07.571Z</updated>
-    
-    <content type="html"><![CDATA[<p>####1.Mysql中索引的概念<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p><p>######索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p><p>####2.索引的基本创建，删除以及数据库表的修改</p><p>#####单列索引的基本创建格式是：<br>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p><p>#####修改表结构的方式创建索引：<br>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p><p>#####或者也可以创建表的时候指明：<br>    CREATE TABLE sys_user(<br>    id INT NOT NULL primary key,<br>    account VARCHAR(16) NOT NULL,<br>    password VARCHAR(32) NOT NULL,<br>    INDEX ac (account (16))<br>    );  </p><p>#####删除索引的语法：<br>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p><p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;p&gt;####1.Mysql中索引的概念&lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰</summary>
-      
-    
-    
-    
-    <category term="后端" scheme="https://seasand1024.github.io/categories/后端/"/>
-    
-    
-    <category term="mysql" scheme="https://seasand1024.github.io/tags/mysql/"/>
-    
-    <category term="索引" scheme="https://seasand1024.github.io/tags/索引/"/>
     
   </entry>
   
@@ -358,9 +386,9 @@
     <category term="后端" scheme="https://seasand1024.github.io/categories/后端/"/>
     
     
-    <category term="spring" scheme="https://seasand1024.github.io/tags/spring/"/>
-    
     <category term="事务" scheme="https://seasand1024.github.io/tags/事务/"/>
+    
+    <category term="spring" scheme="https://seasand1024.github.io/tags/spring/"/>
     
   </entry>
   
@@ -556,34 +584,6 @@ maven 3.5.0
     <category term="mysql" scheme="https://seasand1024.github.io/tags/mysql/"/>
     
     <category term="SQL" scheme="https://seasand1024.github.io/tags/SQL/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>正则表达式</title>
-    <link href="https://seasand1024.github.io/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/"/>
-    <id>https://seasand1024.github.io/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</id>
-    <published>2021-06-17T13:33:00.000Z</published>
-    <updated>2021-06-19T08:07:23.159Z</updated>
-    
-    <content type="html"><![CDATA[<p>? 通配符匹配文件名中的 0 个或 1 个字符</p><p>* 通配符匹配零个或多个字符</p><p>^ 为匹配输入字符串的开始位置。</p><p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p><p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p><p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p><p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p><p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;p&gt;? 通配符匹配文件名中的 0 个或 1 个字符&lt;/p&gt;
-&lt;p&gt;* 通配符匹配零个或多个字符&lt;/p&gt;
-&lt;p&gt;^ 为匹配输入字符串的开始位置。&lt;/p&gt;
-&lt;p&gt;[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。&lt;/p&gt;
-&lt;p&gt;abc$匹配字母 abc 并</summary>
-      
-    
-    
-    
-    <category term="后端" scheme="https://seasand1024.github.io/categories/后端/"/>
-    
-    
-    <category term="正则匹配" scheme="https://seasand1024.github.io/tags/正则匹配/"/>
     
   </entry>
   

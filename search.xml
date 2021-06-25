@@ -1,35 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>MySQL中exists和in的区别及使用场景</title>
-    <url>/2021/06/17/MySQL%E4%B8%ADexists%E5%92%8Cin%E7%9A%84%E5%8C%BA%E5%88%AB%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/</url>
-    <content><![CDATA[<blockquote>
-<p>1.对B查询涉及id，使用索引，故B表效率高，可用大表 –&gt;外小内大<br>select <em> from A where exists (select </em> from B where A.id=B.id);</p>
-</blockquote>
-<blockquote>
-<p>2.对A查询涉及id，使用索引，故A表效率高，可用大表 –&gt;外大内小<br>select * from A where A.id in (select id from B);</p>
-</blockquote>
-<h5 id="1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"><a href="#1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；" class="headerlink" title="1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"></a>1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；</h5><h5 id="2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"><a href="#2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。" class="headerlink" title="2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"></a>2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。</h5><h5 id="3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。"><a href="#3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。" class="headerlink" title="3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。"></a>3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。</h5><p>　　此外，新近遇到的坑，mysql版本问题：</p>
-<p>　　MySQL版本问题：5.6.5优化了子查询，引入物化子查询(针对where clause的subquery)，子查询物化将子查询结果存入临时表，确保子查询只执行一次，该表不记录重复数据且采用哈希索引查找;</p>
-<p>而之前的版本则会把非相关子查询转化为相关子查询，导致效率低下（尤其是子查询是小表，外表是大表的情况下，效率变慢许多）。　</p>
-<p>　相关子查询：子查询依赖外层连接的返回值；</p>
-<p>　　非相关子查询：子查询不依赖外层连接的返回值；</p>
-<p>　　子查询分两种，from语句（派生表）和where语句（子查询），派生表的效率要高一些，5.6的优化就是把where语句变成from语句。</p>
-<p>　　本来是内表小，用的in，但是据说5.6之前的版本会把非相关子查询改为相关子查询，就是把in的语句改成了exists的，结果效率超低。</p>
-<p>　　实验说明：派生表join比派生表的速度还要快。而使用in查询需要很多分钟还没有查出来。　</p>
-<blockquote>
-<p>#使用派生表 4.68秒<br>SELECT id FROM la WHERE cardid IN (<br>SELECT cardid FROM (<br>select cardid from la group by cardid having count(1)&gt;50) a) ;<br>#使用派生表的内连接 1.26秒<br>SELECT id FROM la JOIN (<br>select cardid from la group by cardid having count(1)&gt;50) a ON la.cardid=a.cardid;</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-        <tag>SQL</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Griffin POC</title>
     <url>/2021/06/17/Griffin-POC/</url>
     <content><![CDATA[<pre><code>Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。
@@ -234,6 +205,110 @@ cd ui/angular
       </tags>
   </entry>
   <entry>
+    <title>Mysql之索引的基本概念语法</title>
+    <url>/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</url>
+    <content><![CDATA[<h4 id="1-Mysql中索引的概念"><a href="#1-Mysql中索引的概念" class="headerlink" title="1.Mysql中索引的概念"></a>1.Mysql中索引的概念</h4><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
+<h6 id="索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引"><a href="#索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引" class="headerlink" title="索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引"></a>索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引</h6><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p>
+<h4 id="2-索引的基本创建，删除以及数据库表的修改"><a href="#2-索引的基本创建，删除以及数据库表的修改" class="headerlink" title="2.索引的基本创建，删除以及数据库表的修改"></a>2.索引的基本创建，删除以及数据库表的修改</h4><h5 id="单列索引的基本创建格式是："><a href="#单列索引的基本创建格式是：" class="headerlink" title="单列索引的基本创建格式是："></a>单列索引的基本创建格式是：</h5><p>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p>
+<h5 id="修改表结构的方式创建索引："><a href="#修改表结构的方式创建索引：" class="headerlink" title="修改表结构的方式创建索引："></a>修改表结构的方式创建索引：</h5><p>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
+<h5 id="或者也可以创建表的时候指明："><a href="#或者也可以创建表的时候指明：" class="headerlink" title="或者也可以创建表的时候指明："></a>或者也可以创建表的时候指明：</h5><pre><code>CREATE TABLE sys_user(  
+id INT NOT NULL primary key,   
+account VARCHAR(16) NOT NULL,  
+password VARCHAR(32) NOT NULL,  
+INDEX ac (account (16))  
+);  
+</code></pre><h5 id="删除索引的语法："><a href="#删除索引的语法：" class="headerlink" title="删除索引的语法："></a>删除索引的语法：</h5><p>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
+<h5 id="显示索引信息"><a href="#显示索引信息" class="headerlink" title="显示索引信息:"></a>显示索引信息:</h5><p>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+        <tag>索引</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2018/06/28/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>MySQL中exists和in的区别及使用场景</title>
+    <url>/2021/06/17/MySQL%E4%B8%ADexists%E5%92%8Cin%E7%9A%84%E5%8C%BA%E5%88%AB%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/</url>
+    <content><![CDATA[<blockquote>
+<p>1.对B查询涉及id，使用索引，故B表效率高，可用大表 –&gt;外小内大<br>select <em> from A where exists (select </em> from B where A.id=B.id);</p>
+</blockquote>
+<blockquote>
+<p>2.对A查询涉及id，使用索引，故A表效率高，可用大表 –&gt;外大内小<br>select * from A where A.id in (select id from B);</p>
+</blockquote>
+<h5 id="1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"><a href="#1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；" class="headerlink" title="1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"></a>1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；</h5><h5 id="2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"><a href="#2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。" class="headerlink" title="2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"></a>2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。</h5><h5 id="3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。"><a href="#3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。" class="headerlink" title="3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。"></a>3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。</h5><p>　　此外，新近遇到的坑，mysql版本问题：</p>
+<p>　　MySQL版本问题：5.6.5优化了子查询，引入物化子查询(针对where clause的subquery)，子查询物化将子查询结果存入临时表，确保子查询只执行一次，该表不记录重复数据且采用哈希索引查找;</p>
+<p>而之前的版本则会把非相关子查询转化为相关子查询，导致效率低下（尤其是子查询是小表，外表是大表的情况下，效率变慢许多）。　</p>
+<p>　相关子查询：子查询依赖外层连接的返回值；</p>
+<p>　　非相关子查询：子查询不依赖外层连接的返回值；</p>
+<p>　　子查询分两种，from语句（派生表）和where语句（子查询），派生表的效率要高一些，5.6的优化就是把where语句变成from语句。</p>
+<p>　　本来是内表小，用的in，但是据说5.6之前的版本会把非相关子查询改为相关子查询，就是把in的语句改成了exists的，结果效率超低。</p>
+<p>　　实验说明：派生表join比派生表的速度还要快。而使用in查询需要很多分钟还没有查出来。　</p>
+<blockquote>
+<p>#使用派生表 4.68秒<br>SELECT id FROM la WHERE cardid IN (<br>SELECT cardid FROM (<br>select cardid from la group by cardid having count(1)&gt;50) a) ;<br>#使用派生表的内连接 1.26秒<br>SELECT id FROM la JOIN (<br>select cardid from la group by cardid having count(1)&gt;50) a ON la.cardid=a.cardid;</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+        <tag>SQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>hive跨集群迁移表</title>
+    <url>/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/</url>
+    <content><![CDATA[<h4 id="1-export-table-xxx-to-‘-tmp-xxxx’"><a href="#1-export-table-xxx-to-‘-tmp-xxxx’" class="headerlink" title="1.export table xxx to ‘/tmp/xxxx’;"></a>1.export table xxx to ‘/tmp/xxxx’;</h4><h4 id="2-hadoop-fs-get-tmp-xxx-tmp-xxx"><a href="#2-hadoop-fs-get-tmp-xxx-tmp-xxx" class="headerlink" title="2.hadoop fs - get /tmp/xxx /tmp/xxx"></a>2.hadoop fs - get /tmp/xxx /tmp/xxx</h4><h4 id="3-scp文件。。。"><a href="#3-scp文件。。。" class="headerlink" title="3.scp文件。。。"></a>3.scp文件。。。</h4><h4 id="4-zip-r-tmp-xxxx-zip-tmp-xxx"><a href="#4-zip-r-tmp-xxxx-zip-tmp-xxx" class="headerlink" title="4.zip -r /tmp/xxxx.zip /tmp/xxx"></a>4.zip -r /tmp/xxxx.zip /tmp/xxx</h4><h4 id="5-unzip-xxx-zip-tmp"><a href="#5-unzip-xxx-zip-tmp" class="headerlink" title="5.unzip xxx.zip /tmp/"></a>5.unzip xxx.zip /tmp/</h4><h4 id="6-hadoop-fs-put-tmp-xxxx-tmp-xxxx"><a href="#6-hadoop-fs-put-tmp-xxxx-tmp-xxxx" class="headerlink" title="6.hadoop fs -put /tmp/xxxx /tmp/xxxx"></a>6.hadoop fs -put /tmp/xxxx /tmp/xxxx</h4><h4 id="7-import-table-xxx-from-‘-tmp-xxx’"><a href="#7-import-table-xxx-from-‘-tmp-xxx’" class="headerlink" title="7.import table xxx from ‘/tmp/xxx’__"></a>7.import table xxx from ‘/tmp/xxx’__</h4>]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>hive</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>idea2017 搭建ssm框架过程</title>
+    <url>/2021/06/17/idea2017-%E6%90%AD%E5%BB%BAssm%E6%A1%86%E6%9E%B6%E8%BF%87%E7%A8%8B/</url>
+    <content><![CDATA[<p>环境：</p>
+<pre><code>idea 2017.2.5
+
+jdk1.8
+
+maven 3.5.0
+</code></pre><h4 id="1-新建一个Maven-webapp项目"><a href="#1-新建一个Maven-webapp项目" class="headerlink" title="1. 新建一个Maven webapp项目"></a>1. 新建一个Maven webapp项目</h4><p>配置项目groupid,artifactid,version</p>
+<h4 id="2-搭建项目基本架构"><a href="#2-搭建项目基本架构" class="headerlink" title="2.搭建项目基本架构"></a>2.搭建项目基本架构</h4><pre><code>注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。
+</code></pre><h4 id="3-配置项目项目配置文件，包括mvc配置文件spring-context-mvc-xml，spring-Context上下文文件spring-context-xml-mybatis-config-xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback-lombok-所以有logback配置文件。"><a href="#3-配置项目项目配置文件，包括mvc配置文件spring-context-mvc-xml，spring-Context上下文文件spring-context-xml-mybatis-config-xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback-lombok-所以有logback配置文件。" class="headerlink" title="3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。"></a>3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。</h4><h4 id="4-接下来配置mybatis动态接口代理，在dao包下新建SysUserDao-entity下新建SysUser，mapper下新建SysUserMapper-xml，在spring-context配置文件里配置如下："><a href="#4-接下来配置mybatis动态接口代理，在dao包下新建SysUserDao-entity下新建SysUser，mapper下新建SysUserMapper-xml，在spring-context配置文件里配置如下：" class="headerlink" title="4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下："></a>4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下：</h4><h4 id="5-配置web-xml"><a href="#5-配置web-xml" class="headerlink" title="5.配置web.xml"></a>5.配置web.xml</h4><h4 id="6-完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。"><a href="#6-完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。" class="headerlink" title="6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。"></a>6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。</h4><pre><code>测试类，测试结果：
+
+dao层 
+</code></pre><p>service层：</p>
+<p>service和dao层基本测试完毕，controller在这里直接启动项目测试，为了方便，直接新建一个json类统一返回；</p>
+<p>返回值为true,并且将用户类返回，说明测试成功。</p>
+<h4 id="7-至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https-gitee-com-lonelygin-ssm。"><a href="#7-至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https-gitee-com-lonelygin-ssm。" class="headerlink" title="7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https://gitee.com/lonelygin/ssm。"></a>7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：<a href="https://gitee.com/lonelygin/ssm。" target="_blank" rel="noopener">https://gitee.com/lonelygin/ssm。</a></h4>]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>idea</tag>
+        <tag>ssm</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Streamsets POC总结</title>
     <url>/2021/06/17/POC%E6%80%BB%E7%BB%93/</url>
     <content><![CDATA[<h4 id="Streamsets介绍"><a href="#Streamsets介绍" class="headerlink" title="Streamsets介绍"></a>Streamsets介绍</h4><p>Streamsets是一款大数据实时采集和ETL工具，可以实现不写一行代码完成数据的采集和流转。通过拖拽式的可视化界面，实现数据管道(Pipelines)的设计和定时任务调度。最大的特点有：</p>
@@ -263,31 +338,6 @@ cd ui/angular
       </categories>
       <tags>
         <tag>etl</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2018/06/28/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>hive跨集群迁移表</title>
-    <url>/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/</url>
-    <content><![CDATA[<h4 id="1-export-table-xxx-to-‘-tmp-xxxx’"><a href="#1-export-table-xxx-to-‘-tmp-xxxx’" class="headerlink" title="1.export table xxx to ‘/tmp/xxxx’;"></a>1.export table xxx to ‘/tmp/xxxx’;</h4><h4 id="2-hadoop-fs-get-tmp-xxx-tmp-xxx"><a href="#2-hadoop-fs-get-tmp-xxx-tmp-xxx" class="headerlink" title="2.hadoop fs - get /tmp/xxx /tmp/xxx"></a>2.hadoop fs - get /tmp/xxx /tmp/xxx</h4><h4 id="3-scp文件。。。"><a href="#3-scp文件。。。" class="headerlink" title="3.scp文件。。。"></a>3.scp文件。。。</h4><h4 id="4-zip-r-tmp-xxxx-zip-tmp-xxx"><a href="#4-zip-r-tmp-xxxx-zip-tmp-xxx" class="headerlink" title="4.zip -r /tmp/xxxx.zip /tmp/xxx"></a>4.zip -r /tmp/xxxx.zip /tmp/xxx</h4><h4 id="5-unzip-xxx-zip-tmp"><a href="#5-unzip-xxx-zip-tmp" class="headerlink" title="5.unzip xxx.zip /tmp/"></a>5.unzip xxx.zip /tmp/</h4><h4 id="6-hadoop-fs-put-tmp-xxxx-tmp-xxxx"><a href="#6-hadoop-fs-put-tmp-xxxx-tmp-xxxx" class="headerlink" title="6.hadoop fs -put /tmp/xxxx /tmp/xxxx"></a>6.hadoop fs -put /tmp/xxxx /tmp/xxxx</h4><h4 id="7-import-table-xxx-from-‘-tmp-xxx’"><a href="#7-import-table-xxx-from-‘-tmp-xxx’" class="headerlink" title="7.import table xxx from ‘/tmp/xxx’__"></a>7.import table xxx from ‘/tmp/xxx’__</h4>]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>hive</tag>
       </tags>
   </entry>
   <entry>
@@ -359,6 +409,79 @@ public class B extends A {
       </categories>
       <tags>
         <tag>java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>hive面试常见题目</title>
+    <url>/2021/06/25/hive%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%A2%98%E7%9B%AE/</url>
+    <content><![CDATA[<h4 id="1-hive关联数据倾斜："><a href="#1-hive关联数据倾斜：" class="headerlink" title="1.hive关联数据倾斜："></a>1.hive关联数据倾斜：</h4><p>原因：</p>
+<ul>
+<li>key分布不均匀；</li>
+<li>业务本身的特性；</li>
+<li>建表时考虑不周；</li>
+<li>某些SQL语句本身就有数据倾斜；</li>
+</ul>
+<p>解决办法：</p>
+<ul>
+<li>set hive.groupby.skewindata=true;</li>
+<li>小表大表join，reduce join=&gt;map join;</li>
+<li>大表大表join,key 前缀加随机数字；</li>
+<li><a href="https://zhuanlan.zhihu.com/p/105987407" target="_blank" rel="noopener">知乎hive数据倾斜解决方案；</a></li>
+<li><a href="https://tech.meituan.com/2016/05/12/spark-tuning-pro.html" target="_blank" rel="noopener">拓展：spark 数据倾斜美团处理方案；</a></li>
+<li><a href="https://tech.meituan.com/2016/04/29/spark-tuning-basic.html" target="_blank" rel="noopener">拓展：spark调优优化；</a></li>
+</ul>
+<p><br></p>
+<h4 id="2-hive架构："><a href="#2-hive架构：" class="headerlink" title="2.hive架构："></a>2.hive架构：</h4><p><img src="../../../../images/post-images/up-49a57d36a42afebe3bfcafc55c719b228b4.JPEG" alt="img.png"><br><br></p>
+<h4 id="3-四个by-的区别："><a href="#3-四个by-的区别：" class="headerlink" title="3.四个by 的区别："></a>3.四个by 的区别：</h4><ul>
+<li>Sort by :在数据进入reducer前完成排序,当mapred.reduce.tasks&gt;1时，只能保证每个reducer的输出有序，不保证全局有序；</li>
+<li>Order by:全局排序,对输入的数据做排序，故此只有一个reducer(多个reducer无法保证全局有序),只有一个reducer，会导致当输入规模较大时，需要较长的计算时间；</li>
+<li>Distribute by:按照指定的字段对数据进行划分输出到不同的reduce中，常和sort by一起使用，并且distribute by必须在sort by前面；</li>
+<li>Cluster by:相当于distribute by+sort by，只能默认升序，不能使用倒序；<br><br></li>
+</ul>
+<h4 id="4-常用函数："><a href="#4-常用函数：" class="headerlink" title="4.常用函数："></a>4.常用函数：</h4><h5 id="1-行转列函数"><a href="#1-行转列函数" class="headerlink" title="(1)行转列函数"></a>(1)行转列函数</h5><ul>
+<li>concat：连接各个字段，eg:concat( aa, ‘:’, bb)，只要其中一个是NULL，那么将返回NULL;</li>
+<li>concat_ws：使用分隔符连接字段，分隔符尾第一个参数，eg:concat_ws(‘-‘,’a’,’b’)，只要有一个字符串不是NULL，就不会返回NULL;</li>
+<li>collect_set(col)：函数只接受基本数据类型，它的主要作用是将某字段的值进行去重汇总，产生array类型字段;<h5 id="2-列转行函数"><a href="#2-列转行函数" class="headerlink" title="(2) 列转行函数"></a>(2) 列转行函数</h5></li>
+<li>explode(col)：将hive某列中复杂的array或者map结构拆分成多行;</li>
+<li>lateral view：常和UDTF函数一起使用;</li>
+<li>解释：用于和split, explode等UDTF一起使用，它能够将一列数据拆成多行数据，在此基础上可以对拆分后的数据进行聚合;</li>
+<li>eg:SELECT username, role FROM ods.ods_actor_data LATERAL VIEW explode(split(userrole, ‘,’)) tmpTable AS role;<br><br></li>
+</ul>
+<h4 id="5-Rank排名函数："><a href="#5-Rank排名函数：" class="headerlink" title="5.Rank排名函数："></a>5.Rank排名函数：</h4><ul>
+<li>rank() : 排序相同时会重复，总数不会变；</li>
+<li>dense_rank() : 排序相同时会重复，总数会减少;</li>
+<li>row_number() : 排序相同时不会重复，根据排序计算排名;<br><br><strong>在实际开发中，以上三个rank函数通常是和开窗函数一起使用的。</strong></li>
+</ul>
+<h4 id="6-窗口函数（开窗函数）"><a href="#6-窗口函数（开窗函数）" class="headerlink" title="6.窗口函数（开窗函数）"></a>6.窗口函数（开窗函数）</h4><ul>
+<li>over()  :用于指定分析函数工作时的数据窗口大小，这个数据窗口大小可能会随着行的变而变化； </li>
+<li>current row :当前行；</li>
+<li>n PRECEDING :往前n行数据；</li>
+<li>n FOLLOWING: 往后n行数据； </li>
+<li>UNBOUNDED：起点，UNBOUNDED PRECEDING 表示从前面的起点， UNBOUNDED FOLLOWING表示到后面的终点；</li>
+<li>LAG(col,n,default_val)：往前第n行数据； </li>
+<li>LEAD(col,n, default_val)：往后第n行数据；</li>
+<li>NTILE(n)：把有序分区中的行分发到指定数据的组中，各个组有编号，编号从1开始，对于每一行，NTILE返回此行所属的组的编号。这个函数需要注意：n必须为int类型。<br><br></li>
+</ul>
+<h4 id="7-UDF、UDAF、UDTF的区别？"><a href="#7-UDF、UDAF、UDTF的区别？" class="headerlink" title="7.UDF、UDAF、UDTF的区别？"></a>7.UDF、UDAF、UDTF的区别？</h4><ul>
+<li>UDF：User-Defined-Function，用户自定义函数，数据是一进一出，功能类似于大多数数学函数或者字符串处理函数；</li>
+<li>UDAF：User-Defined Aggregation Function，用户自定义聚合函数，数据是多进一出，功能类似于 count/max/min；</li>
+<li>UDTF：User-Defined Table-Generating Functions，用户自定义表生成函数，数据是一进多处，功能类似于lateral view explore()；<br><br></li>
+</ul>
+<h4 id="8-怎么自定义UDF、UDAF、UDTF函数？"><a href="#8-怎么自定义UDF、UDAF、UDTF函数？" class="headerlink" title="8.怎么自定义UDF、UDAF、UDTF函数？"></a>8.怎么自定义UDF、UDAF、UDTF函数？</h4><p><br></p>
+<h4 id="9-hive优化相关面试题"><a href="#9-hive优化相关面试题" class="headerlink" title="9.hive优化相关面试题"></a>9.hive优化相关面试题</h4><ul>
+<li>MapJoin：如果不指定 MapJoin 或者不符合 MapJoin 的条件，那么 Hive 解析器会将 Join 操作转换 成 Common Join，即：在 Reduce 阶段完成 join容易发生数据倾斜,可以用MapJoin把小 表全部加载到内存在 map 端进行 join，避免 reducer 处理;</li>
+<li>行列过滤：列处理：在 SELECT 中，只拿需要的列，如果有，尽量使用分区过滤，少用 SELECT *;</li>
+<li>行处理：在分区剪裁中，当使用外关联时，如果将副表的过滤条件写在 Where 后面，那 么就会先全表关联，之后再过滤;</li>
+<li>使用分桶;</li>
+<li><a href="https://zhuanlan.zhihu.com/p/80718835" target="_blank" rel="noopener">知乎hive调优</a>;</li>
+</ul>
+]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>SQL</tag>
+        <tag>hive</tag>
       </tags>
   </entry>
   <entry>
@@ -704,32 +827,6 @@ public class Thread07 {
       </categories>
       <tags>
         <tag>java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>idea2017 搭建ssm框架过程</title>
-    <url>/2021/06/17/idea2017-%E6%90%AD%E5%BB%BAssm%E6%A1%86%E6%9E%B6%E8%BF%87%E7%A8%8B/</url>
-    <content><![CDATA[<p>环境：</p>
-<pre><code>idea 2017.2.5
-
-jdk1.8
-
-maven 3.5.0
-</code></pre><h4 id="1-新建一个Maven-webapp项目"><a href="#1-新建一个Maven-webapp项目" class="headerlink" title="1. 新建一个Maven webapp项目"></a>1. 新建一个Maven webapp项目</h4><p>配置项目groupid,artifactid,version</p>
-<h4 id="2-搭建项目基本架构"><a href="#2-搭建项目基本架构" class="headerlink" title="2.搭建项目基本架构"></a>2.搭建项目基本架构</h4><pre><code>注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。
-</code></pre><h4 id="3-配置项目项目配置文件，包括mvc配置文件spring-context-mvc-xml，spring-Context上下文文件spring-context-xml-mybatis-config-xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback-lombok-所以有logback配置文件。"><a href="#3-配置项目项目配置文件，包括mvc配置文件spring-context-mvc-xml，spring-Context上下文文件spring-context-xml-mybatis-config-xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback-lombok-所以有logback配置文件。" class="headerlink" title="3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。"></a>3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。</h4><h4 id="4-接下来配置mybatis动态接口代理，在dao包下新建SysUserDao-entity下新建SysUser，mapper下新建SysUserMapper-xml，在spring-context配置文件里配置如下："><a href="#4-接下来配置mybatis动态接口代理，在dao包下新建SysUserDao-entity下新建SysUser，mapper下新建SysUserMapper-xml，在spring-context配置文件里配置如下：" class="headerlink" title="4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下："></a>4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下：</h4><h4 id="5-配置web-xml"><a href="#5-配置web-xml" class="headerlink" title="5.配置web.xml"></a>5.配置web.xml</h4><h4 id="6-完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。"><a href="#6-完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。" class="headerlink" title="6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。"></a>6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。</h4><pre><code>测试类，测试结果：
-
-dao层 
-</code></pre><p>service层：</p>
-<p>service和dao层基本测试完毕，controller在这里直接启动项目测试，为了方便，直接新建一个json类统一返回；</p>
-<p>返回值为true,并且将用户类返回，说明测试成功。</p>
-<h4 id="7-至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https-gitee-com-lonelygin-ssm。"><a href="#7-至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https-gitee-com-lonelygin-ssm。" class="headerlink" title="7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https://gitee.com/lonelygin/ssm。"></a>7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：<a href="https://gitee.com/lonelygin/ssm。" target="_blank" rel="noopener">https://gitee.com/lonelygin/ssm。</a></h4>]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>idea</tag>
-        <tag>ssm</tag>
       </tags>
   </entry>
   <entry>
@@ -1088,6 +1185,138 @@ proxy.save();
       </tags>
   </entry>
   <entry>
+    <title>mysql 连接</title>
+    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
+    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
+<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
+<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
+<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>mysql</tag>
+        <tag>SQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>flink 理解</title>
+    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
+    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
+<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
+<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
+]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>flink</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>spring 事务理解</title>
+    <url>/2021/06/17/spring-%E4%BA%8B%E5%8A%A1%E7%90%86%E8%A7%A3/</url>
+    <content><![CDATA[<h3 id="1-事务的概念"><a href="#1-事务的概念" class="headerlink" title="1.事务的概念"></a>1.事务的概念</h3><p> 通俗的讲，事务指的是一组业务操作ABCD，要么全部成功，要么全部不成功。</p>
+<h3 id="2-关系数据库的事务的特性-ACID"><a href="#2-关系数据库的事务的特性-ACID" class="headerlink" title="2.关系数据库的事务的特性(ACID)"></a>2.关系数据库的事务的特性(ACID)</h3><ul>
+<li>原子性(Atomicity)：事务是数据库的逻辑工作单位，而且是必须是原子工作单位，对于修改，要么全部执行，要么全部不执行。</li>
+<li>一致性(Consistency)：事务在完成时，必须是所有的数据都保持一致状态。在相关数据库中，所有规则都必须应用于事务的修改，以保持所有数据的完整性。</li>
+<li>隔离性(Isolation)：一个事务的执行不能被其他事务所影响。事务必须是互相隔离的，防止并发读写同一个数据的情况发生 。</li>
+<li><p>持久性(Durability) : 一个事务一旦提交，事物的操作便永久性的保存在DB中。即使此时再执行回滚操作也不能撤消所做的更改。</p>
+<h3 id="3-spring事务的隔离级别"><a href="#3-spring事务的隔离级别" class="headerlink" title="3.spring事务的隔离级别"></a>3.spring事务的隔离级别</h3></li>
+<li><p>ISOLATION_DEFAULT  –使用数据库默认的事务隔离级别。</p>
+<ul>
+<li><p>ISOLATION_READ_UNCOMMITTED  –这是事务最低的隔离级别，它充许令外一个事务可以看到这个事务未提交的数据(<strong>读未提交</strong>)。</p>
+</li>
+<li><p>ISOLATION_READ_COMMITTED  –保证一个事务修改的数据提交后才能被另外一个事务读取。另外一个事务不能读取该事务未提交的数据(<strong>读已提交</strong>)。</p>
+</li>
+<li><p>ISOLATION_REPEATABLE_READ  –这种事务隔离级别可以防止脏读，不可重复读。但是可能出现幻像读(<strong>虚读</strong>)。</p>
+</li>
+<li><p>ISOLATION_SERIALIZABLE  –这是花费最高代价但是最可靠的事务隔离级别。事务被处理为顺序执行。除了防止脏读，不可重复读外，还避免了幻像读(<strong>序列化</strong>)。</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>理解Spring事务的隔离级别，需要明白的几个概念：</p>
+<ul>
+<li>脏读（脏数据）: 指当一个事务正在访问数据，并且对数据进行了修改，而这种修改还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。因为这个数据是还没有提交的数据， 那么另外一个事务读到的这个数据是脏数据，依据脏数据所做的操作可能是不正确的。</li>
+<li>不可重复读: 指在一个事务内，多次读同一数据。在这个事务还没有结束时，另外一个事务也访问该同一数据。那么，在第一个事务中的两次读数据之间，由于第二个事务的修改，那么第一个事务两次读到的数据可能是不一样的。这样就发生了在一个事务内两次读到的数据是不一样的，因此称为是不可重复读。</li>
+<li>幻觉读: 指当事务不是独立执行时发生的一种现象，例如第一个事务对一个表中的数据进行了修改，这种修改涉及到表中的全部数据行。同时，第二个事务也修改这个表中的数据，这种修改是向表中插入一行新数据。那么，以后就会发生操作第一个事务的用户发现表中还有没有修改的数据行，就好象发生了幻觉一样。<h3 id="4-Spring事务的传播属性（Propagation）"><a href="#4-Spring事务的传播属性（Propagation）" class="headerlink" title="4.Spring事务的传播属性（Propagation）"></a>4.Spring事务的传播属性（Propagation）</h3></li>
+<li><p>PROPAGATION_REQUIRED  –支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置。</p>
+</li>
+<li><p>PROPAGATION_SUPPORTS  –支持当前事务，如果当前没有事务，就以非事务方式执行。</p>
+</li>
+<li><p>PROPAGATION_MANDATORY  –支持当前事务，如果当前没有事务，就抛出异常。</p>
+</li>
+<li><p>PROPAGATION_REQUIRES_NEW  –新建事务，如果当前存在事务，把当前事务挂起。</p>
+</li>
+<li><p>PROPAGATION_NOT_SUPPORTED  –以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。</p>
+</li>
+<li><p>PROPAGATION_NEVER  –以非事务方式执行，如果当前存在事务，则抛出异常。</p>
+<h3 id="5-JDBC事务的隔离级别"><a href="#5-JDBC事务的隔离级别" class="headerlink" title="5.JDBC事务的隔离级别"></a>5.JDBC事务的隔离级别</h3></li>
+<li><p>TRANSACTION_NONE  –不支持事务，实际项目中很少使用。</p>
+</li>
+<li><p>TRANSACTION_READ_UNCOMMITTED  –在提交前一个事务可以看到另一个事务的变化。脏读、不可重复的读和幻觉读都是允许的。</p>
+</li>
+<li><p>TRANSACTION_READ_COMMITTED  –读取未提交的数据是不允许的。这个级别仍然允许不可重复的读和虚读产生。</p>
+</li>
+<li><p>TRANSACTION_REPEATABLE_READ  –事务保证能够再次读取相同的数据而不会失败，但虚读仍然会出现。</p>
+</li>
+<li><p>TRANSACTION_SERIALIZABLE  –最高的事务级别，它防止脏读、不可重复的读和虚读。</p>
+</li>
+</ul>
+<p><img src="../../../../images/post-images/10224563-5d3e594331d0c758.png" alt="$LBPYPLJ89T4Z~VED9O)9@E.png"></p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>事务</tag>
+        <tag>spring</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>新辞</title>
+    <url>/2021/06/17/%E6%96%B0%E8%BE%9E/</url>
+    <content><![CDATA[<p>歌管楼台声细细，秋千院落夜沉沉。</p>
+<p>徒有斜阳与人语，不念故乡念旧人。</p>
+<p><img src="../../../../images/post-images/10224563-bb430fb614396c21.jpg" alt="img.jpg"></p>
+]]></content>
+      <categories>
+        <category>古风拾迹</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>一个你不会认识的陌生人</title>
+    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
+    <content><![CDATA[<p>漫长的时光里</p>
+<p>你独自一个人度过</p>
+<p>生命总是孤独</p>
+<p>你总是默默承受</p>
+<p>即使每一个过客</p>
+<p>终究有谢幕离场的时分</p>
+<p>我是一个你不会认识的陌生人</p>
+<p>你是一道我永远也遇不上的彩虹</p>
+<p>没有遇上方知有</p>
+<p>好在花有清香月有阴</p>
+<p>我们在不同的世界</p>
+<p>演绎着类似的人生</p>
+<p>陌生的旧情人</p>
+<p>你是谁的新欢和旧爱</p>
+<p>而我只是一个</p>
+<p>你不会认识的陌生人</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>python-时间序列处理</title>
     <url>/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</url>
     <content><![CDATA[<p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
@@ -1224,17 +1453,306 @@ smooth_method()
       </tags>
   </entry>
   <entry>
-    <title>flink 理解</title>
-    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
-    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
-<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
-<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
-]]></content>
+    <title>spring之aop配置与springboot aop配置</title>
+    <url>/2021/06/17/spring%E4%B9%8Baop%E9%85%8D%E7%BD%AE%E4%B8%8Espringboot-aop%E9%85%8D%E7%BD%AE/</url>
+    <content><![CDATA[<p>spring的面向切面编程，即aop编程是有3种作用的：</p>
+<ul>
+<li><p>日志记录</p>
+</li>
+<li><p>安全验证</p>
+</li>
+<li><p>数据库事务管理</p>
+</li>
+</ul>
+<p>这里简单的先讲述下日志的记录体现。</p>
+<h4 id="1-spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https-gitee-com-lonelygin-ssm"><a href="#1-spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https-gitee-com-lonelygin-ssm" class="headerlink" title="1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/lonelygin/ssm"></a>1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址<a href="https://gitee.com/lonelygin/ssm" target="_blank" rel="noopener">https://gitee.com/lonelygin/ssm</a></h4><p>（1）基于xml的spring aop配置</p>
+<pre><code>新建包Aspect，在下面新建织入类LoggingAspect：
+</code></pre><p>package com.cyy.maven.core.Aspect;</p>
+<p>import org.aspectj.lang.JoinPoint;</p>
+<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
+<p>import org.aspectj.lang.annotation.*;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 织入类</p>
+</li>
+<li><p>@Date:Created in 16:00 2018/7/22</p>
+</li>
+</ul>
+<p>*/</p>
+<p>@Slf4j</p>
+<p>public class LoggingAspect {</p>
+<pre><code>public void beforeMethod(JoinPoint joinPoint){
+
+String methodName = joinPoint.getSignature().getName();
+
+    Object [] args = joinPoint.getArgs();
+
+   log.info(&quot;The method={} begins with={}&quot;,methodName,Arrays.asList(args));
+
+}
+</code></pre><p>public void afterMethod(JoinPoint joinPoint){</p>
+<pre><code>String methodName = joinPoint.getSignature().getName();
+
+log.info(&quot;The method={} ends&quot;,methodName);
+
+}
+</code></pre><p>  public void afterReturning(JoinPoint joinPoint, Object result){</p>
+<pre><code>String methodName = joinPoint.getSignature().getName();
+
+   log.info(&quot;The method={},ends with={}&quot;,methodName,result);
+
+}
+</code></pre><p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
+<pre><code>String methodName = joinPoint.getSignature().getName();
+
+  log.error(&quot;The method={},occurs excetion:={}&quot;,methodName,e);
+
+}
+</code></pre><p>  public Object aroundMethod(ProceedingJoinPoint pjd){</p>
+<pre><code>Object result =null;
+
+    String methodName = pjd.getSignature().getName();
+
+    try {
+
+        //前置通知
+
+      log.info(&quot;The method={},begins with={}&quot;, methodName, Arrays.asList(pjd.getArgs()));
+
+        //执行目标方法
+
+        result = pjd.proceed();
+
+        //返回通知
+
+      log.info(&quot;The method={},ends with={}&quot;,methodName ,result);
+
+    }catch (Throwable e) {
+
+        //异常通知
+
+       log.error(&quot;The method={}，occurs exception:={}&quot;,methodName,e);
+
+        throw new RuntimeException(e);
+
+    }
+</code></pre><p>//后置通知</p>
+<pre><code>   log.info(&quot;The method={},ends&quot;,methodName);
+
+    return result;
+
+}
+</code></pre><p>}<br>在spring的配置文件spring-context.xml中配置基于aop的事务增强。</p>
+<bean id="loggingAspect" class="com.cyy.maven.core.Aspect.LoggingAspect">
+
+<p><a href="aop:config" target="_blank" rel="noopener">aop:config</a></p>
+<p>&lt;aop:pointcut id=”serviceOpearation” expression=”execution(<em> com.cyy.maven.core.service.impl.</em>.*(..))”/&gt;</p>
+<p>&lt;aop:aspect ref=”loggingAspect”&gt;</p>
+<pre><code>&lt;aop:before method=&quot;beforeMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
+
+&lt;aop:after method=&quot;afterMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
+
+&lt;aop:after-returning method=&quot;afterReturning&quot; pointcut-ref=&quot;serviceOpearation&quot; returning=&quot;result&quot;/&gt;
+
+&lt;aop:after-throwing method=&quot;afterThrowing&quot; pointcut-ref=&quot;serviceOpearation&quot; throwing=&quot;e&quot;/&gt;
+</code></pre><p>&lt;/aop:aspect&gt;</p>
+<!--<aop:advisor advice-ref=""/>-->
+<p>&lt;/aop:config&gt;<br>测试结果：</p>
+<p>beforeMethod</p>
+<p>afterMethod&amp;afterReturning<br>在spring-context.xml中其实可以直接配置&lt;aop:around method=”aroundMethod” pointcut-ref=”serviceOpearation”/&gt;环绕通知，等价于前面3个办法的功能。</p>
+<p>（2）基于注解的spring aop配置</p>
+<p>LoggingAspect的配置改为如下：</p>
+<p>package com.cyy.maven.core.Aspect;</p>
+<p>import org.aspectj.lang.JoinPoint;</p>
+<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
+<p>import org.aspectj.lang.annotation.*;</p>
+<p>import org.springframework.stereotype.Component;</p>
+<p>import java.util.Arrays;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description:</p>
+</li>
+<li><p>@Date:Created in 16:00 2018/7/22</p>
+</li>
+</ul>
+<p>*/</p>
+<p>@Slf4j</p>
+<p>@Aspect</p>
+<p>@Component</p>
+<p>public class LoggingAspect {</p>
+<p>@Pointcut(“execution(<em> com.cyy.maven.core.service.impl.</em>.*(..))”)</p>
+<p>private void log(){}</p>
+<p>@Before(“log()”)</p>
+<p>public void beforeMethod(JoinPoint joinPoint){</p>
+<p>String methodName = joinPoint.getSignature().getName();</p>
+<pre><code>    Object [] args = joinPoint.getArgs();
+
+     log.info(&quot;The method={},begins with={}&quot;,methodName,Arrays.asList(args));
+
+}
+</code></pre><p>@After(“log()”)</p>
+<p>public void afterMethod(JoinPoint joinPoint){</p>
+<p>String methodName = joinPoint.getSignature().getName();</p>
+<pre><code>    log.info(&quot;The method={},ends&quot;,methodName);
+
+}
+</code></pre><p>@AfterReturning(pointcut =”log()”,returning =”result”)</p>
+<p>public void afterReturning(JoinPoint joinPoint, Object result){</p>
+<p>String methodName = joinPoint.getSignature().getName();</p>
+<pre><code>  log.info(&quot;The method={},ends with={}&quot;,methodName,result);
+
+}
+</code></pre><p>@AfterThrowing(pointcut =”log()”,throwing =”e”)</p>
+<p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
+<p>String methodName = joinPoint.getSignature().getName();</p>
+<pre><code>   log.error(&quot;The method={},occurs excetion:={}&quot;,methodName,e);
+
+}
+</code></pre><p>//    @Around(“log()”)</p>
+<pre><code>public ObjectaroundMethod(ProceedingJoinPoint pjd){
+</code></pre><p>Object result =null;</p>
+<pre><code>String methodName = pjd.getSignature().getName();
+
+try {
+</code></pre><p>//前置通知</p>
+<pre><code>   log.info(&quot;The method={},begins with={}&quot;, methodName, Arrays.asList(pjd.getArgs()));
+
+    //执行目标方法
+
+    result = pjd.proceed();
+
+    //返回通知
+
+   log.info(&quot;The method={},ends with={}&quot;,methodName ,result);
+
+}catch (Throwable e) {
+</code></pre><p>//异常通知</p>
+<pre><code>    log.error(&quot;The method={}，occurs exception:={}&quot;,methodName,e);
+
+    throw new RuntimeException(e);
+
+}
+</code></pre><p>//后置通知</p>
+<pre><code>  log.info(&quot;The method={},ends&quot;,methodName);
+
+    return result;
+
+}
+</code></pre><p>}</p>
+<p>spring配置文件spring-context.xml的配置如下：</p>
+<!-- 配置自动扫描-->
+<p>&lt;context:component-scan base-package=”com.cyy.maven.core.Aspect”/&gt;</p>
+<!--告诉JVM 我们用了aspectj的 annotation -->
+<p><a href="aop:aspectj-autoproxy/" target="_blank" rel="noopener">aop:aspectj-autoproxy/</a><br>测试结果如图：</p>
+<p>beforeMethod</p>
+<p>afterMethod&amp;afterReturning<br>在aroundMethod加上@Around(“log()”)，注释掉其他的注解，可以实现相同的功能。</p>
+<p>2.springboot的aop配置不用基于xml，是完全基于注解的配置，和spring的注解配置很相似。</p>
+<p>这里也直接用以前搭建的springboot框架来测试，码云地址为<a href="https://gitee.com/lonelygin/girl.git。" target="_blank" rel="noopener">https://gitee.com/lonelygin/girl.git。</a></p>
+<p>新建Aspect包，下面新建HttpAspect织入类：</p>
+<p>package com.cyy.Aspect;</p>
+<p>import lombok.extern.slf4j.Slf4j;</p>
+<p>import org.apache.catalina.servlet4preview.http.HttpServletRequest;</p>
+<p>import org.aspectj.lang.JoinPoint;</p>
+<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
+<p>import org.aspectj.lang.annotation.*;</p>
+<p>import org.springframework.stereotype.Component;</p>
+<p>import org.springframework.web.context.request.RequestContextHolder;</p>
+<p>import org.springframework.web.context.request.ServletRequestAttributes;</p>
+<p>@Slf4j</p>
+<p>@Aspect</p>
+<p>@Component</p>
+<p>public class HttpAspect {</p>
+<p>@Pointcut(“execution(public <em> com.cyy.controller.GirlController.</em>(..))”)</p>
+<p>public void log(){}</p>
+<p>@Before(“log()”)</p>
+<p>public void doBefore(JoinPoint joinPoint){</p>
+<p>ServletRequestAttributes attributes= (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();</p>
+<pre><code>    HttpServletRequest request= (HttpServletRequest) attributes.getRequest();
+
+    log.info(&quot;执行事务之前。。。&quot;);
+
+    log.info(&quot;url={}&quot;,request.getRequestURI());
+
+    log.info(&quot;method={}&quot;,request.getMethod());
+
+    log.info(&quot;ip={}&quot;,request.getRemoteAddr());
+
+    log.info(&quot;class-method={}&quot;,joinPoint.getSignature().getDeclaringTypeName()+&quot;.&quot;+joinPoint.getSignature().getName());
+
+    log.info(&quot;args={}&quot;,joinPoint.getArgs());
+
+}
+</code></pre><p>@After(“log()”)</p>
+<p>public void doAfter(){</p>
+<p>log.info(“执行事务之后。。。”);</p>
+<pre><code>}
+</code></pre><p>@AfterReturning(returning =”object”, pointcut =”log()”)</p>
+<p>public void doAfterReturning(Object object) {</p>
+<p>log.info(“response={}”, object.toString());</p>
+<pre><code>}
+</code></pre><p>@AfterThrowing(pointcut =”log()”,throwing =”e”)</p>
+<p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
+<p>String methodName = joinPoint.getSignature().getName();</p>
+<pre><code>  log.info(&quot;The method={}&quot; + methodName +&quot; occurs excetion:={}&quot; + e);
+
+}
+</code></pre><p>//    @Around(“log()”)</p>
+<pre><code>public ObjectaroundMethod(ProceedingJoinPoint pjd){
+</code></pre><p>Object object =null;</p>
+<pre><code>String methodName = pjd.getSignature().getName();
+
+try {
+</code></pre><p>//前置通知</p>
+<pre><code>    ServletRequestAttributes attributes= (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+
+    HttpServletRequest request= (HttpServletRequest) attributes.getRequest();
+
+    log.info(&quot;执行事务之前。。。&quot;);
+
+    log.info(&quot;url={}&quot;,request.getRequestURI());
+
+    log.info(&quot;method={}&quot;,request.getMethod());
+
+    log.info(&quot;ip={}&quot;,request.getRemoteAddr());
+
+    log.info(&quot;class-method={}&quot;,pjd.getSignature().getDeclaringTypeName()+&quot;.&quot;+pjd.getSignature().getName());
+
+    log.info(&quot;args={}&quot;,pjd.getArgs());
+
+    //执行目标方法
+
+    object = pjd.proceed();
+
+    //返回通知
+
+    log.info(&quot;response={}&quot;, object.toString());
+
+}catch (Throwable e) {
+</code></pre><p>//异常通知</p>
+<pre><code>  log.info(&quot;The method={},occurs exception:={}&quot;,methodName,e);
+
+    throw new RuntimeException(e);
+
+}
+</code></pre><p>//后置通知</p>
+<pre><code>    log.info(&quot;执行事务之后。。。&quot;);
+
+    return object;
+
+}
+</code></pre><p>}<br>测试结果：</p>
+<p>同样的， 将@Around(“log()”)加上，将其他注解注释掉，运行也是同样的结果。</p>
+</bean>]]></content>
       <categories>
-        <category>数据开发</category>
+        <category>后端</category>
       </categories>
       <tags>
-        <tag>flink</tag>
+        <tag>java</tag>
+        <tag>spring</tag>
       </tags>
   </entry>
   <entry>
@@ -1691,458 +2209,22 @@ public void demo02(){
       </tags>
   </entry>
   <entry>
-    <title>Mysql之索引的基本概念语法</title>
-    <url>/2021/06/17/Mysql%E4%B9%8B%E7%B4%A2%E5%BC%95%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E8%AF%AD%E6%B3%95/</url>
-    <content><![CDATA[<p>####1.Mysql中索引的概念<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
-<p>######索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p>
-<p>####2.索引的基本创建，删除以及数据库表的修改</p>
-<p>#####单列索引的基本创建格式是：<br>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p>
-<p>#####修改表结构的方式创建索引：<br>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
-<p>#####或者也可以创建表的时候指明：<br>    CREATE TABLE sys_user(<br>    id INT NOT NULL primary key,<br>    account VARCHAR(16) NOT NULL,<br>    password VARCHAR(32) NOT NULL,<br>    INDEX ac (account (16))<br>    );  </p>
-<p>#####删除索引的语法：<br>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
-<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
+    <title>正则表达式</title>
+    <url>/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</url>
+    <content><![CDATA[<p>? 通配符匹配文件名中的 0 个或 1 个字符</p>
+<p>* 通配符匹配零个或多个字符</p>
+<p>^ 为匹配输入字符串的开始位置。</p>
+<p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p>
+<p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p>
+<p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p>
+<p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
+<p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>
 ]]></content>
       <categories>
         <category>后端</category>
       </categories>
       <tags>
-        <tag>mysql</tag>
-        <tag>索引</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>mysql 连接</title>
-    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
-    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
-<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
-<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
-<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-        <tag>SQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>spring 事务理解</title>
-    <url>/2021/06/17/spring-%E4%BA%8B%E5%8A%A1%E7%90%86%E8%A7%A3/</url>
-    <content><![CDATA[<h3 id="1-事务的概念"><a href="#1-事务的概念" class="headerlink" title="1.事务的概念"></a>1.事务的概念</h3><p> 通俗的讲，事务指的是一组业务操作ABCD，要么全部成功，要么全部不成功。</p>
-<h3 id="2-关系数据库的事务的特性-ACID"><a href="#2-关系数据库的事务的特性-ACID" class="headerlink" title="2.关系数据库的事务的特性(ACID)"></a>2.关系数据库的事务的特性(ACID)</h3><ul>
-<li>原子性(Atomicity)：事务是数据库的逻辑工作单位，而且是必须是原子工作单位，对于修改，要么全部执行，要么全部不执行。</li>
-<li>一致性(Consistency)：事务在完成时，必须是所有的数据都保持一致状态。在相关数据库中，所有规则都必须应用于事务的修改，以保持所有数据的完整性。</li>
-<li>隔离性(Isolation)：一个事务的执行不能被其他事务所影响。事务必须是互相隔离的，防止并发读写同一个数据的情况发生 。</li>
-<li><p>持久性(Durability) : 一个事务一旦提交，事物的操作便永久性的保存在DB中。即使此时再执行回滚操作也不能撤消所做的更改。</p>
-<h3 id="3-spring事务的隔离级别"><a href="#3-spring事务的隔离级别" class="headerlink" title="3.spring事务的隔离级别"></a>3.spring事务的隔离级别</h3></li>
-<li><p>ISOLATION_DEFAULT  –使用数据库默认的事务隔离级别。</p>
-<ul>
-<li><p>ISOLATION_READ_UNCOMMITTED  –这是事务最低的隔离级别，它充许令外一个事务可以看到这个事务未提交的数据(<strong>读未提交</strong>)。</p>
-</li>
-<li><p>ISOLATION_READ_COMMITTED  –保证一个事务修改的数据提交后才能被另外一个事务读取。另外一个事务不能读取该事务未提交的数据(<strong>读已提交</strong>)。</p>
-</li>
-<li><p>ISOLATION_REPEATABLE_READ  –这种事务隔离级别可以防止脏读，不可重复读。但是可能出现幻像读(<strong>虚读</strong>)。</p>
-</li>
-<li><p>ISOLATION_SERIALIZABLE  –这是花费最高代价但是最可靠的事务隔离级别。事务被处理为顺序执行。除了防止脏读，不可重复读外，还避免了幻像读(<strong>序列化</strong>)。</p>
-</li>
-</ul>
-</li>
-</ul>
-<p>理解Spring事务的隔离级别，需要明白的几个概念：</p>
-<ul>
-<li>脏读（脏数据）: 指当一个事务正在访问数据，并且对数据进行了修改，而这种修改还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。因为这个数据是还没有提交的数据， 那么另外一个事务读到的这个数据是脏数据，依据脏数据所做的操作可能是不正确的。</li>
-<li>不可重复读: 指在一个事务内，多次读同一数据。在这个事务还没有结束时，另外一个事务也访问该同一数据。那么，在第一个事务中的两次读数据之间，由于第二个事务的修改，那么第一个事务两次读到的数据可能是不一样的。这样就发生了在一个事务内两次读到的数据是不一样的，因此称为是不可重复读。</li>
-<li>幻觉读: 指当事务不是独立执行时发生的一种现象，例如第一个事务对一个表中的数据进行了修改，这种修改涉及到表中的全部数据行。同时，第二个事务也修改这个表中的数据，这种修改是向表中插入一行新数据。那么，以后就会发生操作第一个事务的用户发现表中还有没有修改的数据行，就好象发生了幻觉一样。<h3 id="4-Spring事务的传播属性（Propagation）"><a href="#4-Spring事务的传播属性（Propagation）" class="headerlink" title="4.Spring事务的传播属性（Propagation）"></a>4.Spring事务的传播属性（Propagation）</h3></li>
-<li><p>PROPAGATION_REQUIRED  –支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置。</p>
-</li>
-<li><p>PROPAGATION_SUPPORTS  –支持当前事务，如果当前没有事务，就以非事务方式执行。</p>
-</li>
-<li><p>PROPAGATION_MANDATORY  –支持当前事务，如果当前没有事务，就抛出异常。</p>
-</li>
-<li><p>PROPAGATION_REQUIRES_NEW  –新建事务，如果当前存在事务，把当前事务挂起。</p>
-</li>
-<li><p>PROPAGATION_NOT_SUPPORTED  –以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。</p>
-</li>
-<li><p>PROPAGATION_NEVER  –以非事务方式执行，如果当前存在事务，则抛出异常。</p>
-<h3 id="5-JDBC事务的隔离级别"><a href="#5-JDBC事务的隔离级别" class="headerlink" title="5.JDBC事务的隔离级别"></a>5.JDBC事务的隔离级别</h3></li>
-<li><p>TRANSACTION_NONE  –不支持事务，实际项目中很少使用。</p>
-</li>
-<li><p>TRANSACTION_READ_UNCOMMITTED  –在提交前一个事务可以看到另一个事务的变化。脏读、不可重复的读和幻觉读都是允许的。</p>
-</li>
-<li><p>TRANSACTION_READ_COMMITTED  –读取未提交的数据是不允许的。这个级别仍然允许不可重复的读和虚读产生。</p>
-</li>
-<li><p>TRANSACTION_REPEATABLE_READ  –事务保证能够再次读取相同的数据而不会失败，但虚读仍然会出现。</p>
-</li>
-<li><p>TRANSACTION_SERIALIZABLE  –最高的事务级别，它防止脏读、不可重复的读和虚读。</p>
-</li>
-</ul>
-<p><img src="../../../../images/post-images/10224563-5d3e594331d0c758.png" alt="$LBPYPLJ89T4Z~VED9O)9@E.png"></p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>spring</tag>
-        <tag>事务</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>一个你不会认识的陌生人</title>
-    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
-    <content><![CDATA[<p>漫长的时光里</p>
-<p>你独自一个人度过</p>
-<p>生命总是孤独</p>
-<p>你总是默默承受</p>
-<p>即使每一个过客</p>
-<p>终究有谢幕离场的时分</p>
-<p>我是一个你不会认识的陌生人</p>
-<p>你是一道我永远也遇不上的彩虹</p>
-<p>没有遇上方知有</p>
-<p>好在花有清香月有阴</p>
-<p>我们在不同的世界</p>
-<p>演绎着类似的人生</p>
-<p>陌生的旧情人</p>
-<p>你是谁的新欢和旧爱</p>
-<p>而我只是一个</p>
-<p>你不会认识的陌生人</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>spring之aop配置与springboot aop配置</title>
-    <url>/2021/06/17/spring%E4%B9%8Baop%E9%85%8D%E7%BD%AE%E4%B8%8Espringboot-aop%E9%85%8D%E7%BD%AE/</url>
-    <content><![CDATA[<p>spring的面向切面编程，即aop编程是有3种作用的：</p>
-<ul>
-<li><p>日志记录</p>
-</li>
-<li><p>安全验证</p>
-</li>
-<li><p>数据库事务管理</p>
-</li>
-</ul>
-<p>这里简单的先讲述下日志的记录体现。</p>
-<h4 id="1-spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https-gitee-com-lonelygin-ssm"><a href="#1-spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https-gitee-com-lonelygin-ssm" class="headerlink" title="1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址https://gitee.com/lonelygin/ssm"></a>1.spring的aop配置有基于注解和xml2种，为了方便演示，这里用上次ssm搭建代码来演示，代码地址<a href="https://gitee.com/lonelygin/ssm" target="_blank" rel="noopener">https://gitee.com/lonelygin/ssm</a></h4><p>（1）基于xml的spring aop配置</p>
-<pre><code>新建包Aspect，在下面新建织入类LoggingAspect：
-</code></pre><p>package com.cyy.maven.core.Aspect;</p>
-<p>import org.aspectj.lang.JoinPoint;</p>
-<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
-<p>import org.aspectj.lang.annotation.*;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 织入类</p>
-</li>
-<li><p>@Date:Created in 16:00 2018/7/22</p>
-</li>
-</ul>
-<p>*/</p>
-<p>@Slf4j</p>
-<p>public class LoggingAspect {</p>
-<pre><code>public void beforeMethod(JoinPoint joinPoint){
-
-String methodName = joinPoint.getSignature().getName();
-
-    Object [] args = joinPoint.getArgs();
-
-   log.info(&quot;The method={} begins with={}&quot;,methodName,Arrays.asList(args));
-
-}
-</code></pre><p>public void afterMethod(JoinPoint joinPoint){</p>
-<pre><code>String methodName = joinPoint.getSignature().getName();
-
-log.info(&quot;The method={} ends&quot;,methodName);
-
-}
-</code></pre><p>  public void afterReturning(JoinPoint joinPoint, Object result){</p>
-<pre><code>String methodName = joinPoint.getSignature().getName();
-
-   log.info(&quot;The method={},ends with={}&quot;,methodName,result);
-
-}
-</code></pre><p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
-<pre><code>String methodName = joinPoint.getSignature().getName();
-
-  log.error(&quot;The method={},occurs excetion:={}&quot;,methodName,e);
-
-}
-</code></pre><p>  public Object aroundMethod(ProceedingJoinPoint pjd){</p>
-<pre><code>Object result =null;
-
-    String methodName = pjd.getSignature().getName();
-
-    try {
-
-        //前置通知
-
-      log.info(&quot;The method={},begins with={}&quot;, methodName, Arrays.asList(pjd.getArgs()));
-
-        //执行目标方法
-
-        result = pjd.proceed();
-
-        //返回通知
-
-      log.info(&quot;The method={},ends with={}&quot;,methodName ,result);
-
-    }catch (Throwable e) {
-
-        //异常通知
-
-       log.error(&quot;The method={}，occurs exception:={}&quot;,methodName,e);
-
-        throw new RuntimeException(e);
-
-    }
-</code></pre><p>//后置通知</p>
-<pre><code>   log.info(&quot;The method={},ends&quot;,methodName);
-
-    return result;
-
-}
-</code></pre><p>}<br>在spring的配置文件spring-context.xml中配置基于aop的事务增强。</p>
-<bean id="loggingAspect" class="com.cyy.maven.core.Aspect.LoggingAspect">
-
-<p><a href="aop:config" target="_blank" rel="noopener">aop:config</a></p>
-<p>&lt;aop:pointcut id=”serviceOpearation” expression=”execution(<em> com.cyy.maven.core.service.impl.</em>.*(..))”/&gt;</p>
-<p>&lt;aop:aspect ref=”loggingAspect”&gt;</p>
-<pre><code>&lt;aop:before method=&quot;beforeMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
-
-&lt;aop:after method=&quot;afterMethod&quot; pointcut-ref=&quot;serviceOpearation&quot;/&gt;
-
-&lt;aop:after-returning method=&quot;afterReturning&quot; pointcut-ref=&quot;serviceOpearation&quot; returning=&quot;result&quot;/&gt;
-
-&lt;aop:after-throwing method=&quot;afterThrowing&quot; pointcut-ref=&quot;serviceOpearation&quot; throwing=&quot;e&quot;/&gt;
-</code></pre><p>&lt;/aop:aspect&gt;</p>
-<!--<aop:advisor advice-ref=""/>-->
-<p>&lt;/aop:config&gt;<br>测试结果：</p>
-<p>beforeMethod</p>
-<p>afterMethod&amp;afterReturning<br>在spring-context.xml中其实可以直接配置&lt;aop:around method=”aroundMethod” pointcut-ref=”serviceOpearation”/&gt;环绕通知，等价于前面3个办法的功能。</p>
-<p>（2）基于注解的spring aop配置</p>
-<p>LoggingAspect的配置改为如下：</p>
-<p>package com.cyy.maven.core.Aspect;</p>
-<p>import org.aspectj.lang.JoinPoint;</p>
-<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
-<p>import org.aspectj.lang.annotation.*;</p>
-<p>import org.springframework.stereotype.Component;</p>
-<p>import java.util.Arrays;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description:</p>
-</li>
-<li><p>@Date:Created in 16:00 2018/7/22</p>
-</li>
-</ul>
-<p>*/</p>
-<p>@Slf4j</p>
-<p>@Aspect</p>
-<p>@Component</p>
-<p>public class LoggingAspect {</p>
-<p>@Pointcut(“execution(<em> com.cyy.maven.core.service.impl.</em>.*(..))”)</p>
-<p>private void log(){}</p>
-<p>@Before(“log()”)</p>
-<p>public void beforeMethod(JoinPoint joinPoint){</p>
-<p>String methodName = joinPoint.getSignature().getName();</p>
-<pre><code>    Object [] args = joinPoint.getArgs();
-
-     log.info(&quot;The method={},begins with={}&quot;,methodName,Arrays.asList(args));
-
-}
-</code></pre><p>@After(“log()”)</p>
-<p>public void afterMethod(JoinPoint joinPoint){</p>
-<p>String methodName = joinPoint.getSignature().getName();</p>
-<pre><code>    log.info(&quot;The method={},ends&quot;,methodName);
-
-}
-</code></pre><p>@AfterReturning(pointcut =”log()”,returning =”result”)</p>
-<p>public void afterReturning(JoinPoint joinPoint, Object result){</p>
-<p>String methodName = joinPoint.getSignature().getName();</p>
-<pre><code>  log.info(&quot;The method={},ends with={}&quot;,methodName,result);
-
-}
-</code></pre><p>@AfterThrowing(pointcut =”log()”,throwing =”e”)</p>
-<p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
-<p>String methodName = joinPoint.getSignature().getName();</p>
-<pre><code>   log.error(&quot;The method={},occurs excetion:={}&quot;,methodName,e);
-
-}
-</code></pre><p>//    @Around(“log()”)</p>
-<pre><code>public ObjectaroundMethod(ProceedingJoinPoint pjd){
-</code></pre><p>Object result =null;</p>
-<pre><code>String methodName = pjd.getSignature().getName();
-
-try {
-</code></pre><p>//前置通知</p>
-<pre><code>   log.info(&quot;The method={},begins with={}&quot;, methodName, Arrays.asList(pjd.getArgs()));
-
-    //执行目标方法
-
-    result = pjd.proceed();
-
-    //返回通知
-
-   log.info(&quot;The method={},ends with={}&quot;,methodName ,result);
-
-}catch (Throwable e) {
-</code></pre><p>//异常通知</p>
-<pre><code>    log.error(&quot;The method={}，occurs exception:={}&quot;,methodName,e);
-
-    throw new RuntimeException(e);
-
-}
-</code></pre><p>//后置通知</p>
-<pre><code>  log.info(&quot;The method={},ends&quot;,methodName);
-
-    return result;
-
-}
-</code></pre><p>}</p>
-<p>spring配置文件spring-context.xml的配置如下：</p>
-<!-- 配置自动扫描-->
-<p>&lt;context:component-scan base-package=”com.cyy.maven.core.Aspect”/&gt;</p>
-<!--告诉JVM 我们用了aspectj的 annotation -->
-<p><a href="aop:aspectj-autoproxy/" target="_blank" rel="noopener">aop:aspectj-autoproxy/</a><br>测试结果如图：</p>
-<p>beforeMethod</p>
-<p>afterMethod&amp;afterReturning<br>在aroundMethod加上@Around(“log()”)，注释掉其他的注解，可以实现相同的功能。</p>
-<p>2.springboot的aop配置不用基于xml，是完全基于注解的配置，和spring的注解配置很相似。</p>
-<p>这里也直接用以前搭建的springboot框架来测试，码云地址为<a href="https://gitee.com/lonelygin/girl.git。" target="_blank" rel="noopener">https://gitee.com/lonelygin/girl.git。</a></p>
-<p>新建Aspect包，下面新建HttpAspect织入类：</p>
-<p>package com.cyy.Aspect;</p>
-<p>import lombok.extern.slf4j.Slf4j;</p>
-<p>import org.apache.catalina.servlet4preview.http.HttpServletRequest;</p>
-<p>import org.aspectj.lang.JoinPoint;</p>
-<p>import org.aspectj.lang.ProceedingJoinPoint;</p>
-<p>import org.aspectj.lang.annotation.*;</p>
-<p>import org.springframework.stereotype.Component;</p>
-<p>import org.springframework.web.context.request.RequestContextHolder;</p>
-<p>import org.springframework.web.context.request.ServletRequestAttributes;</p>
-<p>@Slf4j</p>
-<p>@Aspect</p>
-<p>@Component</p>
-<p>public class HttpAspect {</p>
-<p>@Pointcut(“execution(public <em> com.cyy.controller.GirlController.</em>(..))”)</p>
-<p>public void log(){}</p>
-<p>@Before(“log()”)</p>
-<p>public void doBefore(JoinPoint joinPoint){</p>
-<p>ServletRequestAttributes attributes= (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();</p>
-<pre><code>    HttpServletRequest request= (HttpServletRequest) attributes.getRequest();
-
-    log.info(&quot;执行事务之前。。。&quot;);
-
-    log.info(&quot;url={}&quot;,request.getRequestURI());
-
-    log.info(&quot;method={}&quot;,request.getMethod());
-
-    log.info(&quot;ip={}&quot;,request.getRemoteAddr());
-
-    log.info(&quot;class-method={}&quot;,joinPoint.getSignature().getDeclaringTypeName()+&quot;.&quot;+joinPoint.getSignature().getName());
-
-    log.info(&quot;args={}&quot;,joinPoint.getArgs());
-
-}
-</code></pre><p>@After(“log()”)</p>
-<p>public void doAfter(){</p>
-<p>log.info(“执行事务之后。。。”);</p>
-<pre><code>}
-</code></pre><p>@AfterReturning(returning =”object”, pointcut =”log()”)</p>
-<p>public void doAfterReturning(Object object) {</p>
-<p>log.info(“response={}”, object.toString());</p>
-<pre><code>}
-</code></pre><p>@AfterThrowing(pointcut =”log()”,throwing =”e”)</p>
-<p>public void afterThrowing(JoinPoint joinPoint, Exception e){</p>
-<p>String methodName = joinPoint.getSignature().getName();</p>
-<pre><code>  log.info(&quot;The method={}&quot; + methodName +&quot; occurs excetion:={}&quot; + e);
-
-}
-</code></pre><p>//    @Around(“log()”)</p>
-<pre><code>public ObjectaroundMethod(ProceedingJoinPoint pjd){
-</code></pre><p>Object object =null;</p>
-<pre><code>String methodName = pjd.getSignature().getName();
-
-try {
-</code></pre><p>//前置通知</p>
-<pre><code>    ServletRequestAttributes attributes= (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-
-    HttpServletRequest request= (HttpServletRequest) attributes.getRequest();
-
-    log.info(&quot;执行事务之前。。。&quot;);
-
-    log.info(&quot;url={}&quot;,request.getRequestURI());
-
-    log.info(&quot;method={}&quot;,request.getMethod());
-
-    log.info(&quot;ip={}&quot;,request.getRemoteAddr());
-
-    log.info(&quot;class-method={}&quot;,pjd.getSignature().getDeclaringTypeName()+&quot;.&quot;+pjd.getSignature().getName());
-
-    log.info(&quot;args={}&quot;,pjd.getArgs());
-
-    //执行目标方法
-
-    object = pjd.proceed();
-
-    //返回通知
-
-    log.info(&quot;response={}&quot;, object.toString());
-
-}catch (Throwable e) {
-</code></pre><p>//异常通知</p>
-<pre><code>  log.info(&quot;The method={},occurs exception:={}&quot;,methodName,e);
-
-    throw new RuntimeException(e);
-
-}
-</code></pre><p>//后置通知</p>
-<pre><code>    log.info(&quot;执行事务之后。。。&quot;);
-
-    return object;
-
-}
-</code></pre><p>}<br>测试结果：</p>
-<p>同样的， 将@Around(“log()”)加上，将其他注解注释掉，运行也是同样的结果。</p>
-</bean>]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>java</tag>
-        <tag>spring</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>挪威的森林</title>
-    <url>/2021/06/23/%E6%8C%AA%E5%A8%81%E7%9A%84%E6%A3%AE%E6%9E%97/</url>
-    <content><![CDATA[<p>与你的相遇</p>
-<p>像是夜里与一颗流星的邂逅</p>
-<p>在望不到尽头的山野里</p>
-<p>彼此相守</p>
-<p>往后的岁月里</p>
-<p>我们各自奔流</p>
-<p>在远方时空里</p>
-<p>演绎每一场都市夜景下的灯火通明</p>
-<p><br><br>夜里游动，黑猫流窜的小区</p>
-<p>给予记忆无声的催眠</p>
-<p>彼时年轻人的欢声笑语与热血</p>
-<p>都融化做深夜里的一杯杯清酒</p>
-<p>随夜色褪去</p>
-<p>你是否将我遗忘</p>
-<p>如同曾经千千万万个挪威的森林</p>
-<p>而终究独身于无人之境</p>
-<p><br></p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
+        <tag>正则匹配</tag>
       </tags>
   </entry>
   <entry>
@@ -2174,33 +2256,62 @@ try {
       </tags>
   </entry>
   <entry>
-    <title>正则表达式</title>
-    <url>/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</url>
-    <content><![CDATA[<p>? 通配符匹配文件名中的 0 个或 1 个字符</p>
-<p>* 通配符匹配零个或多个字符</p>
-<p>^ 为匹配输入字符串的开始位置。</p>
-<p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p>
-<p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p>
-<p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p>
-<p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
-<p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>
+    <title>挪威的森林</title>
+    <url>/2021/06/23/%E6%8C%AA%E5%A8%81%E7%9A%84%E6%A3%AE%E6%9E%97/</url>
+    <content><![CDATA[<p>与你的相遇</p>
+<p>像是夜里与一颗流星的邂逅</p>
+<p>在望不到尽头的山野里</p>
+<p>彼此相守</p>
+<p>往后的岁月里</p>
+<p>我们各自奔流</p>
+<p>在远方时空里</p>
+<p>演绎每一场都市夜景下的灯火通明</p>
+<p><br><br>夜里游动，黑猫流窜的小区</p>
+<p>给予记忆无声的催眠</p>
+<p>彼时年轻人的欢声笑语与热血</p>
+<p>都融化做深夜里的一杯杯清酒</p>
+<p>随夜色褪去</p>
+<p>你是否将我遗忘</p>
+<p>如同曾经千千万万个挪威的森林</p>
+<p>而终究独身于无人之境</p>
+<p><br></p>
 ]]></content>
       <categories>
-        <category>后端</category>
+        <category>现代诗</category>
       </categories>
       <tags>
-        <tag>正则匹配</tag>
+        <tag>诗歌</tag>
       </tags>
   </entry>
   <entry>
-    <title>新辞</title>
-    <url>/2021/06/17/%E6%96%B0%E8%BE%9E/</url>
-    <content><![CDATA[<p>歌管楼台声细细，秋千院落夜沉沉。</p>
-<p>徒有斜阳与人语，不念故乡念旧人。</p>
-<p><img src="../../../../images/post-images/10224563-bb430fb614396c21.jpg" alt="img.jpg"></p>
+    <title>無題</title>
+    <url>/2021/06/17/%E7%84%A1%E9%A1%8C/</url>
+    <content><![CDATA[<p>就像没说完的一段故事</p>
+<p>就像断了的弦</p>
+<p>孤寂在夜空盘旋</p>
+<p>旅人在灯下行走</p>
+<p>车辆穿梭于漆黑的夜</p>
+<p>喧嚣隐去于沉睡的异世界</p>
+<p>圆月下的立交桥路面</p>
+<p>水银镜一般映射光华</p>
+<p>深夜的路灯</p>
+<p>独自闷不吭声</p>
+<p>光线四处逃窜</p>
+<p>疲惫不堪的倒在地上</p>
+<p>摸索着所有能触及的黑暗</p>
+<p>潮水在离森林不远处翻滚声息</p>
+<p>萤火虫于溪岸跃动身影</p>
+<p>追寻</p>
+<p>自黄昏到黑夜</p>
+<p>流动的城市灯火</p>
+<p>停留于指尖瞬间</p>
+<p>抑或</p>
+<p>雨中潮湿的羽翼</p>
+<p>在遥远的空中挥动</p>
+<p>在视野中渐行渐远</p>
 ]]></content>
       <categories>
-        <category>古风拾迹</category>
+        <category>现代诗</category>
       </categories>
       <tags>
         <tag>诗歌</tag>
@@ -2452,40 +2563,6 @@ try {
 <p>列车经过铁轨吸进一个个影子后逝去﻿</p>
 <p>乡愁像一曲永不停息的曲子﻿</p>
 <p>在风尘苦旅的夜里奏起</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>無題</title>
-    <url>/2021/06/17/%E7%84%A1%E9%A1%8C/</url>
-    <content><![CDATA[<p>就像没说完的一段故事</p>
-<p>就像断了的弦</p>
-<p>孤寂在夜空盘旋</p>
-<p>旅人在灯下行走</p>
-<p>车辆穿梭于漆黑的夜</p>
-<p>喧嚣隐去于沉睡的异世界</p>
-<p>圆月下的立交桥路面</p>
-<p>水银镜一般映射光华</p>
-<p>深夜的路灯</p>
-<p>独自闷不吭声</p>
-<p>光线四处逃窜</p>
-<p>疲惫不堪的倒在地上</p>
-<p>摸索着所有能触及的黑暗</p>
-<p>潮水在离森林不远处翻滚声息</p>
-<p>萤火虫于溪岸跃动身影</p>
-<p>追寻</p>
-<p>自黄昏到黑夜</p>
-<p>流动的城市灯火</p>
-<p>停留于指尖瞬间</p>
-<p>抑或</p>
-<p>雨中潮湿的羽翼</p>
-<p>在遥远的空中挥动</p>
-<p>在视野中渐行渐远</p>
 ]]></content>
       <categories>
         <category>现代诗</category>

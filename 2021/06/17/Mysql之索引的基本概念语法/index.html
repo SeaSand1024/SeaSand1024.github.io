@@ -88,19 +88,19 @@
 
 
 
-<meta name="description" content="####1.Mysql中索引的概念&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为">
+<meta name="description" content="1.Mysql中索引的概念&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHE">
 <meta name="keywords" content="mysql,索引">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Mysql之索引的基本概念语法">
 <meta property="og:url" content="https://seasand1024.github.io/2021/06/17/Mysql之索引的基本概念语法/index.html">
 <meta property="og:site_name" content="Mr_Chen">
-<meta property="og:description" content="####1.Mysql中索引的概念&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为">
+<meta property="og:description" content="1.Mysql中索引的概念&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHE">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-2af9d972939f6a7a.png">
-<meta property="og:updated_time" content="2021-06-18T17:14:07.571Z">
+<meta property="og:updated_time" content="2021-06-25T12:10:53.514Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Mysql之索引的基本概念语法">
-<meta name="twitter:description" content="####1.Mysql中索引的概念&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为">
+<meta name="twitter:description" content="1.Mysql中索引的概念&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHE">
 <meta name="twitter:image" content="https://seasand1024.github.io/images/post-images/10224563-2af9d972939f6a7a.png">
 
 
@@ -425,14 +425,18 @@
       
 
       
-        <p>####1.Mysql中索引的概念<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
-<p>######索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p>
-<p>####2.索引的基本创建，删除以及数据库表的修改</p>
-<p>#####单列索引的基本创建格式是：<br>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p>
-<p>#####修改表结构的方式创建索引：<br>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
-<p>#####或者也可以创建表的时候指明：<br>    CREATE TABLE sys_user(<br>    id INT NOT NULL primary key,<br>    account VARCHAR(16) NOT NULL,<br>    password VARCHAR(32) NOT NULL,<br>    INDEX ac (account (16))<br>    );  </p>
-<p>#####删除索引的语法：<br>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
-<p>#####显示索引信息:<br>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
+        <h4 id="1-Mysql中索引的概念"><a href="#1-Mysql中索引的概念" class="headerlink" title="1.Mysql中索引的概念"></a>1.Mysql中索引的概念</h4><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MySQL索引的建立对于MySQL的高效运行是很重要的，索引可以大大提高MySQL的检索速度。打个比方，如果合理的设计且使用索引的MySQL是一辆兰博基尼的话，那么没有设计和使用索引的MySQL就是一个人力三轮车。创建索引时，你需要确保该索引是应用在SQL 查询语句的条件(一般作为 WHERE 子句的条件)。 实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。</p>
+<h6 id="索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引"><a href="#索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引" class="headerlink" title="索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引"></a>索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引</h6><p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。建立索引会占用磁盘空间的索引文件。</p>
+<h4 id="2-索引的基本创建，删除以及数据库表的修改"><a href="#2-索引的基本创建，删除以及数据库表的修改" class="headerlink" title="2.索引的基本创建，删除以及数据库表的修改"></a>2.索引的基本创建，删除以及数据库表的修改</h4><h5 id="单列索引的基本创建格式是："><a href="#单列索引的基本创建格式是：" class="headerlink" title="单列索引的基本创建格式是："></a>单列索引的基本创建格式是：</h5><p>CREATE （UNQIUE）INDEX +索引名称+ON+表名（列名（长度））<br>例如：create unique index ac on sys_user(account);</p>
+<h5 id="修改表结构的方式创建索引："><a href="#修改表结构的方式创建索引：" class="headerlink" title="修改表结构的方式创建索引："></a>修改表结构的方式创建索引：</h5><p>ALTER TABLE+表名+ADD(UNIQUE) INDEX+索引名称(列名)<br>例如：alter table sys_user add unique index pa(password);</p>
+<h5 id="或者也可以创建表的时候指明："><a href="#或者也可以创建表的时候指明：" class="headerlink" title="或者也可以创建表的时候指明："></a>或者也可以创建表的时候指明：</h5><pre><code>CREATE TABLE sys_user(  
+id INT NOT NULL primary key,   
+account VARCHAR(16) NOT NULL,  
+password VARCHAR(32) NOT NULL,  
+INDEX ac (account (16))  
+);  
+</code></pre><h5 id="删除索引的语法："><a href="#删除索引的语法：" class="headerlink" title="删除索引的语法："></a>删除索引的语法：</h5><p>DROP INDEX 索引名称 ON 表 或者 alter table 表名 drop index 索引名;<br>例如：drop index pa on sys_user;&amp; alter table sys_user drop index pa;</p>
+<h5 id="显示索引信息"><a href="#显示索引信息" class="headerlink" title="显示索引信息:"></a>显示索引信息:</h5><p>格式：SHOW INDEX FROM 表名;<br>SHOW INDEX FROM sys_user;<br><img src="../../../../images/post-images/10224563-2af9d972939f6a7a.png" alt="image.png"></p>
 
       
     </div>
@@ -490,8 +494,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2021/06/17/浅谈java基础之JVM/" rel="next" title="浅谈java基础之JVM">
-                <i class="fa fa-chevron-left"></i> 浅谈java基础之JVM
+              <a href="/2021/06/17/python-时间序列处理/" rel="next" title="python-时间序列处理">
+                <i class="fa fa-chevron-left"></i> python-时间序列处理
               </a>
             
           </div>
@@ -500,8 +504,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2021/06/17/python-时间序列处理/" rel="prev" title="python-时间序列处理">
-                python-时间序列处理 <i class="fa fa-chevron-right"></i>
+              <a href="/2021/06/17/Mysql-索引的具体优化策略/" rel="prev" title="Mysql 索引的具体优化策略">
+                Mysql 索引的具体优化策略 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -554,8 +558,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <section class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -572,7 +585,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-count">27</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -662,11 +675,27 @@
           
 
           <div id="music163player">
-<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="//music.163.com/outchain/player?type=2&id=463840678&auto=1&height=66"></iframe>
+<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="//music.163.com/outchain/player?type=2&id=1834192628&auto=1&height=66"></iframe>
 </div>
         </div>
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-Mysql中索引的概念"><span class="nav-number">1.</span> <span class="nav-text">1.Mysql中索引的概念</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引"><span class="nav-number">1.0.1.</span> <span class="nav-text">索引一般分为：主键索引、唯一索引、普通索引、全文索引、组合索引</span></a></li></ol></li></ol><li class="nav-item nav-level-4"><a class="nav-link" href="#2-索引的基本创建，删除以及数据库表的修改"><span class="nav-number">2.</span> <span class="nav-text">2.索引的基本创建，删除以及数据库表的修改</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#单列索引的基本创建格式是："><span class="nav-number">2.1.</span> <span class="nav-text">单列索引的基本创建格式是：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#修改表结构的方式创建索引："><span class="nav-number">2.2.</span> <span class="nav-text">修改表结构的方式创建索引：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#或者也可以创建表的时候指明："><span class="nav-number">2.3.</span> <span class="nav-text">或者也可以创建表的时候指明：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#删除索引的语法："><span class="nav-number">2.4.</span> <span class="nav-text">删除索引的语法：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#显示索引信息"><span class="nav-number">2.5.</span> <span class="nav-text">显示索引信息:</span></a></li></ol></li></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
