@@ -87,10 +87,10 @@ douban:
   builtin: false
   book:
     title: '阅读'
-    quote: 'This is my book quote'
+    quote: '男人，对自己狠一点'
   movie:
     title: '观影'
-    quote: 'This is my movie quote'
+    quote: '男人，对自己狠一点'
   #  game:
   #    title: 'This is my game title'
   #    quote: 'This is my game quote'
