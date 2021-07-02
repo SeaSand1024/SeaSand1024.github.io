@@ -768,8 +768,8 @@ public class B extends A {
         <category>后端</category>
       </categories>
       <tags>
-        <tag>spring</tag>
         <tag>事务</tag>
+        <tag>spring</tag>
       </tags>
   </entry>
   <entry>
