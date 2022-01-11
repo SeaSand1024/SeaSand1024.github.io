@@ -242,14 +242,14 @@
   </url>
   
   <url>
-    <loc>https://seasand1024.github.io/tags/%E7%B4%A2%E5%BC%95/</loc>
+    <loc>https://seasand1024.github.io/tags/SQL/</loc>
     <lastmod>2022-01-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://seasand1024.github.io/tags/SQL/</loc>
+    <loc>https://seasand1024.github.io/tags/%E7%B4%A2%E5%BC%95/</loc>
     <lastmod>2022-01-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -270,13 +270,6 @@
   </url>
   
   <url>
-    <loc>https://seasand1024.github.io/tags/hive/</loc>
-    <lastmod>2022-01-11</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://seasand1024.github.io/tags/idea/</loc>
     <lastmod>2022-01-11</lastmod>
     <changefreq>daily</changefreq>
@@ -285,6 +278,13 @@
   
   <url>
     <loc>https://seasand1024.github.io/tags/ssm/</loc>
+    <lastmod>2022-01-11</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://seasand1024.github.io/tags/hive/</loc>
     <lastmod>2022-01-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -333,13 +333,6 @@
   </url>
   
   <url>
-    <loc>https://seasand1024.github.io/tags/%E6%AD%A3%E5%88%99%E5%8C%B9%E9%85%8D/</loc>
-    <lastmod>2022-01-11</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://seasand1024.github.io/tags/JVM/</loc>
     <lastmod>2022-01-11</lastmod>
     <changefreq>daily</changefreq>
@@ -348,6 +341,13 @@
   
   <url>
     <loc>https://seasand1024.github.io/tags/%E9%9D%A2%E8%AF%95/</loc>
+    <lastmod>2022-01-11</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://seasand1024.github.io/tags/%E6%AD%A3%E5%88%99%E5%8C%B9%E9%85%8D/</loc>
     <lastmod>2022-01-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
