@@ -84,7 +84,7 @@ deploy:
 
 douban:
   user: 140573087
-  builtin: false
+  builtin: true
   book:
     title: '阅读'
     quote: '男人，对自己狠一点'
