@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-flash.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="java,spring,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Mr_Chen" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;  &amp;lt;project xmlns=&amp;quot;http://maven.apache.org/POM/4.0.0&amp;quot; xmlns:xsi=&amp;quot;http://www">
+<meta name="keywords" content="java,spring">
+<meta property="og:type" content="article">
+<meta property="og:title" content="spring aop模式管理数据库事务">
+<meta property="og:url" content="https://seasand1024.github.io/2021/06/17/spring-aop模式管理数据库事务/index.html">
+<meta property="og:site_name" content="Mr_Chen">
+<meta property="og:description" content="1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;  &amp;lt;project xmlns=&amp;quot;http://maven.apache.org/POM/4.0.0&amp;quot; xmlns:xsi=&amp;quot;http://www">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-f0a8e95d111c2c32.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-ac72d8c125bc3062.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-ab28af911bfe3aac.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-749472f82639c604.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-9fe139292e669e3f.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-5a2104cf2c23e421.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-48ab6b16ab8d2df0.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-dcdf6ad87573eace.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-6f94344b6dcf4d61.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-ba3ab6d571d669c7.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-218e84e6ecb0e0a9.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-9640bee658b2336a.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-fea1db5aaed45a0d.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/10224563-c891d9eec4750387.png">
+<meta property="og:updated_time" content="2021-06-19T07:53:18.938Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="spring aop模式管理数据库事务">
+<meta name="twitter:description" content="1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;  &amp;lt;project xmlns=&amp;quot;http://maven.apache.org/POM/4.0.0&amp;quot; xmlns:xsi=&amp;quot;http://www">
+<meta name="twitter:image" content="https://seasand1024.github.io/images/post-images/10224563-f0a8e95d111c2c32.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://seasand1024.github.io/2021/06/17/spring-aop模式管理数据库事务/">
+
+
+
+
+
+  <title>spring aop模式管理数据库事务 | Mr_Chen</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Mr_Chen</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">yyds</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-movies">
+          <a href="/movies/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-film"></i> <br>
+            
+            观影
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-books">
+          <a href="/books/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br>
+            
+            阅读
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://seasand1024.github.io/2021/06/17/spring-aop模式管理数据库事务/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Gin">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/head.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mr_Chen">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">spring aop模式管理数据库事务</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-06-17T21:52:12+08:00">
+                2021-06-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/后端/" itemprop="url" rel="index">
+                    <span itemprop="name">后端</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h4 id="1-搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖："><a href="#1-搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：" class="headerlink" title="1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖："></a>1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：</h4><pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+
+&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+  xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+  &lt;groupId&gt;com.cyy&lt;/groupId&gt;
+  &lt;artifactId&gt;spring_aop&lt;/artifactId&gt;
+  &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+
+  &lt;name&gt;spring_aop&lt;/name&gt;
+  &lt;!-- FIXME change it to the project&apos;s website --&gt;
+  &lt;url&gt;http://www.example.com&lt;/url&gt;
+
+  &lt;properties&gt;
+    &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+    &lt;maven.compiler.source&gt;1.8&lt;/maven.compiler.source&gt;
+    &lt;maven.compiler.target&gt;1.8&lt;/maven.compiler.target&gt;
+    &lt;spring.version&gt;4.3.12.RELEASE&lt;/spring.version&gt;
+  &lt;/properties&gt;
+
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;junit&lt;/groupId&gt;
+      &lt;artifactId&gt;junit&lt;/artifactId&gt;
+      &lt;version&gt;4.11&lt;/version&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-aop&lt;/artifactId&gt;
+      &lt;version&gt;${spring.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;aopalliance&lt;/groupId&gt;
+      &lt;artifactId&gt;aopalliance&lt;/artifactId&gt;
+      &lt;version&gt;1.0&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.aspectj&lt;/groupId&gt;
+      &lt;artifactId&gt;aspectjrt&lt;/artifactId&gt;
+      &lt;version&gt;1.8.11&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-aspects&lt;/artifactId&gt;
+      &lt;version&gt;${spring.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-tx&lt;/artifactId&gt;
+      &lt;version&gt;${spring.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-jdbc&lt;/artifactId&gt;
+      &lt;version&gt;${spring.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;mysql&lt;/groupId&gt;
+      &lt;artifactId&gt;mysql-connector-java&lt;/artifactId&gt;
+      &lt;version&gt;5.1.42&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;c3p0&lt;/groupId&gt;
+      &lt;artifactId&gt;c3p0&lt;/artifactId&gt;
+      &lt;version&gt;0.9.1.2&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-beans&lt;/artifactId&gt;
+      &lt;version&gt;${spring.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-core&lt;/artifactId&gt;
+      &lt;version&gt;${spring.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-context&lt;/artifactId&gt;
+      &lt;version&gt;${spring.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-expression&lt;/artifactId&gt;
+      &lt;version&gt;${spring.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+
+  &lt;/dependencies&gt;
+
+  &lt;build&gt;
+    &lt;pluginManagement&gt;&lt;!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) --&gt;
+      &lt;plugins&gt;
+        &lt;plugin&gt;
+          &lt;artifactId&gt;maven-clean-plugin&lt;/artifactId&gt;
+          &lt;version&gt;3.0.0&lt;/version&gt;
+        &lt;/plugin&gt;
+        &lt;!-- see http://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging --&gt;
+        &lt;plugin&gt;
+          &lt;artifactId&gt;maven-resources-plugin&lt;/artifactId&gt;
+          &lt;version&gt;3.0.2&lt;/version&gt;
+        &lt;/plugin&gt;
+        &lt;plugin&gt;
+          &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+          &lt;version&gt;3.7.0&lt;/version&gt;
+        &lt;/plugin&gt;
+        &lt;plugin&gt;
+          &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+          &lt;version&gt;2.20.1&lt;/version&gt;
+        &lt;/plugin&gt;
+        &lt;plugin&gt;
+          &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
+          &lt;version&gt;3.0.2&lt;/version&gt;
+        &lt;/plugin&gt;
+        &lt;plugin&gt;
+          &lt;artifactId&gt;maven-install-plugin&lt;/artifactId&gt;
+          &lt;version&gt;2.5.2&lt;/version&gt;
+        &lt;/plugin&gt;
+        &lt;plugin&gt;
+          &lt;artifactId&gt;maven-deploy-plugin&lt;/artifactId&gt;
+          &lt;version&gt;2.8.2&lt;/version&gt;
+        &lt;/plugin&gt;
+      &lt;/plugins&gt;
+    &lt;/pluginManagement&gt;
+  &lt;/build&gt;
+&lt;/project&gt;
+</code></pre><p>具体的搭建项目步骤，自行百度解决。</p>
+<h4 id="2-转账事务环境搭建："><a href="#2-转账事务环境搭建：" class="headerlink" title="2.转账事务环境搭建："></a>2.转账事务环境搭建：</h4><p>1）创建表和各个类与接口：</p>
+<pre><code>create database ee19_spring_day03;
+use ee19_spring_day03;
+create table account(
+  id int primary key auto_increment,
+  username varchar(50),
+  money int
+);
+insert into account(username,money) values(&apos;jack&apos;,&apos;10000&apos;);
+insert into account(username,money) values(&apos;rose&apos;,&apos;10000&apos;);
+</code></pre><ul>
+<li>新建service层和dao层以及各自下面的impl层</li>
+<li><p>在dao下面新建AccountDao接口，代码如下：</p>
+<pre><code>package com.cyy.dao;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 22:37 2018/8/1
+ */
+public interface AccountDao {
+
+    public void out(String outer, Integer money) ;
+    public void in(String inner, Integer money) ;
+
+}
+</code></pre></li>
+<li><p>在dao下的impl下新建实现类AccountDaoImpl，继承自JdbcDaoSupport，实现其中的方法：</p>
+<pre><code>package com.cyy.dao.impl;
+
+import com.cyy.dao.AccountDao;
+import org.springframework.jdbc.core.support.JdbcDaoSupport;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 22:37 2018/8/1
+ */
+public class AccountDaoImpl extends JdbcDaoSupport implements AccountDao {
+    @Override
+    public void out(String outer, Integer money) {
+
+        this.getJdbcTemplate().update(&quot;update account set money = money - ? where username = ?&quot;, money,outer);
+    }
+
+    @Override
+    public void in(String inner, Integer money) {
+        this.getJdbcTemplate().update(&quot;update account set money = money + ? where username = ?&quot;, money,inner);
+    }
+}
+</code></pre></li>
+<li><p>新建service下AccountService接口：</p>
+<pre><code>package com.cyy.service;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 22:40 2018/8/1
+ */
+public interface AccountService {
+
+    public void transfer(String outer, String inner, Integer money);
+}
+</code></pre></li>
+<li><p>新建service.impl下AccountServiceImpl实现类：</p>
+<pre><code>package com.cyy.service.impl;
+
+import com.cyy.dao.AccountDao;
+import com.cyy.service.AccountService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 22:40 2018/8/1
+ */
+public class AccountServiceImpl  implements AccountService{
+</code></pre></li>
+</ul>
+<pre><code>    public void setAccountDao(AccountDao accountDao) {
+        this.accountDao = accountDao;
+    }
+
+    private AccountDao accountDao;
+
+
+    @Override
+    public void transfer(String outer, String inner, Integer money) {
+        // TODO Auto-generated method stub
+        accountDao.out(outer, money);
+        //断电
+//        int i = 1 / 0;
+        accountDao.in(inner, money);
+    }
+}
+</code></pre><p>2）完善配置文件</p>
+<ul>
+<li>在main下新建与java的同级目录resources，并且标记为Resources Root;</li>
+<li>在resources下新建spring上下文文件applicationContext.xml，配置初始配置内容如下：</li>
+</ul>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;beans xmlns=&quot;http://www.springframework.org/schema/beans&quot;
+       xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+       xmlns:aop=&quot;http://www.springframework.org/schema/aop&quot;
+       xmlns:context=&quot;http://www.springframework.org/schema/context&quot;
+       xmlns:tx=&quot;http://www.springframework.org/schema/tx&quot;
+       xsi:schemaLocation=&quot;http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd&quot;&gt;
+    &lt;context:property-placeholder location=&quot;classpath:jdbc.properties&quot;/&gt;
+
+    &lt;bean id=&quot;dataSource&quot; class=&quot;com.mchange.v2.c3p0.ComboPooledDataSource&quot;&gt;
+        &lt;property name=&quot;driverClass&quot; value=&quot;${jdbc.driver}&quot;/&gt;
+        &lt;property name=&quot;jdbcUrl&quot; value=&quot;${jdbc.url}&quot;/&gt;
+        &lt;property name=&quot;user&quot; value=&quot;${jdbc.username}&quot;/&gt;
+        &lt;property name=&quot;password&quot; value=&quot;${jdbc.password}&quot;/&gt;
+    &lt;/bean&gt;
+
+    &lt;bean id=&quot;accountDao&quot; class=&quot;com.cyy.dao.impl.AccountDaoImpl&quot;&gt;
+        &lt;property name=&quot;dataSource&quot; ref=&quot;dataSource&quot;/&gt;
+    &lt;/bean&gt;
+
+    &lt;bean id=&quot;accountService&quot; class=&quot;com.cyy.service.impl.AccountServiceImpl&quot;&gt;
+        &lt;property name=&quot;accountDao&quot; ref=&quot;accountDao&quot;/&gt;
+    &lt;/bean&gt;
+
+&lt;/beans&gt;
+</code></pre><ul>
+<li>在resources下新建jdbc.properties配置文件：</li>
+</ul>
+<pre><code>jdbc.driver=com.mysql.jdbc.Driver
+jdbc.url=jdbc:mysql://localhost:3306/ee19_spring_day03
+jdbc.username=root
+jdbc.password=
+</code></pre><p>3）测试文件的配置</p>
+<ul>
+<li>在main同级的test文件下的java下新建test文件（其实已经maven自动生成了），如图：<br><img src="../../../../images/post-images/10224563-f0a8e95d111c2c32.png" alt="image.png"></li>
+</ul>
+<p>配置代码：</p>
+<pre><code>package com.cyy;
+
+
+import com.cyy.service.AccountService;
+import org.junit.Test;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+/**
+ * Unit test for simple App.
+ */
+public class AppTest 
+{
+    /**
+     * Rigorous Test :-)
+     */
+    @Test
+    public void demo01(){
+        String xmlPath = &quot;applicationContext.xml&quot;;
+        ApplicationContext applicationContext = new ClassPathXmlApplicationContext(xmlPath);
+        AccountService accountService =  (AccountService) applicationContext.getBean(&quot;accountService&quot;);
+        accountService.transfer(&quot;rose&quot;, &quot;jack&quot;, 1000);
+    }
+
+}
+</code></pre><h4 id="3-测试运行"><a href="#3-测试运行" class="headerlink" title="3.测试运行"></a>3.测试运行</h4><p>原本数据库jack和rose的money都是10000的：<br><img src="../../../../images/post-images/10224563-ac72d8c125bc3062.png" alt="image.png"></p>
+<p>此处在AccountServiceImpl暂时注销掉了<br>  //        int i = 1 / 0;<br>先保证事务的正确运行查看效果，点击运行AppTest类：<br><img src="../../../../images/post-images/10224563-ab28af911bfe3aac.png" alt="image.png"></p>
+<p>测试通过，再来查看数据库：<br><img src="../../../../images/post-images/10224563-749472f82639c604.png" alt="image.png"></p>
+<p>已经成功实现了转账1000块的功能，这次把  //        int i = 1 / 0;注释去掉，<br>并且恢复数据库原本数值，再次点击AppTest类运行：<br><img src="../../../../images/post-images/10224563-9fe139292e669e3f.png" alt="image.png"></p>
+<p>异常报错，再去查看数据库：<br><img src="../../../../images/post-images/10224563-5a2104cf2c23e421.png" alt="image.png"></p>
+<p>事务没有正确回滚，导致事务的ACID特性被破坏，所以接下来，我们将通过几种方式实现事务的管理。</p>
+<h4 id="4-手动事务管理"><a href="#4-手动事务管理" class="headerlink" title="4.手动事务管理"></a>4.手动事务管理</h4><ul>
+<li>修改AccountService接口：</li>
+</ul>
+<pre><code>package com.cyy.service;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 22:40 2018/8/1
+ */
+public interface AccountService {
+
+//    public void transfer(String outer, String inner, Integer money);
+    public void transfer(final String outer,final String inner,final Integer money);
+}
+</code></pre><ul>
+<li>将AccountServiceImpl中原来的transfer注释掉，添加以下代码：</li>
+</ul>
+<pre><code>private TransactionTemplate transactionTemplate;
+public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
+    this.transactionTemplate = transactionTemplate;
+}
+@Override
+public void transfer(final String outer,final String inner,final Integer money) {
+    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+
+        @Override
+        protected void doInTransactionWithoutResult(TransactionStatus arg0) {
+            accountDao.out(outer, money);
+            //断电
+              int i = 1/0;
+            accountDao.in(inner, money);
+        }
+    });
+
+}
+</code></pre><ul>
+<li>修改applicationContext.xml配置文件：</li>
+</ul>
+<pre><code>&lt;bean id=&quot;accountService&quot; class=&quot;com.cyy.service.impl.AccountServiceImpl&quot;&gt;
+    &lt;property name=&quot;accountDao&quot; ref=&quot;accountDao&quot;/&gt;
+    &lt;property name=&quot;transactionTemplate&quot; ref=&quot;transactionTemplate&quot;/&gt;
+&lt;/bean&gt;
+&lt;!-- 手动模式，使用TransactionTemplate --&gt;
+ &lt;bean id=&quot;txManager&quot; class=&quot;org.springframework.jdbc.datasource.DataSourceTransactionManager&quot;&gt;
+    &lt;property name=&quot;dataSource&quot; ref=&quot;dataSource&quot;/&gt;
+&lt;/bean&gt;
+
+&lt;bean id=&quot;transactionTemplate&quot; class=&quot;org.springframework.transaction.support.TransactionTemplate&quot;&gt;
+    &lt;property name=&quot;transactionManager&quot; ref=&quot;txManager&quot;/&gt;
+&lt;/bean&gt;
+</code></pre><ul>
+<li>再次点击AppTest类运行测试，运行结果：</li>
+</ul>
+<p><img src="../../../../images/post-images/10224563-48ab6b16ab8d2df0.png" alt="image.png"></p>
+<p>如期报错,再去查看数据库：<br><img src="../../../../images/post-images/10224563-dcdf6ad87573eace.png" alt="image.png"></p>
+<p>如期实现了手动的事务管理，通过spring底层使用 TransactionTemplate 事务模板进行操作。</p>
+<p>####5.代理工厂实现的事务管理</p>
+<ul>
+<li>修改AccountService接口和AccountServiceImpl类以及applicationContext.xml为原本的配置；</li>
+</ul>
+<p>然后新增如下配置：</p>
+<pre><code> &lt;bean id=&quot;txManager&quot; class=&quot;org.springframework.jdbc.datasource.DataSourceTransactionManager&quot;&gt;
+   &lt;property name=&quot;dataSource&quot; ref=&quot;dataSource&quot;/&gt;
+ &lt;/bean&gt;
+    &lt;bean id=&quot;proxyAccountService&quot; class=&quot;org.springframework.transaction.interceptor.TransactionProxyFactoryBean&quot;&gt;
+    &lt;property name=&quot;proxyInterfaces&quot; value=&quot;com.cyy.service.AccountService&quot;/&gt;
+    &lt;property name=&quot;target&quot; ref=&quot;accountService&quot;/&gt;
+    &lt;property name=&quot;transactionManager&quot; ref=&quot;txManager&quot;/&gt;
+    &lt;property name=&quot;transactionAttributes&quot;&gt;
+        &lt;props&gt;
+            &lt;prop key=&quot;transfer&quot;&gt;PROPAGATION_REQUIRED,ISOLATION_DEFAULT&lt;/prop&gt;
+        &lt;/props&gt;
+    &lt;/property&gt;
+&lt;/bean&gt;    
+</code></pre><ul>
+<li><p>在AppTest中新建demo2方法：</p>
+<pre><code>@Test
+public void demo02(){
+    String xmlPath = &quot;applicationContext.xml&quot;;
+    ApplicationContext applicationContext = new ClassPathXmlApplicationContext(xmlPath);
+    AccountService accountService =  (AccountService) applicationContext.getBean(&quot;proxyAccountService&quot;);
+    accountService.transfer(&quot;jack&quot;, &quot;rose&quot;, 1000);
+}
+</code></pre></li>
+<li><p>测试结果：</p>
+</li>
+</ul>
+<p><img src="../../../../images/post-images/10224563-6f94344b6dcf4d61.png" alt="image.png"></p>
+<p>一样报错，但是数据库没有实现错误转账，如图：</p>
+<p><img src="../../../../images/post-images/10224563-ba3ab6d571d669c7.png" alt="image.png"></p>
+<p>####6.基于xml的aop事务配置</p>
+<ul>
+<li><p>修改applicationContext.xml配置文件：</p>
+<pre><code> &lt;!--事务管理器的配置--&gt;
+  &lt;bean id=&quot;txManager&quot; class=&quot;org.springframework.jdbc.datasource.DataSourceTransactionManager&quot;&gt;
+    &lt;property name=&quot;dataSource&quot; ref=&quot;dataSource&quot;/&gt;
+&lt;/bean&gt;
+ &lt;!-- 基于xml的aop事务配置 --&gt;
+ &lt;tx:advice id=&quot;txAdvice&quot; transaction-manager=&quot;txManager&quot;&gt;
+     &lt;tx:attributes&gt;
+         &lt;tx:method name=&quot;transfer&quot; propagation=&quot;REQUIRED&quot; isolation=&quot;DEFAULT&quot;/&gt;
+     &lt;/tx:attributes&gt;
+ &lt;/tx:advice&gt;
+
+ &lt;aop:config&gt;
+     &lt;aop:advisor advice-ref=&quot;txAdvice&quot; pointcut=&quot;execution(* com.cyy.service.impl.*.*(..))&quot;/&gt;
+ &lt;/aop:config&gt;
+</code></pre></li>
+<li><p>运行测试AppTest类的demo1()方法：</p>
+</li>
+</ul>
+<p><img src="../../../../images/post-images/10224563-218e84e6ecb0e0a9.png" alt="image.png"></p>
+<p>数据库：<br><img src="../../../../images/post-images/10224563-9640bee658b2336a.png" alt="image.png"></p>
+<p>####7.基于注解的aop事务配置</p>
+<ul>
+<li><p>在applicationContext.xml中将以上代理类的配置替换成</p>
+<pre><code>&lt;tx:annotation-driven transaction-manager=&quot;txManager&quot;/&gt;
+</code></pre></li>
+<li><p>在需要进行事务操作的类或者方法上进行加上注解 @Transactional，同时可以配置事务传播级别和事务隔离级别，例如：</p>
+<pre><code>@Transactional(propagation = Propagation.REQUIRED,isolation = Isolation.DEFAULT)
+</code></pre></li>
+</ul>
+<p>简单解释一下，这里的传播级别设置的是REQUIRED,即支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置;隔离级别DEFAULT，使用数据库默认的事务隔离级别（MySQL 事务默认隔离级别是可重复读）。</p>
+<ul>
+<li>再次查看测试结果：<br><img src="../../../../images/post-images/10224563-fea1db5aaed45a0d.png" alt="image.png"></li>
+</ul>
+<p>报错，数据库：<br><img src="../../../../images/post-images/10224563-c891d9eec4750387.png" alt="image.png"></p>
+
+      
+    </div>
+    
+    
+    
+
+    <div>
+          
+            
+          
+    </div>
+
+    
+
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    Gin
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://seasand1024.github.io/2021/06/17/spring-aop模式管理数据库事务/" title="spring aop模式管理数据库事务">https://seasand1024.github.io/2021/06/17/spring-aop模式管理数据库事务/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/spring/" rel="tag"># spring</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/06/17/spring之aop配置与springboot-aop配置/" rel="next" title="spring之aop配置与springboot aop配置">
+                <i class="fa fa-chevron-left"></i> spring之aop配置与springboot aop配置
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/06/17/spring-事务理解/" rel="prev" title="spring 事务理解">
+                spring 事务理解 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/head.gif" alt="Gin">
+            
+              <p class="site-author-name" itemprop="name">Gin</p>
+              <p class="site-description motion-element" itemprop="description">人生没有回头路</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">29</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">18</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/SeaSand1024" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:2215205259@qq.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                友情链接
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.bilibili.com" title="Bilibili" target="_blank">Bilibili</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.google.com" title="Google" target="_blank">Google</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.nature.com" title="Nature" target="_blank">Nature</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.jos.org.cn" title="Jos" target="_blank">Jos</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          <div id="music163player">
+<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="//music.163.com/outchain/player?type=2&id=1445825360&auto=1&height=66"></iframe>
+</div>
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖："><span class="nav-number">1.</span> <span class="nav-text">1.搭建项目环境，基于idea下maven环境的搭建，此处贴出pom文件的jar包依赖：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-转账事务环境搭建："><span class="nav-number">2.</span> <span class="nav-text">2.转账事务环境搭建：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-测试运行"><span class="nav-number">3.</span> <span class="nav-text">3.测试运行</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-手动事务管理"><span class="nav-number">4.</span> <span class="nav-text">4.手动事务管理</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Gin</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
