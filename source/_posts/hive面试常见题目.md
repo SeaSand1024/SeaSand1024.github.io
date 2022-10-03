@@ -1,7 +1,6 @@
 ---
 title: hive面试常见题目
 type: categories
-top: true
 date: 2021-06-25 20:05:40
 tags: [hive,SQL]
 categories: 数据开发
