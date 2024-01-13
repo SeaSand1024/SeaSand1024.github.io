@@ -1,4 +1,5 @@
 ﻿title: ⼤数据系统设计思路概览
+top: true
 author: Gin
 tags:
   - big data
