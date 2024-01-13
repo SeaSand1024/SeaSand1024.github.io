@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-flash.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="big data,">
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Mr_Chen" type="application/atom+xml">
+
+
+
+
+
+
+<meta name="description" content="⼀ .⼤数据系统设计思路概览 ⼤数据概念与传统定义 狭义的⼤数据–专⻔的⼤数据软硬件以及服务 源起Google搜索引擎背后的三驾⻢⻋  GFS MapReduce BigTable   从GFS到DataFlow,19年⼤数据架构⽣态演进  Lambda 架构 Kappa 架构   ⼴义的⼤数据–“⼤数据”是指传统数据处理应⽤软件时，不⾜以处理的⼤的或者复杂的数据集 的术语 维基百科的定义  ⼤数">
+<meta name="keywords" content="big data">
+<meta property="og:type" content="article">
+<meta property="og:title" content="⼤数据系统设计思路概览">
+<meta property="og:url" content="https://seasand1024.github.io/2023/05/20/大数据系统设计思路概览与Flink SQL构建实时数仓介绍演示/index.html">
+<meta property="og:site_name" content="Mr_Chen">
+<meta property="og:description" content="⼀ .⼤数据系统设计思路概览 ⼤数据概念与传统定义 狭义的⼤数据–专⻔的⼤数据软硬件以及服务 源起Google搜索引擎背后的三驾⻢⻋  GFS MapReduce BigTable   从GFS到DataFlow,19年⼤数据架构⽣态演进  Lambda 架构 Kappa 架构   ⼴义的⼤数据–“⼤数据”是指传统数据处理应⽤软件时，不⾜以处理的⼤的或者复杂的数据集 的术语 维基百科的定义  ⼤数">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.001.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.002.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.003.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.004.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.005.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.006.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.007.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.008.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.009.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.010.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.011.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.012.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.013.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.014.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.015.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.016.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.017.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.018.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.019.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.020.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.021.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.022.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.023.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.024.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.025.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.026.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.027.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.028.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.029.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.031.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.032.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.033.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.034.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.035.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.036.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.037.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.038.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.039.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.040.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.041.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.042.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.043.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.044.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.045.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.046.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.047.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.048.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.049.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.050.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.051.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.052.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.053.jpeg">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.054.png">
+<meta property="og:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.055.png">
+<meta property="og:updated_time" content="2023-05-20T11:36:14.578Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="⼤数据系统设计思路概览">
+<meta name="twitter:description" content="⼀ .⼤数据系统设计思路概览 ⼤数据概念与传统定义 狭义的⼤数据–专⻔的⼤数据软硬件以及服务 源起Google搜索引擎背后的三驾⻢⻋  GFS MapReduce BigTable   从GFS到DataFlow,19年⼤数据架构⽣态演进  Lambda 架构 Kappa 架构   ⼴义的⼤数据–“⼤数据”是指传统数据处理应⽤软件时，不⾜以处理的⼤的或者复杂的数据集 的术语 维基百科的定义  ⼤数">
+<meta name="twitter:image" content="https://seasand1024.github.io/images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.001.jpeg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://seasand1024.github.io/2023/05/20/大数据系统设计思路概览与Flink SQL构建实时数仓介绍演示/">
+
+
+
+
+
+  <title>⼤数据系统设计思路概览 | Mr_Chen</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Mr_Chen</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">yyds</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-sitemap">
+          <a href="/sitemap.xml" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>
+            
+            站点地图
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-movies">
+          <a href="/movies/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-film"></i> <br>
+            
+            观影
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-books">
+          <a href="/books/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-book"></i> <br>
+            
+            阅读
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://seasand1024.github.io/2023/05/20/大数据系统设计思路概览与Flink SQL构建实时数仓介绍演示/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="安徒生">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/head.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mr_Chen">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">⼤数据系统设计思路概览</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-05-20T18:26:00+08:00">
+                2023-05-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据开发/" itemprop="url" rel="index">
+                    <span itemprop="name">数据开发</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><strong>⼀</strong> .<strong>⼤数据系统设计思路概览</strong></p>
+<p><strong>⼤数据概念与传统定义</strong></p>
+<p><strong>狭义的⼤数据</strong>–<strong>专⻔的⼤数据软硬件以及服务</strong></p>
+<p><strong>源起</strong>Google<strong>搜索引擎背后的三驾⻢⻋</strong></p>
+<ul>
+<li>GFS</li>
+<li>MapReduce</li>
+<li>BigTable</li>
+</ul>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.001.jpeg" alt="img.jpeg"></p>
+<p><strong>从</strong>GFS<strong>到</strong>DataFlow,19<strong>年⼤数据架构⽣态演进</strong></p>
+<ul>
+<li>Lambda 架构</li>
+<li>Kappa 架构</li>
+</ul>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.002.jpeg" alt="img.jpeg"></p>
+<p><strong>⼴义的⼤数据</strong>–<strong>“⼤数据”是指传统数据处理应⽤软件时，不⾜以处理的⼤的或者复杂的数据集 的术语</strong></p>
+<p><strong>维基百科的定义</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.003.jpeg" alt="img.jpeg"></p>
+<p><strong>⼤数据的</strong>4V</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.004.jpeg" alt="img.jpeg"></p>
+<p><strong>⼤数据技术</strong>–<strong>⼤数据技术其实是计算机科学中很多科⽬的综合应⽤</strong></p>
+<p><strong>简单的⼤数据技术栈</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.005.jpeg" alt="img.jpeg"></p>
+<p><strong>⼤数据分类–基于系统层⾯开展的细分领域</strong></p>
+<p><strong>分布式系统</strong></p>
+<p><strong>数据编码</strong></p>
+<p>数据表现形式⽆⾮两种：</p>
+<ul>
+<li>内存中数据保存对象，结构体、列表、数组、哈希表和树结构等等，传统的数据结构对于 CPU⾼效访问优化。</li>
+<li>数据写⼊⽂件通过⽹络发送，必须要编码为某种字节序列，但是由于⼀些虚拟字节⽐如指针的存在所以和内存的表现形式有可能不⼀样。</li>
+</ul>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.006.jpeg" alt="img.jpeg"></p>
+<p><strong>数据分区</strong></p>
+<p>哈希分区</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.007.jpeg" alt="img.jpeg"></p>
+<p>范围分区</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.008.jpeg" alt="img.jpeg"></p>
+<p><strong>数据复制</strong></p>
+<p>单领导者（单主复制）</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.009.jpeg" alt="img.jpeg"></p>
+<p>多领导者（多主复制）</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.010.jpeg" alt="img.jpeg"></p>
+<p>⽆领导者（⽆主复制）</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.011.jpeg" alt="img.jpeg"></p>
+<p>每种⽅法都有优点和缺点。单主复制是⾮常流⾏的，因为它很容易理解，不需要担⼼冲突解决。在出现故障节点，⽹络中断和延迟峰 值的情况下，多领导者和⽆领导者复制可以更加稳健，但代价很难推测，只能提供⾮常弱的⼀致性保证。</p>
+<p>复制可以是同步的，也可以是异步的，在发⽣故障时对系统⾏为有深远的影响。尽管在系统运⾏平稳时异步复制速度很快，但是在复 制滞后增加和服务器故障时要弄清楚会发⽣什么， 这⼀点很重要。如果⼀个领导者失败了，并且你推动⼀个异步更新的追随者成为新 的领导者，那么最近承诺的数据可能会丢失。</p>
+<p><strong>数据检索与索引</strong> </p>
+<p>哈希索引</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.012.jpeg" alt="img.jpeg"></p>
+<p>SSTables和 LSM TREE<br><img src="../../../../images/post-images/bigData/../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.013.jpeg" alt></p>
+<p>合并多个 SSTable 段，仅保留每个键的最新值。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.014.jpeg" alt></p>
+<p>SSTable 及其内存中的索引。</p>
+<p><strong>数据模型</strong> 关系模型与⽂档模型</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.015.jpeg" alt></p>
+<p>图状数据模型</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.016.jpeg" alt></p>
+<p><strong>数据批处理与流处理</strong></p>
+<p>mapreduce 模式的批处理</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.017.jpeg" alt></p>
+<p>flink的 dataflow流处理模式</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.018.jpeg" alt></p>
+<p><strong>数据事务⼀致性</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.019.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.020.jpeg" alt></p>
+<p><strong>数据压缩与存储 列存储</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.021.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.022.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.023.png" alt></p>
+<p><strong>数据⼀致性与共识</strong></p>
+<p>分布式系统挑战</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.024.jpeg" alt></p>
+<p>2PC/3PC和 Paxos协议是经典的分布式协议</p>
+<p>Two Phase指的是 Commit-request阶段 Commit阶段。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.025.png" alt> 请求阶段</p>
+<p>在请求阶段，协调者将通知事务参与者准备提交或取消事务，然后进⼊表决过程。 在表决过程中，参与者将告知协调者⾃⼰的决策：同意（事务参与者本地作业执⾏成功）或取消（本地作业执⾏故障）。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.026.png" alt> 提交阶段</p>
+<p>在该阶段，协调者将基于第⼀个阶段的投票结果进⾏决策：提交或取消。 当且仅当所有的参与者同意提交事务协调者才通知所有的参与者提交事务，否则协调者将通知所有的参与者取消事务。参与者在接收 到协调者发来的消息后将执⾏响应的操作。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.027.png" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.028.png" alt> 同步阻塞</p>
+<p>执⾏过程中，所有参与节点都是事务独占状态，当参与者占有公共资源时，第三⽅节点访问公共资源被阻塞。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.029.png" alt> 单点问题</p>
+<p>⼀旦协调者发⽣故障，参与者会⼀直阻塞下去。</p>
+<p>![](../../../../images/post-images/bigData/Aspo</p>
+<p>在第⼆阶段中，假设协调者发出了事务 commit的通知，但是因为⽹络问题该通知仅被⼀部分参与者所收到并执⾏ commit，其余的参与 者没有收到通知⼀直处于阻塞状态，这段时间就产⽣了数据的不⼀致性。</p>
+<p>Three Phase分别为 CanCommit、 PreCommit、 DoCommit。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.031.png" alt></p>
+<p><strong>三阶段提交针对两阶段提交做了改进：</strong></p>
+<ul>
+<li>引⼊超时机制。在 2PC中，只有协调者拥有超时机制， 3PC同时在协调者和参与者中都引⼊超时机制。</li>
+<li>在第⼀阶段和第⼆阶段中插⼊⼀个准备阶段。保证了在最后提交阶段之前各参与节点的状态是⼀致的。</li>
+</ul>
+<p>Paxos算法</p>
+<p>应⽤最⼴的分布式⼀致性算法。</p>
+<p>节点⻆⾊</p>
+<ul>
+<li>Proposer:提案者 ;</li>
+<li>Acceptor:批准者 ;</li>
+<li>Learner:学习者 ;</li>
+</ul>
+<p>约束条件：</p>
+<ul>
+<li>Acceptor必须接受它收到的第⼀个提案；</li>
+<li>如果⼀个提案的 v值被⼤多数 Acceptor接受过，那后续的所有被接受的提案中也必须包含 v值（ v值可以理解为提案的内容，提案 由⼀个或多个 v和提案编号组成）；</li>
+<li>如果某⼀轮 Paxos 协议批准了某个 value，则以后各轮 Paxos 只能批准这个 value；</li>
+</ul>
+<p>通信， 两个阶段 4个过程 ：</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.032.jpeg" alt></p>
+<p>选举</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.033.png" alt></p>
+<p><a href="**⽤户购买商品统计表**--**buy\_cnt\_per\_hour**">^1</a><strong>⼤数据当今的趋势与潮流</strong></p>
+<p><strong>流批⼀体实时计算 数据湖 ⽆服务化</strong>(serverless) <strong>应⽤层⾯</strong>–<strong>低代码化</strong></p>
+<p><strong>⼆</strong>.Flink SQL <strong>构建端到端的实时数据应⽤简单</strong>Demo<strong>演示</strong></p>
+<p><strong>基于</strong>docker<strong>集成组件</strong></p>
+<ul>
+<li><strong>Flink SQL CLI:</strong> used to submit queries and visualize their results.</li>
+<li><strong>Flink Cluster:</strong> a Flink JobManager and a Flink TaskManager container to execute queries.</li>
+<li><strong>MySQL:</strong> MySQL 5.7 and a pre-populated category table in the database. The category table will be joined with data in Kafka to enrich the real-time data.</li>
+<li><strong>Kafka:</strong> mainly used as a data source. The DataGen component automatically writes data into a Kafka topic.</li>
+<li><strong>Zookeeper:</strong> this component is required by Kafka.</li>
+<li><strong>Elasticsearch:</strong> mainly used as a data sink.</li>
+<li><strong>Kibana:</strong> used to visualize the data in Elasticsearch.</li>
+<li><strong>DataGen:</strong> the data generator. After the container is started, user behavior data is automatically generated and sent to the Kafka topic. By default, 2000 data entries are generated each second for about 1.5 hours. You can modify DataGen’s speedupparameter in docker-compose.yml to adjust the generation rate (which takes effect after Docker Compose is restarted).</li>
+</ul>
+<p><strong>相关的</strong>flinkSQL</p>
+<p><strong>数据流外部表构建</strong></p>
+<p><strong>⽤户⾏为⽇志表</strong>–<strong>user_behavior</strong></p>
+<p>[^2] CREATE TABLE user_behavior (<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.034.png" alt></p>
+<p>2  user_id BIGINT,<br>2  item_id BIGINT,<br>2  category_id BIGINT,<br>2  behavior STRING,<br>2  ts TIMESTAMP(3),<br>2  proctime AS PROCTIME(),   – generates processing-time attribute using computed column</p>
+<p>8 WATERMARK FOR ts AS ts - INTERVAL ‘5’ SECOND  – defines watermark on ts column, marks ts as even 9 ) WITH (</p>
+<p>10 ‘connector’ = ‘kafka’,  – using kafka connector</p>
+<p>11 ‘topic’ = ‘user_behavior’,  – kafka topic</p>
+<p>12 ‘scan.startup.mode’ = ‘earliest-offset’,  – reading from the beginning</p>
+<p>13 ‘properties.bootstrap.servers’ = ‘kafka:9094’,  – kafka broker address</p>
+<p>14 ‘format’ = ‘json’  – the data format is json 15 );</p>
+<p>2  hour_of_day BIGINT,<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.035.png" alt><br>2  buy_cnt BIGINT<br>2  ) WITH (</p>
+<p>5 ‘connector’ = ‘elasticsearch-7’, – using elasticsearch connector</p>
+<p>6 ‘hosts’ = ‘<a href="http://elasticsearch:9200&#39;" target="_blank" rel="noopener">http://elasticsearch:9200&#39;</a>,  – elasticsearch address</p>
+<p>7 ‘index’ = ‘buy_cnt_per_hour’  – elasticsearch index name, similar to database table name 8 );</p>
+<p><strong>实现实时统计每天各时段商品购买量统计</strong></p>
+<p>[^3] INSERT INTO buy_cnt_per_hour<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.036.png" alt></p>
+<p>[^4] SELECT HOUR(TUMBLE_START(ts, INTERVAL ‘1’ HOUR)), COUNT(*) [^5] FROM user_behavior</p>
+<p>[^6] WHERE behavior = ‘buy’</p>
+<p>[^7] GROUP BY TUMBLE(ts, INTERVAL ‘1’ HOUR);</p>
+<p><strong>cumulative_uv 外部表</strong></p>
+<p>1  CREATE TABLE cumulative_uv (<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.037.png" alt><br>1  date_str STRING,<br>1  time_str STRING,<br>1  uv BIGINT,</p>
+<p>5 PRIMARY KEY (date_str, time_str) NOT ENFORCED [^8] ) WITH (</p>
+<p>[^9] ‘connector’ = ‘elasticsearch-7’,</p>
+<p>[^10] ‘hosts’ = ‘<a href="http://elasticsearch:9200&#39;" target="_blank" rel="noopener">http://elasticsearch:9200&#39;</a>,</p>
+<p>[^11] ‘index’ = ‘cumulative_uv’</p>
+<p>[^12] );</p>
+<p><strong>实现实时每</strong>10<strong>分钟唯⼀访客的累计统计</strong></p>
+<p>1  INSERT INTO cumulative_uv<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.038.png" alt><br>1  SELECT date_str, MAX(time_str), COUNT(DISTINCT user_id) as uv<br>1  FROM (<br>1  SELECT</p>
+<p>5 DATE_FORMAT( ts, ‘yyyy-MM-dd’) as date_str,</p>
+<p>6 SUBSTR(DATE_FORMAT( ts, ‘HH:mm’),1,4) || ‘0’ as time_str,</p>
+<p>7  user_id<br>7  FROM user_behavior)<br>7  GROUP BY date_str;</p>
+<p><strong>顶级品类分布维度外部表</strong></p>
+<p>12 );<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.039.png" alt></p>
+<p><strong>顶级品类分布计算结果外部表</strong></p>
+<p>1  CREATE TABLE top_category (<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.040.png" alt><br>1  category_name STRING PRIMARY KEY NOT ENFORCED,<br>1  buy_cnt BIGINT<br>1  ) WITH (</p>
+<p>5 ‘connector’ = ‘elasticsearch-7’,</p>
+<p>6 ‘hosts’ = ‘<a href="http://elasticsearch:9200&#39;" target="_blank" rel="noopener">http://elasticsearch:9200&#39;</a>,</p>
+<p>7 ‘index’ = ‘top_category’ 8 );</p>
+<p><strong>⾏为表与品类纬度表实时关联虚拟视图</strong></p>
+<p>1  CREATE VIEW rich_user_behavior AS<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.041.png" alt><br>1  SELECT U.user_id, U.item_id, U.behavior, C.parent_category_name as category_name<br>1  FROM user_behavior AS U LEFT JOIN category_dim FOR SYSTEM_TIME AS OF U.proctime AS C<br>1  ON U.category_id = C.sub_category_id;</p>
+<p><strong>实时计算顶级品类分布</strong></p>
+<p>1  INSERT INTO top_category<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.042.png" alt><br>1  SELECT category_name, COUNT(*) buy_cnt<br>1  FROM rich_user_behavior<br>1  WHERE behavior = ‘buy’<br>1  GROUP BY category_name;</p>
+<p>Kibana<strong>可视化</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.043.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.044.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.045.jpeg" alt></p>
+<p><strong>三</strong>.<strong>学习渠道与图书推荐</strong></p>
+<p><strong>计算机体系原理必读</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.046.jpeg" alt></p>
+<p><strong>分布式经典</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.047.jpeg" alt></p>
+<p><strong>⼤数据技术栈相关</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.048.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.049.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.050.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.051.jpeg" alt></p>
+<p><strong>其他⼀些相关和拓展</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.052.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.053.jpeg" alt><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.054.png" alt><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.055.png" alt></p>
+<p>[^2]: CREATE TABLE buy_cnt_per_hour (<br>[^3]: CREATE TABLE category_dim (<br>[^4]: <code></code>sub_category_id BIGINT,<br>[^5]: <code></code>parent_category_name STRING<br>[^6]: ) WITH (<br>[^7]: ‘connector’ = ‘jdbc’,<br>[^8]: ‘url’ = ‘jdbc:mysql://mysql:3306/flink’,<br>[^9]: ‘table-name’ = ‘category’,<br>[^10]: ‘username’ = ‘root’,<br>[^11]: ‘password’ = ‘123456’,<br>[^12]: ‘lookup.cache.max-rows’ = ‘5000’,</p>
+<pre><code>11 &apos;lookup.cache.ttl&apos; = &apos;10min&apos;
+</code></pre>
+      
+    </div>
+    
+    
+    
+
+    <div>
+          
+            
+          
+    </div>
+
+    
+
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    Gin
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://seasand1024.github.io/2023/05/20/大数据系统设计思路概览与Flink SQL构建实时数仓介绍演示/" title="⼤数据系统设计思路概览">https://seasand1024.github.io/2023/05/20/大数据系统设计思路概览与Flink SQL构建实时数仓介绍演示/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/big-data/" rel="tag"># big data</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/10/02/两公里的月光/" rel="next" title="两公里的月光">
+                <i class="fa fa-chevron-left"></i> 两公里的月光
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/head.gif" alt="安徒生">
+            
+              <p class="site-author-name" itemprop="name">安徒生</p>
+              <p class="site-description motion-element" itemprop="description">人生没有回头路</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">30</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">19</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/SeaSand1024" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:2215205259@qq.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                友情链接
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.bilibili.com" title="Bilibili" target="_blank">Bilibili</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.google.com" title="Google" target="_blank">Google</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.nature.com" title="Nature" target="_blank">Nature</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.jos.org.cn" title="Jos" target="_blank">Jos</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          <div id="music163player">
+<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="//music.163.com/outchain/player?type=2&id=442488&auto=1&height=66"></iframe>
+</div>
+        </div>
+      </section>
+
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">安徒生</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
