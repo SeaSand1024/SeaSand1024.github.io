@@ -1,103 +1,461 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Griffin POC</title>
-    <url>/2021/06/17/Griffin-POC/</url>
-    <content><![CDATA[<pre><code>Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。
-</code></pre><p>Apache Griffin填补了开源世界里在大数据质量领域的空白。就像空气质量，水和食品安全等无时不刻地在影响人类的生命一样，数据质量在数据科学领域是至关重要的。在大数据时代，企业决策调整，商机发现等越来越依赖于大数据的数据分析和数据挖掘，而数据质量的保证是所有一切数据分析和数据挖掘的基础。</p>
-<h6 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h6><p><img src="../../../../images/post-images/10224563-4cdc01da7a0a285c.png" alt="img.png"></p>
-<p>Griffin架构图</p>
-<p>1.apache griffin  安装配置；</p>
-<p>从官网下载最新版本<a href="http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；" target="_blank" rel="noopener">http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；</a></p>
-<p>2.(1)配置measure组件；</p>
-<pre><code>配置env-batch.json中hdfs和es的path,分别为&quot;hdfs://10.2.29.101:8020/griffin/batch/persist&quot;,&quot;http://10.2.29.102:9200/griffin/accuracy&quot;,env-streaming.json类似，env-streaming.json还要配置zk的host为“10.2.29.101:2181“，其他默认；
-
-配置config-batch.json，config-streaming.json其中的sinks至少要有es，配置config-batch-advanced.json[&quot;HDFS&quot;,&quot;ELASTICSEARCH&quot;,&quot;CONSOLE&quot;]，运行maven命令，mvn clean package -Dmaven.test.skip=true;
-</code></pre><p>   (2)配置service组件；</p>
-<pre><code>配置env下env_streaming.json，env_batch.json，配置同measure;
-
-配置application.properties，配置端口为9270，server.port=9270；
-
-配置quartz数据库，进入postgres用户下bin目录下，createdb -O &lt;username&gt; quartz，将项目中的Init_quartz_postgres.sql quartz拷贝到一个目录，psql -p &lt;port&gt; -h &lt;host address&gt; -U &lt;username&gt; -f Init_quartz_postgres.sql quartz；
-
-配置spring.datasource为相应的数据库quartz，设置用户名密码，设置相应数据库驱动，设置hive.metastore.uris=thrift://en1-dev1-tbdp.trendy-global.com:9083，hive.metastore.dbname=default，kafka.schema.registry.url=http://en1- dev1-tbdp.trendy-global.com:6667，fs.defaultFS=hdfs://nn1-dev1-tbdp.trendy-global.com:8020，elasticsearch.host=10.2.29.102，elasticsearch.port=9200，livy.uri=http://en1-dev1-tbdp.trendy-global.com:8999/batches，yarn.uri=http://en1-dev1-tbdp.trendy-global.com:8088；
-
-配置sparkProperties.json，如下：
-</code></pre><p>{</p>
-<p>   “file”: “hdfs:///griffin/griffin-measure.jar”,</p>
-<p>   “className”: “org.apache.griffin.measure.Application”,</p>
-<p>   “name”: “griffin”,</p>
-<p>   “queue”: “default”,</p>
-<p>   “numExecutors”: 3,</p>
-<p>   “executorCores”: 1,</p>
-<p>   “driverMemory”: “1g”,</p>
-<p>   “executorMemory”: “1g”,</p>
-<p>   “files”: [ “hdfs:///livy/hive-site.xml” ]</p>
-<p>}；</p>
-<pre><code>然后在service根目录下运行maven命令，mvn clean package -Dmaven.test.skip=true;
-
-将measure组件按照sparkProperties.json配置的丢到hdfs上；
-</code></pre><p>   (3)配置ui组件；</p>
-<pre><code>配置ui/angular/src/app/service/service.service.ts文件public BACKEND_SERVER = &apos;http://localhost:9270&apos;;为之前service的端口；
-
-在angular下运行命令npm run build 
-</code></pre><p>3.运行；</p>
-<p>  （1）启动service组件，命令：</p>
-<p>java -jar -Dserver.port=9270 -Dfs.defaultFS=hdfs:///griffin/persist service-0.3.0-incubating.jar；</p>
-<p>  （2）启动ui 组件，命令：</p>
-<pre><code>在angular下运行命令npm run start或者
-
-cd ui/angular 
-
-../angular/node_modules/.bin/ng serve --port 9280
-</code></pre><p><img src="../../../../images/post-images/10224563-b1e4fcbdee632715.png" alt="img.png"><br>griffin运行界面</p>
-<p>4.建立数据质量检测方案poc；</p>
-<pre><code>（1）建立accuracy类型检测，点击create measure 按钮，按照操作步骤进行设置，注意设置分区要相对应或者不设置；
-
-（2）建立data profiling类型检测，同样按照步骤操作；
-
-（3）点击create job根据提示创建job;
-
- 结果如图：
-</code></pre><h6 id="job界面"><a href="#job界面" class="headerlink" title="job界面"></a>job界面</h6><p><img src="../../../../images/post-images/10224563-a7e84c6a56d5f3a4.png" alt="img.png"></p>
-<h6 id="job详解界面"><a href="#job详解界面" class="headerlink" title="job详解界面"></a>job详解界面</h6><p><img src="../../../../images/post-images/10224563-aa9b60841926f0a0.png" alt="img.png"></p>
-<h6 id="job4"><a href="#job4" class="headerlink" title="job4"></a>job4</h6><p><img src="../../../../images/post-images/10224563-cd9a5aaafb910e22.png" alt="img.png"></p>
-<h6 id="mea-job1"><a href="#mea-job1" class="headerlink" title="mea-job1"></a>mea-job1</h6><p><img src="../../../../images/post-images/10224563-577da07c46b740dd.png" alt="img.png"></p>
+    <title>⼤数据系统设计思路概览</title>
+    <url>/2023/05/20/%E5%A4%A7%E6%95%B0%E6%8D%AE%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF%E6%A6%82%E8%A7%88%E4%B8%8EFlink%20SQL%E6%9E%84%E5%BB%BA%E5%AE%9E%E6%97%B6%E6%95%B0%E4%BB%93%E4%BB%8B%E7%BB%8D%E6%BC%94%E7%A4%BA/</url>
+    <content><![CDATA[<p><strong>⼀</strong> .<strong>⼤数据系统设计思路概览</strong></p>
+<p><strong>⼤数据概念与传统定义</strong></p>
+<p><strong>狭义的⼤数据</strong>–<strong>专⻔的⼤数据软硬件以及服务</strong></p>
+<p><strong>源起</strong>Google<strong>搜索引擎背后的三驾⻢⻋</strong></p>
+<ul>
+<li>GFS</li>
+<li>MapReduce</li>
+<li>BigTable</li>
+</ul>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.001.jpeg" alt="img.jpeg"></p>
+<p><strong>从</strong>GFS<strong>到</strong>DataFlow,19<strong>年⼤数据架构⽣态演进</strong></p>
+<ul>
+<li>Lambda 架构</li>
+<li>Kappa 架构</li>
+</ul>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.002.jpeg" alt="img.jpeg"></p>
+<p><strong>⼴义的⼤数据</strong>–<strong>“⼤数据”是指传统数据处理应⽤软件时，不⾜以处理的⼤的或者复杂的数据集 的术语</strong></p>
+<p><strong>维基百科的定义</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.003.jpeg" alt="img.jpeg"></p>
+<p><strong>⼤数据的</strong>4V</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.004.jpeg" alt="img.jpeg"></p>
+<p><strong>⼤数据技术</strong>–<strong>⼤数据技术其实是计算机科学中很多科⽬的综合应⽤</strong></p>
+<p><strong>简单的⼤数据技术栈</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.005.jpeg" alt="img.jpeg"></p>
+<p><strong>⼤数据分类–基于系统层⾯开展的细分领域</strong></p>
+<p><strong>分布式系统</strong></p>
+<p><strong>数据编码</strong></p>
+<p>数据表现形式⽆⾮两种：</p>
+<ul>
+<li>内存中数据保存对象，结构体、列表、数组、哈希表和树结构等等，传统的数据结构对于 CPU⾼效访问优化。</li>
+<li>数据写⼊⽂件通过⽹络发送，必须要编码为某种字节序列，但是由于⼀些虚拟字节⽐如指针的存在所以和内存的表现形式有可能不⼀样。</li>
+</ul>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.006.jpeg" alt="img.jpeg"></p>
+<p><strong>数据分区</strong></p>
+<p>哈希分区</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.007.jpeg" alt="img.jpeg"></p>
+<p>范围分区</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.008.jpeg" alt="img.jpeg"></p>
+<p><strong>数据复制</strong></p>
+<p>单领导者（单主复制）</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.009.jpeg" alt="img.jpeg"></p>
+<p>多领导者（多主复制）</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.010.jpeg" alt="img.jpeg"></p>
+<p>⽆领导者（⽆主复制）</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.011.jpeg" alt="img.jpeg"></p>
+<p>每种⽅法都有优点和缺点。单主复制是⾮常流⾏的，因为它很容易理解，不需要担⼼冲突解决。在出现故障节点，⽹络中断和延迟峰 值的情况下，多领导者和⽆领导者复制可以更加稳健，但代价很难推测，只能提供⾮常弱的⼀致性保证。</p>
+<p>复制可以是同步的，也可以是异步的，在发⽣故障时对系统⾏为有深远的影响。尽管在系统运⾏平稳时异步复制速度很快，但是在复 制滞后增加和服务器故障时要弄清楚会发⽣什么， 这⼀点很重要。如果⼀个领导者失败了，并且你推动⼀个异步更新的追随者成为新 的领导者，那么最近承诺的数据可能会丢失。</p>
+<p><strong>数据检索与索引</strong> </p>
+<p>哈希索引</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.012.jpeg" alt="img.jpeg"></p>
+<p>SSTables和 LSM TREE<br><img src="../../../../images/post-images/bigData/../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.013.jpeg" alt></p>
+<p>合并多个 SSTable 段，仅保留每个键的最新值。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.014.jpeg" alt></p>
+<p>SSTable 及其内存中的索引。</p>
+<p><strong>数据模型</strong> 关系模型与⽂档模型</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.015.jpeg" alt></p>
+<p>图状数据模型</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.016.jpeg" alt></p>
+<p><strong>数据批处理与流处理</strong></p>
+<p>mapreduce 模式的批处理</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.017.jpeg" alt></p>
+<p>flink的 dataflow流处理模式</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.018.jpeg" alt></p>
+<p><strong>数据事务⼀致性</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.019.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.020.jpeg" alt></p>
+<p><strong>数据压缩与存储 列存储</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.021.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.022.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.023.png" alt></p>
+<p><strong>数据⼀致性与共识</strong></p>
+<p>分布式系统挑战</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.024.jpeg" alt></p>
+<p>2PC/3PC和 Paxos协议是经典的分布式协议</p>
+<p>Two Phase指的是 Commit-request阶段 Commit阶段。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.025.png" alt> 请求阶段</p>
+<p>在请求阶段，协调者将通知事务参与者准备提交或取消事务，然后进⼊表决过程。 在表决过程中，参与者将告知协调者⾃⼰的决策：同意（事务参与者本地作业执⾏成功）或取消（本地作业执⾏故障）。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.026.png" alt> 提交阶段</p>
+<p>在该阶段，协调者将基于第⼀个阶段的投票结果进⾏决策：提交或取消。 当且仅当所有的参与者同意提交事务协调者才通知所有的参与者提交事务，否则协调者将通知所有的参与者取消事务。参与者在接收 到协调者发来的消息后将执⾏响应的操作。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.027.png" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.028.png" alt> 同步阻塞</p>
+<p>执⾏过程中，所有参与节点都是事务独占状态，当参与者占有公共资源时，第三⽅节点访问公共资源被阻塞。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.029.png" alt> 单点问题</p>
+<p>⼀旦协调者发⽣故障，参与者会⼀直阻塞下去。</p>
+<p>![](../../../../images/post-images/bigData/Aspo</p>
+<p>在第⼆阶段中，假设协调者发出了事务 commit的通知，但是因为⽹络问题该通知仅被⼀部分参与者所收到并执⾏ commit，其余的参与 者没有收到通知⼀直处于阻塞状态，这段时间就产⽣了数据的不⼀致性。</p>
+<p>Three Phase分别为 CanCommit、 PreCommit、 DoCommit。</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.031.png" alt></p>
+<p><strong>三阶段提交针对两阶段提交做了改进：</strong></p>
+<ul>
+<li>引⼊超时机制。在 2PC中，只有协调者拥有超时机制， 3PC同时在协调者和参与者中都引⼊超时机制。</li>
+<li>在第⼀阶段和第⼆阶段中插⼊⼀个准备阶段。保证了在最后提交阶段之前各参与节点的状态是⼀致的。</li>
+</ul>
+<p>Paxos算法</p>
+<p>应⽤最⼴的分布式⼀致性算法。</p>
+<p>节点⻆⾊</p>
+<ul>
+<li>Proposer:提案者 ;</li>
+<li>Acceptor:批准者 ;</li>
+<li>Learner:学习者 ;</li>
+</ul>
+<p>约束条件：</p>
+<ul>
+<li>Acceptor必须接受它收到的第⼀个提案；</li>
+<li>如果⼀个提案的 v值被⼤多数 Acceptor接受过，那后续的所有被接受的提案中也必须包含 v值（ v值可以理解为提案的内容，提案 由⼀个或多个 v和提案编号组成）；</li>
+<li>如果某⼀轮 Paxos 协议批准了某个 value，则以后各轮 Paxos 只能批准这个 value；</li>
+</ul>
+<p>通信， 两个阶段 4个过程 ：</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.032.jpeg" alt></p>
+<p>选举</p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.033.png" alt></p>
+<p><a href="**⽤户购买商品统计表**--**buy\_cnt\_per\_hour**">^1</a><strong>⼤数据当今的趋势与潮流</strong></p>
+<p><strong>流批⼀体实时计算 数据湖 ⽆服务化</strong>(serverless) <strong>应⽤层⾯</strong>–<strong>低代码化</strong></p>
+<p><strong>⼆</strong>.Flink SQL <strong>构建端到端的实时数据应⽤简单</strong>Demo<strong>演示</strong></p>
+<p><strong>基于</strong>docker<strong>集成组件</strong></p>
+<ul>
+<li><strong>Flink SQL CLI:</strong> used to submit queries and visualize their results.</li>
+<li><strong>Flink Cluster:</strong> a Flink JobManager and a Flink TaskManager container to execute queries.</li>
+<li><strong>MySQL:</strong> MySQL 5.7 and a pre-populated category table in the database. The category table will be joined with data in Kafka to enrich the real-time data.</li>
+<li><strong>Kafka:</strong> mainly used as a data source. The DataGen component automatically writes data into a Kafka topic.</li>
+<li><strong>Zookeeper:</strong> this component is required by Kafka.</li>
+<li><strong>Elasticsearch:</strong> mainly used as a data sink.</li>
+<li><strong>Kibana:</strong> used to visualize the data in Elasticsearch.</li>
+<li><strong>DataGen:</strong> the data generator. After the container is started, user behavior data is automatically generated and sent to the Kafka topic. By default, 2000 data entries are generated each second for about 1.5 hours. You can modify DataGen’s speedupparameter in docker-compose.yml to adjust the generation rate (which takes effect after Docker Compose is restarted).</li>
+</ul>
+<p><strong>相关的</strong>flinkSQL</p>
+<p><strong>数据流外部表构建</strong></p>
+<p><strong>⽤户⾏为⽇志表</strong>–<strong>user_behavior</strong></p>
+<p>[^2] CREATE TABLE user_behavior (<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.034.png" alt></p>
+<p>2  user_id BIGINT,<br>2  item_id BIGINT,<br>2  category_id BIGINT,<br>2  behavior STRING,<br>2  ts TIMESTAMP(3),<br>2  proctime AS PROCTIME(),   – generates processing-time attribute using computed column</p>
+<p>8 WATERMARK FOR ts AS ts - INTERVAL ‘5’ SECOND  – defines watermark on ts column, marks ts as even 9 ) WITH (</p>
+<p>10 ‘connector’ = ‘kafka’,  – using kafka connector</p>
+<p>11 ‘topic’ = ‘user_behavior’,  – kafka topic</p>
+<p>12 ‘scan.startup.mode’ = ‘earliest-offset’,  – reading from the beginning</p>
+<p>13 ‘properties.bootstrap.servers’ = ‘kafka:9094’,  – kafka broker address</p>
+<p>14 ‘format’ = ‘json’  – the data format is json 15 );</p>
+<p>2  hour_of_day BIGINT,<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.035.png" alt><br>2  buy_cnt BIGINT<br>2  ) WITH (</p>
+<p>5 ‘connector’ = ‘elasticsearch-7’, – using elasticsearch connector</p>
+<p>6 ‘hosts’ = ‘<a href="http://elasticsearch:9200&#39;" target="_blank" rel="noopener">http://elasticsearch:9200&#39;</a>,  – elasticsearch address</p>
+<p>7 ‘index’ = ‘buy_cnt_per_hour’  – elasticsearch index name, similar to database table name 8 );</p>
+<p><strong>实现实时统计每天各时段商品购买量统计</strong></p>
+<p>[^3] INSERT INTO buy_cnt_per_hour<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.036.png" alt></p>
+<p>[^4] SELECT HOUR(TUMBLE_START(ts, INTERVAL ‘1’ HOUR)), COUNT(*) [^5] FROM user_behavior</p>
+<p>[^6] WHERE behavior = ‘buy’</p>
+<p>[^7] GROUP BY TUMBLE(ts, INTERVAL ‘1’ HOUR);</p>
+<p><strong>cumulative_uv 外部表</strong></p>
+<p>1  CREATE TABLE cumulative_uv (<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.037.png" alt><br>1  date_str STRING,<br>1  time_str STRING,<br>1  uv BIGINT,</p>
+<p>5 PRIMARY KEY (date_str, time_str) NOT ENFORCED [^8] ) WITH (</p>
+<p>[^9] ‘connector’ = ‘elasticsearch-7’,</p>
+<p>[^10] ‘hosts’ = ‘<a href="http://elasticsearch:9200&#39;" target="_blank" rel="noopener">http://elasticsearch:9200&#39;</a>,</p>
+<p>[^11] ‘index’ = ‘cumulative_uv’</p>
+<p>[^12] );</p>
+<p><strong>实现实时每</strong>10<strong>分钟唯⼀访客的累计统计</strong></p>
+<p>1  INSERT INTO cumulative_uv<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.038.png" alt><br>1  SELECT date_str, MAX(time_str), COUNT(DISTINCT user_id) as uv<br>1  FROM (<br>1  SELECT</p>
+<p>5 DATE_FORMAT( ts, ‘yyyy-MM-dd’) as date_str,</p>
+<p>6 SUBSTR(DATE_FORMAT( ts, ‘HH:mm’),1,4) || ‘0’ as time_str,</p>
+<p>7  user_id<br>7  FROM user_behavior)<br>7  GROUP BY date_str;</p>
+<p><strong>顶级品类分布维度外部表</strong></p>
+<p>12 );<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.039.png" alt></p>
+<p><strong>顶级品类分布计算结果外部表</strong></p>
+<p>1  CREATE TABLE top_category (<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.040.png" alt><br>1  category_name STRING PRIMARY KEY NOT ENFORCED,<br>1  buy_cnt BIGINT<br>1  ) WITH (</p>
+<p>5 ‘connector’ = ‘elasticsearch-7’,</p>
+<p>6 ‘hosts’ = ‘<a href="http://elasticsearch:9200&#39;" target="_blank" rel="noopener">http://elasticsearch:9200&#39;</a>,</p>
+<p>7 ‘index’ = ‘top_category’ 8 );</p>
+<p><strong>⾏为表与品类纬度表实时关联虚拟视图</strong></p>
+<p>1  CREATE VIEW rich_user_behavior AS<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.041.png" alt><br>1  SELECT U.user_id, U.item_id, U.behavior, C.parent_category_name as category_name<br>1  FROM user_behavior AS U LEFT JOIN category_dim FOR SYSTEM_TIME AS OF U.proctime AS C<br>1  ON U.category_id = C.sub_category_id;</p>
+<p><strong>实时计算顶级品类分布</strong></p>
+<p>1  INSERT INTO top_category<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.042.png" alt><br>1  SELECT category_name, COUNT(*) buy_cnt<br>1  FROM rich_user_behavior<br>1  WHERE behavior = ‘buy’<br>1  GROUP BY category_name;</p>
+<p>Kibana<strong>可视化</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.043.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.044.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.045.jpeg" alt></p>
+<p><strong>三</strong>.<strong>学习渠道与图书推荐</strong></p>
+<p><strong>计算机体系原理必读</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.046.jpeg" alt></p>
+<p><strong>分布式经典</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.047.jpeg" alt></p>
+<p><strong>⼤数据技术栈相关</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.048.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.049.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.050.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.051.jpeg" alt></p>
+<p><strong>其他⼀些相关和拓展</strong></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.052.jpeg" alt></p>
+<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.053.jpeg" alt><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.054.png" alt><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.055.png" alt></p>
+<p>[^2]: CREATE TABLE buy_cnt_per_hour (<br>[^3]: CREATE TABLE category_dim (<br>[^4]: <code></code>sub_category_id BIGINT,<br>[^5]: <code></code>parent_category_name STRING<br>[^6]: ) WITH (<br>[^7]: ‘connector’ = ‘jdbc’,<br>[^8]: ‘url’ = ‘jdbc:mysql://mysql:3306/flink’,<br>[^9]: ‘table-name’ = ‘category’,<br>[^10]: ‘username’ = ‘root’,<br>[^11]: ‘password’ = ‘123456’,<br>[^12]: ‘lookup.cache.max-rows’ = ‘5000’,</p>
+<pre><code>11 &apos;lookup.cache.ttl&apos; = &apos;10min&apos;
+</code></pre>]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>big data</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>圣诞树与新月</title>
+    <url>/2022/10/02/%E5%9C%A3%E8%AF%9E%E6%A0%91%E4%B8%8E%E6%96%B0%E6%9C%88/</url>
+    <content><![CDATA[<p>当雨淅淅沥沥之时<br>是你照耀着我<br>夏夜中的皓月<br>星星们喃喃低语<br>它们犹如圣诞树般<br>为你我欢声歌唱<br>曾经多少个夏夜<br>那成千上万件微不足道的<br>你未知晓的事<br>纠结缠绕于我心中</p>
+<p>我正沦陷于你的双眸中<br>就像仲夏夜飘落的初雪一般<br>你便是这如同难以置信的奇迹般<br>令人惊叹的瞬间</p>
+<p>或许你知道的<br>关于你 存在着只有我一人知晓的模样<br>纵使在这仲夏夜吹拂而来的风<br>我心绪纷飞<br>也会一直等你<br>就像圣诞树与新月<br>我只是渴望<br>与你同在同一片天空下</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>两公里的月光</title>
+    <url>/2022/10/02/%E4%B8%A4%E5%85%AC%E9%87%8C%E7%9A%84%E6%9C%88%E5%85%89/</url>
+    <content><![CDATA[<p>有人说 时光总在深夜流逝<br>可是一直要到了今夜<br>我才能明白<br>仿佛是在风中纷纷翻动的书页<br>时光也会在深夜翩然而至</p>
+<p>当月色澄明如水<br>溶入四野<br>仿佛是风中纷纷翻动的书页<br>带着轻微的颤栗与喘息<br>时光在我们眼前浮现<br>千世的繁华<br>千世的劫难</p>
+<p>在每一次月圆之夜的祭奠里<br>我们想必都曾经一如今夜这样地<br>携手并肩而行<br>而月色如水<br>穿越过松林<br>在这两公里的山径上<br>与我们静静相对的<br>是两公里的悲欢<br>两公里的月光</p>
+<p><img src="../../../../images/post-images/image.png" alt="image.png"></p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>hive面试常见题目</title>
+    <url>/2021/06/25/hive%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%A2%98%E7%9B%AE/</url>
+    <content><![CDATA[<h4 id="1-hive关联数据倾斜："><a href="#1-hive关联数据倾斜：" class="headerlink" title="1.hive关联数据倾斜："></a>1.hive关联数据倾斜：</h4><p>原因：</p>
+<ul>
+<li>key分布不均匀；</li>
+<li>业务本身的特性；</li>
+<li>建表时考虑不周；</li>
+<li>某些SQL语句本身就有数据倾斜；</li>
+</ul>
+<p>解决办法：</p>
+<ul>
+<li>set hive.groupby.skewindata=true;</li>
+<li>小表大表join，reduce join=&gt;map join;</li>
+<li>大表大表join,key 前缀加随机数字；</li>
+<li><a href="https://zhuanlan.zhihu.com/p/105987407" target="_blank" rel="noopener">知乎hive数据倾斜解决方案；</a></li>
+<li><a href="https://tech.meituan.com/2016/05/12/spark-tuning-pro.html" target="_blank" rel="noopener">拓展：spark 数据倾斜美团处理方案；</a></li>
+<li><a href="https://tech.meituan.com/2016/04/29/spark-tuning-basic.html" target="_blank" rel="noopener">拓展：spark调优优化；</a></li>
+</ul>
+<p><br></p>
+<h4 id="2-hive架构："><a href="#2-hive架构：" class="headerlink" title="2.hive架构："></a>2.hive架构：</h4><p><img src="../../../../images/post-images/up-49a57d36a42afebe3bfcafc55c719b228b4.JPEG" alt="img.png"><br><br></p>
+<h4 id="3-四个by-的区别："><a href="#3-四个by-的区别：" class="headerlink" title="3.四个by 的区别："></a>3.四个by 的区别：</h4><ul>
+<li>Sort by :在数据进入reducer前完成排序,当mapred.reduce.tasks&gt;1时，只能保证每个reducer的输出有序，不保证全局有序；</li>
+<li>Order by:全局排序,对输入的数据做排序，故此只有一个reducer(多个reducer无法保证全局有序),只有一个reducer，会导致当输入规模较大时，需要较长的计算时间；</li>
+<li>Distribute by:按照指定的字段对数据进行划分输出到不同的reduce中，常和sort by一起使用，并且distribute by必须在sort by前面；</li>
+<li>Cluster by:相当于distribute by+sort by，只能默认升序，不能使用倒序；<br><br></li>
+</ul>
+<h4 id="4-常用函数："><a href="#4-常用函数：" class="headerlink" title="4.常用函数："></a>4.常用函数：</h4><h5 id="1-行转列函数"><a href="#1-行转列函数" class="headerlink" title="(1)行转列函数"></a>(1)行转列函数</h5><ul>
+<li>concat：连接各个字段，eg:concat( aa, ‘:’, bb)，只要其中一个是NULL，那么将返回NULL;</li>
+<li>concat_ws：使用分隔符连接字段，分隔符尾第一个参数，eg:concat_ws(‘-‘,’a’,’b’)，只要有一个字符串不是NULL，就不会返回NULL;</li>
+<li>collect_set(col)：函数只接受基本数据类型，它的主要作用是将某字段的值进行去重汇总，产生array类型字段;<h5 id="2-列转行函数"><a href="#2-列转行函数" class="headerlink" title="(2) 列转行函数"></a>(2) 列转行函数</h5></li>
+<li>explode(col)：将hive某列中复杂的array或者map结构拆分成多行;</li>
+<li>lateral view：常和UDTF函数一起使用;</li>
+<li>解释：用于和split, explode等UDTF一起使用，它能够将一列数据拆成多行数据，在此基础上可以对拆分后的数据进行聚合;</li>
+<li>eg:SELECT username, role FROM ods.ods_actor_data LATERAL VIEW explode(split(userrole, ‘,’)) tmpTable AS role;<br><br></li>
+</ul>
+<h4 id="5-Rank排名函数："><a href="#5-Rank排名函数：" class="headerlink" title="5.Rank排名函数："></a>5.Rank排名函数：</h4><ul>
+<li>rank() : 排序相同时会重复，总数不会变；</li>
+<li>dense_rank() : 排序相同时会重复，总数会减少;</li>
+<li>row_number() : 排序相同时不会重复，根据排序计算排名;<br><br><strong>在实际开发中，以上三个rank函数通常是和开窗函数一起使用的。</strong></li>
+</ul>
+<h4 id="6-窗口函数（开窗函数）"><a href="#6-窗口函数（开窗函数）" class="headerlink" title="6.窗口函数（开窗函数）"></a>6.窗口函数（开窗函数）</h4><ul>
+<li>over()  :用于指定分析函数工作时的数据窗口大小，这个数据窗口大小可能会随着行的变而变化； </li>
+<li>current row :当前行；</li>
+<li>n PRECEDING :往前n行数据；</li>
+<li>n FOLLOWING: 往后n行数据； </li>
+<li>UNBOUNDED：起点，UNBOUNDED PRECEDING 表示从前面的起点， UNBOUNDED FOLLOWING表示到后面的终点；</li>
+<li>LAG(col,n,default_val)：往前第n行数据； </li>
+<li>LEAD(col,n, default_val)：往后第n行数据；</li>
+<li>NTILE(n)：把有序分区中的行分发到指定数据的组中，各个组有编号，编号从1开始，对于每一行，NTILE返回此行所属的组的编号。这个函数需要注意：n必须为int类型。<br><br></li>
+</ul>
+<h4 id="7-UDF、UDAF、UDTF的区别？"><a href="#7-UDF、UDAF、UDTF的区别？" class="headerlink" title="7.UDF、UDAF、UDTF的区别？"></a>7.UDF、UDAF、UDTF的区别？</h4><ul>
+<li>UDF：User-Defined-Function，用户自定义函数，数据是一进一出，功能类似于大多数数学函数或者字符串处理函数；</li>
+<li>UDAF：User-Defined Aggregation Function，用户自定义聚合函数，数据是多进一出，功能类似于 count/max/min；</li>
+<li>UDTF：User-Defined Table-Generating Functions，用户自定义表生成函数，数据是一进多处，功能类似于lateral view explore()；<br><br></li>
+</ul>
+<h4 id="8-怎么自定义UDF、UDAF、UDTF函数？"><a href="#8-怎么自定义UDF、UDAF、UDTF函数？" class="headerlink" title="8.怎么自定义UDF、UDAF、UDTF函数？"></a>8.怎么自定义UDF、UDAF、UDTF函数？</h4><p><br></p>
+<h4 id="9-hive优化相关面试题"><a href="#9-hive优化相关面试题" class="headerlink" title="9.hive优化相关面试题"></a>9.hive优化相关面试题</h4><ul>
+<li>MapJoin：如果不指定 MapJoin 或者不符合 MapJoin 的条件，那么 Hive 解析器会将 Join 操作转换 成 Common Join，即：在 Reduce 阶段完成 join容易发生数据倾斜,可以用MapJoin把小 表全部加载到内存在 map 端进行 join，避免 reducer 处理;</li>
+<li>行列过滤：列处理：在 SELECT 中，只拿需要的列，如果有，尽量使用分区过滤，少用 SELECT *;</li>
+<li>行处理：在分区剪裁中，当使用外关联时，如果将副表的过滤条件写在 Where 后面，那 么就会先全表关联，之后再过滤;</li>
+<li>使用分桶;</li>
+<li><a href="https://zhuanlan.zhihu.com/p/80718835" target="_blank" rel="noopener">知乎hive调优</a>;</li>
+</ul>
 ]]></content>
       <categories>
         <category>数据开发</category>
       </categories>
       <tags>
-        <tag>数据质量监控</tag>
+        <tag>SQL</tag>
+        <tag>hive</tag>
       </tags>
   </entry>
   <entry>
-    <title>MySQL中exists和in的区别及使用场景</title>
-    <url>/2021/06/17/MySQL%E4%B8%ADexists%E5%92%8Cin%E7%9A%84%E5%8C%BA%E5%88%AB%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/</url>
-    <content><![CDATA[<blockquote>
-<p>1.对B查询涉及id，使用索引，故B表效率高，可用大表 –&gt;外小内大<br>select <em> from A where exists (select </em> from B where A.id=B.id);</p>
-</blockquote>
-<blockquote>
-<p>2.对A查询涉及id，使用索引，故A表效率高，可用大表 –&gt;外大内小<br>select * from A where A.id in (select id from B);</p>
-</blockquote>
-<h5 id="1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"><a href="#1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；" class="headerlink" title="1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"></a>1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；</h5><h5 id="2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"><a href="#2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。" class="headerlink" title="2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"></a>2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。</h5><h5 id="3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。"><a href="#3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。" class="headerlink" title="3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。"></a>3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。</h5><p>　　此外，新近遇到的坑，mysql版本问题：</p>
-<p>　　MySQL版本问题：5.6.5优化了子查询，引入物化子查询(针对where clause的subquery)，子查询物化将子查询结果存入临时表，确保子查询只执行一次，该表不记录重复数据且采用哈希索引查找;</p>
-<p>而之前的版本则会把非相关子查询转化为相关子查询，导致效率低下（尤其是子查询是小表，外表是大表的情况下，效率变慢许多）。　</p>
-<p>　相关子查询：子查询依赖外层连接的返回值；</p>
-<p>　　非相关子查询：子查询不依赖外层连接的返回值；</p>
-<p>　　子查询分两种，from语句（派生表）和where语句（子查询），派生表的效率要高一些，5.6的优化就是把where语句变成from语句。</p>
-<p>　　本来是内表小，用的in，但是据说5.6之前的版本会把非相关子查询改为相关子查询，就是把in的语句改成了exists的，结果效率超低。</p>
-<p>　　实验说明：派生表join比派生表的速度还要快。而使用in查询需要很多分钟还没有查出来。　</p>
-<blockquote>
-<p>#使用派生表 4.68秒<br>SELECT id FROM la WHERE cardid IN (<br>SELECT cardid FROM (<br>select cardid from la group by cardid having count(1)&gt;50) a) ;<br>#使用派生表的内连接 1.26秒<br>SELECT id FROM la JOIN (<br>select cardid from la group by cardid having count(1)&gt;50) a ON la.cardid=a.cardid;</p>
-</blockquote>
+    <title>挪威的森林</title>
+    <url>/2021/06/23/%E6%8C%AA%E5%A8%81%E7%9A%84%E6%A3%AE%E6%9E%97/</url>
+    <content><![CDATA[<p>与你的相遇</p>
+<p>像是夜里与一颗流星的邂逅</p>
+<p>在望不到尽头的山野里</p>
+<p>彼此相守</p>
+<p>往后的岁月里</p>
+<p>我们各自奔流</p>
+<p>在远方时空里</p>
+<p>演绎每一场都市夜景下的灯火通明</p>
+<p><br><br>夜里游动，黑猫流窜的小区</p>
+<p>给予记忆无声的催眠</p>
+<p>彼时年轻人的欢声笑语与热血</p>
+<p>都融化做深夜里的一杯杯清酒</p>
+<p>随夜色褪去</p>
+<p>你是否将我遗忘</p>
+<p>如同曾经千千万万个挪威的森林</p>
+<p>而终究独身于无人之境</p>
+<p><br></p>
 ]]></content>
       <categories>
-        <category>后端</category>
+        <category>现代诗</category>
       </categories>
       <tags>
-        <tag>mysql</tag>
-        <tag>SQL</tag>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>意难平</title>
+    <url>/2021/06/23/%E6%84%8F%E9%9A%BE%E5%B9%B3/</url>
+    <content><![CDATA[<p>风起意难平</p>
+<p>我终究是你故事里的一个配角</p>
+<p>风起意难平</p>
+<p>我终于将所有遗憾慢慢填满心间</p>
+<p>风起意难平</p>
+<p>我终究是一个你不会认识的陌生人</p>
+<p><br></p>
+<p>层楼终身误</p>
+<p>你终究是人间里的一介过客</p>
+<p>层楼终身误</p>
+<p>你终究是神游太虚的一场梦境</p>
+<p>层楼终生误</p>
+<p>你终将成为谁的新欢与旧爱</p>
+<p><br></p>
+<p>到底意难平</p>
+<p>我们也注定分离</p>
+<p><br></p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>一个你不会认识的陌生人</title>
+    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
+    <content><![CDATA[<p>漫长的时光里</p>
+<p>你独自一个人度过</p>
+<p>生命总是孤独</p>
+<p>你总是默默承受</p>
+<p>即使每一个过客</p>
+<p>终究有谢幕离场的时分</p>
+<p>我是一个你不会认识的陌生人</p>
+<p>你是一道我永远也遇不上的彩虹</p>
+<p>没有遇上方知有</p>
+<p>好在花有清香月有阴</p>
+<p>我们在不同的世界</p>
+<p>演绎着类似的人生</p>
+<p>陌生的旧情人</p>
+<p>你是谁的新欢和旧爱</p>
+<p>而我只是一个</p>
+<p>你不会认识的陌生人</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>鄉愁</title>
+    <url>/2021/06/17/%E9%84%89%E6%84%81/</url>
+    <content><![CDATA[<p>芦苇飘荡的季节﻿</p>
+<p>少年将沉沉的离别披在肩上﻿</p>
+<p>乡愁像芦苇荡里的水一样柔﻿</p>
+<p>遗忘的日子里﻿</p>
+<p>心中总是若有所思﻿</p>
+<p>乡愁像渔家的灯火一样引人入眠﻿</p>
+<p>岁月像车轮一般轧过如路面荒芜的日子﻿</p>
+<p>远处月台橘黄色的站台灯碰弯了旅人的思绪﻿</p>
+<p>恍惚流失的光阴迷失在记忆的岔道口﻿</p>
+<p>春日大海的阳光照耀着北回归线﻿</p>
+<p>视野里的芦苇叶子眯成一线﻿</p>
+<p>蓝的海黑的海 逐渐缩成点的海鸥﻿</p>
+<p>露水闪透着晶莹的清晨﻿</p>
+<p>列车经过铁轨吸进一个个影子后逝去﻿</p>
+<p>乡愁像一曲永不停息的曲子﻿</p>
+<p>在风尘苦旅的夜里奏起</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>無題</title>
+    <url>/2021/06/17/%E7%84%A1%E9%A1%8C/</url>
+    <content><![CDATA[<p>就像没说完的一段故事</p>
+<p>就像断了的弦</p>
+<p>孤寂在夜空盘旋</p>
+<p>旅人在灯下行走</p>
+<p>车辆穿梭于漆黑的夜</p>
+<p>喧嚣隐去于沉睡的异世界</p>
+<p>圆月下的立交桥路面</p>
+<p>水银镜一般映射光华</p>
+<p>深夜的路灯</p>
+<p>独自闷不吭声</p>
+<p>光线四处逃窜</p>
+<p>疲惫不堪的倒在地上</p>
+<p>摸索着所有能触及的黑暗</p>
+<p>潮水在离森林不远处翻滚声息</p>
+<p>萤火虫于溪岸跃动身影</p>
+<p>追寻</p>
+<p>自黄昏到黑夜</p>
+<p>流动的城市灯火</p>
+<p>停留于指尖瞬间</p>
+<p>抑或</p>
+<p>雨中潮湿的羽翼</p>
+<p>在遥远的空中挥动</p>
+<p>在视野中渐行渐远</p>
+]]></content>
+      <categories>
+        <category>现代诗</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>新辞</title>
+    <url>/2021/06/17/%E6%96%B0%E8%BE%9E/</url>
+    <content><![CDATA[<p>歌管楼台声细细，秋千院落夜沉沉。</p>
+<p>徒有斜阳与人语，不念故乡念旧人。</p>
+<p><img src="../../../../images/post-images/10224563-bb430fb614396c21.jpg" alt="img.jpg"></p>
+]]></content>
+      <categories>
+        <category>古风拾迹</category>
+      </categories>
+      <tags>
+        <tag>诗歌</tag>
       </tags>
   </entry>
   <entry>
@@ -258,947 +616,6 @@ INDEX ac (account (16))
       </tags>
   </entry>
   <entry>
-    <title>Streamsets POC总结</title>
-    <url>/2021/06/17/POC%E6%80%BB%E7%BB%93/</url>
-    <content><![CDATA[<h4 id="Streamsets介绍"><a href="#Streamsets介绍" class="headerlink" title="Streamsets介绍"></a>Streamsets介绍</h4><p>Streamsets是一款大数据实时采集和ETL工具，可以实现不写一行代码完成数据的采集和流转。通过拖拽式的可视化界面，实现数据管道(Pipelines)的设计和定时任务调度。最大的特点有：</p>
-<p>(1) 可视化界面操作，不写代码完成数据的采集和流转;</p>
-<p>(2) 内置监控，可是实时查看数据流传输的基本信息和数据的质量;</p>
-<p>(3) 强大的整合力，对现有常用组件全力支持，包括50种数据源、44种数据操作、46种目的地。</p>
-<p>对于Streamsets来说，最重要的概念就是数据源(Origins)、操作(Processors)、目的地(Destinations)，创建一个Pipelines管道配置也基本是这三个方面，除此之外还有执行器(executor)，是做一些数据处理操作的。</p>
-<p>常见的Origins有Kafka、HTTP、UDP、JDBC、HDFS等；Processors可以实现对每个字段的过滤、更改、编码、聚合等操作；Destinations跟Origins差不多，可以写入Kafka、Flume、JDBC、HDFS、Redis等。</p>
-<h4 id="POC-需求"><a href="#POC-需求" class="headerlink" title="POC 需求"></a>POC 需求</h4><p>实现一个工作流程：</p>
-<p>1.对一个数据库中的所需要的表进行增量的抽取，从数据库到分布式文件系统上，比如从postgresql到hive上；</p>
-<p>2.有业务需求的抽取，因为数据库表中的修改时间字段不会跟随修改的数据而更新，所以需要在每次增量的抽取上次抽取时间点之前时间的数据（比如前3个月）；</p>
-<p>3.要能自动判断hive上是否存在该表，根据情况进行创建，之后进行数据载入；</p>
-<p>POC结果</p>
-<p>最后的实现方案是：</p>
-<p>   通过airflow调度streamsets的restapi实现pipeline的开启以及一些数据的获取和pipline的状态判断，筛选条件offset的设置，实现整个sdc的etl 流程，不过最后发现该实现方案存在较大的缺陷，而且还有一个时间变量的设置存在问题；</p>
-<p>streamsets的案例是: 全量抽取pipeline<br><a href="http://10.2.29.102:9230/collector/pipeline/streamsettest03byquerycopy57a756ec-6d71-4640-9fd9-40e4ce24eb46；" target="_blank" rel="noopener">http://10.2.29.102:9230/collector/pipeline/streamsettest03byquerycopy57a756ec-6d71-4640-9fd9-40e4ce24eb46；</a></p>
-<p>以及增量pipeline<br><a href="http://10.2.29.102:9230/collector/pipeline/streamsettest03byqueryincr6ce53b23-cb23-455e-b3f5-8921a1d93afa；" target="_blank" rel="noopener">http://10.2.29.102:9230/collector/pipeline/streamsettest03byqueryincr6ce53b23-cb23-455e-b3f5-8921a1d93afa；</a></p>
-<p>全量<br><img src="../../../../images/post-images/10224563-e5747904c91a11a1.png" alt="img.png"></p>
-<p>增量<br><img src="../../../../images/post-images/10224563-1b359d9207f8e2e2.png" alt="img.png"></p>
-<p>airflow调度脚本案例是：<a href="http://10.2.29.102:9210/admin/airflow/code?dag_id=test_my_http；" target="_blank" rel="noopener">http://10.2.29.102:9210/admin/airflow/code?dag_id=test_my_http；</a></p>
-<p>airflow调度<br><img src="../../../../images/post-images/10224563-6f993055d421c0f5.png" alt="img.png"></p>
-<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><h5 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h5><p>1.使用拖拽的方式减少了手动etl各种繁琐的代码编写，并且实时即开即用，可以实现UI界面的etl的简单操作，运行时候的可视化界面可以了解数据载入的各个过程情况，并且有rest的api可以实现其他进程的调用，比如调度程序airflow的调度，实现定时任务自动化etl，减少每次人工操作的繁琐，实现自动化智能化，适合大数据下的使用；</p>
-<h5 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h5><p>1.因为设计的时候是定制普通的etl，某些根据业务要求的etl无法实现，比如本次poc中的案例，还有pipeline 之间的依赖，包括restapi在airflow调度后的异步问题导致的etl流程顺序紊乱 ，比如本例中的conditional_task1根据实际情况进行判断，假如全量抽取之前不存在的话，会调用SimpleHttpOperator进行一次全量的抽取，但是通过restapi返回的response并不是pipeline执行完成后才返回的，执行表明已经调用成功，但是运行的状态未知，这样可能在load_crm_goods_full还没跑完的情况下（数据量大的情况下），conditional_task2开始执行，去拿load_crm_goods_full对应的pipeline的id的offset去对增量表的offset进行设置，有可能导致拿不到的结果，而导致整个etl流程失败；除此之外，run_hive_query对2表的数据进行合并的时候要拿到一个判断值去进行表的数据merge,是根据上一个job,load_crm_goods_incr的offset来取值的，但是load_crm_goods_incr要根据reset_crm_goods1，reset_crm_goods2的其中一个结果来决定，所以在定义sql的时候需要动态定义时间的值，这在整个airflow脚本中是很难实现的，暂时没有想到解决的方案。</p>
-]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>etl</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>flink 理解</title>
-    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
-    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
-<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
-<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
-]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>flink</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2018/06/28/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-]]></content>
-  </entry>
-  <entry>
-    <title>hive跨集群迁移表</title>
-    <url>/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/</url>
-    <content><![CDATA[<h4 id="1-export-table-xxx-to-‘-tmp-xxxx’"><a href="#1-export-table-xxx-to-‘-tmp-xxxx’" class="headerlink" title="1.export table xxx to ‘/tmp/xxxx’;"></a>1.export table xxx to ‘/tmp/xxxx’;</h4><h4 id="2-hadoop-fs-get-tmp-xxx-tmp-xxx"><a href="#2-hadoop-fs-get-tmp-xxx-tmp-xxx" class="headerlink" title="2.hadoop fs - get /tmp/xxx /tmp/xxx"></a>2.hadoop fs - get /tmp/xxx /tmp/xxx</h4><h4 id="3-scp文件。。。"><a href="#3-scp文件。。。" class="headerlink" title="3.scp文件。。。"></a>3.scp文件。。。</h4><h4 id="4-zip-r-tmp-xxxx-zip-tmp-xxx"><a href="#4-zip-r-tmp-xxxx-zip-tmp-xxx" class="headerlink" title="4.zip -r /tmp/xxxx.zip /tmp/xxx"></a>4.zip -r /tmp/xxxx.zip /tmp/xxx</h4><h4 id="5-unzip-xxx-zip-tmp"><a href="#5-unzip-xxx-zip-tmp" class="headerlink" title="5.unzip xxx.zip /tmp/"></a>5.unzip xxx.zip /tmp/</h4><h4 id="6-hadoop-fs-put-tmp-xxxx-tmp-xxxx"><a href="#6-hadoop-fs-put-tmp-xxxx-tmp-xxxx" class="headerlink" title="6.hadoop fs -put /tmp/xxxx /tmp/xxxx"></a>6.hadoop fs -put /tmp/xxxx /tmp/xxxx</h4><h4 id="7-import-table-xxx-from-‘-tmp-xxx’"><a href="#7-import-table-xxx-from-‘-tmp-xxx’" class="headerlink" title="7.import table xxx from ‘/tmp/xxx’__"></a>7.import table xxx from ‘/tmp/xxx’__</h4>]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>hive</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>hive面试常见题目</title>
-    <url>/2021/06/25/hive%E9%9D%A2%E8%AF%95%E5%B8%B8%E8%A7%81%E9%A2%98%E7%9B%AE/</url>
-    <content><![CDATA[<h4 id="1-hive关联数据倾斜："><a href="#1-hive关联数据倾斜：" class="headerlink" title="1.hive关联数据倾斜："></a>1.hive关联数据倾斜：</h4><p>原因：</p>
-<ul>
-<li>key分布不均匀；</li>
-<li>业务本身的特性；</li>
-<li>建表时考虑不周；</li>
-<li>某些SQL语句本身就有数据倾斜；</li>
-</ul>
-<p>解决办法：</p>
-<ul>
-<li>set hive.groupby.skewindata=true;</li>
-<li>小表大表join，reduce join=&gt;map join;</li>
-<li>大表大表join,key 前缀加随机数字；</li>
-<li><a href="https://zhuanlan.zhihu.com/p/105987407" target="_blank" rel="noopener">知乎hive数据倾斜解决方案；</a></li>
-<li><a href="https://tech.meituan.com/2016/05/12/spark-tuning-pro.html" target="_blank" rel="noopener">拓展：spark 数据倾斜美团处理方案；</a></li>
-<li><a href="https://tech.meituan.com/2016/04/29/spark-tuning-basic.html" target="_blank" rel="noopener">拓展：spark调优优化；</a></li>
-</ul>
-<p><br></p>
-<h4 id="2-hive架构："><a href="#2-hive架构：" class="headerlink" title="2.hive架构："></a>2.hive架构：</h4><p><img src="../../../../images/post-images/up-49a57d36a42afebe3bfcafc55c719b228b4.JPEG" alt="img.png"><br><br></p>
-<h4 id="3-四个by-的区别："><a href="#3-四个by-的区别：" class="headerlink" title="3.四个by 的区别："></a>3.四个by 的区别：</h4><ul>
-<li>Sort by :在数据进入reducer前完成排序,当mapred.reduce.tasks&gt;1时，只能保证每个reducer的输出有序，不保证全局有序；</li>
-<li>Order by:全局排序,对输入的数据做排序，故此只有一个reducer(多个reducer无法保证全局有序),只有一个reducer，会导致当输入规模较大时，需要较长的计算时间；</li>
-<li>Distribute by:按照指定的字段对数据进行划分输出到不同的reduce中，常和sort by一起使用，并且distribute by必须在sort by前面；</li>
-<li>Cluster by:相当于distribute by+sort by，只能默认升序，不能使用倒序；<br><br></li>
-</ul>
-<h4 id="4-常用函数："><a href="#4-常用函数：" class="headerlink" title="4.常用函数："></a>4.常用函数：</h4><h5 id="1-行转列函数"><a href="#1-行转列函数" class="headerlink" title="(1)行转列函数"></a>(1)行转列函数</h5><ul>
-<li>concat：连接各个字段，eg:concat( aa, ‘:’, bb)，只要其中一个是NULL，那么将返回NULL;</li>
-<li>concat_ws：使用分隔符连接字段，分隔符尾第一个参数，eg:concat_ws(‘-‘,’a’,’b’)，只要有一个字符串不是NULL，就不会返回NULL;</li>
-<li>collect_set(col)：函数只接受基本数据类型，它的主要作用是将某字段的值进行去重汇总，产生array类型字段;<h5 id="2-列转行函数"><a href="#2-列转行函数" class="headerlink" title="(2) 列转行函数"></a>(2) 列转行函数</h5></li>
-<li>explode(col)：将hive某列中复杂的array或者map结构拆分成多行;</li>
-<li>lateral view：常和UDTF函数一起使用;</li>
-<li>解释：用于和split, explode等UDTF一起使用，它能够将一列数据拆成多行数据，在此基础上可以对拆分后的数据进行聚合;</li>
-<li>eg:SELECT username, role FROM ods.ods_actor_data LATERAL VIEW explode(split(userrole, ‘,’)) tmpTable AS role;<br><br></li>
-</ul>
-<h4 id="5-Rank排名函数："><a href="#5-Rank排名函数：" class="headerlink" title="5.Rank排名函数："></a>5.Rank排名函数：</h4><ul>
-<li>rank() : 排序相同时会重复，总数不会变；</li>
-<li>dense_rank() : 排序相同时会重复，总数会减少;</li>
-<li>row_number() : 排序相同时不会重复，根据排序计算排名;<br><br><strong>在实际开发中，以上三个rank函数通常是和开窗函数一起使用的。</strong></li>
-</ul>
-<h4 id="6-窗口函数（开窗函数）"><a href="#6-窗口函数（开窗函数）" class="headerlink" title="6.窗口函数（开窗函数）"></a>6.窗口函数（开窗函数）</h4><ul>
-<li>over()  :用于指定分析函数工作时的数据窗口大小，这个数据窗口大小可能会随着行的变而变化； </li>
-<li>current row :当前行；</li>
-<li>n PRECEDING :往前n行数据；</li>
-<li>n FOLLOWING: 往后n行数据； </li>
-<li>UNBOUNDED：起点，UNBOUNDED PRECEDING 表示从前面的起点， UNBOUNDED FOLLOWING表示到后面的终点；</li>
-<li>LAG(col,n,default_val)：往前第n行数据； </li>
-<li>LEAD(col,n, default_val)：往后第n行数据；</li>
-<li>NTILE(n)：把有序分区中的行分发到指定数据的组中，各个组有编号，编号从1开始，对于每一行，NTILE返回此行所属的组的编号。这个函数需要注意：n必须为int类型。<br><br></li>
-</ul>
-<h4 id="7-UDF、UDAF、UDTF的区别？"><a href="#7-UDF、UDAF、UDTF的区别？" class="headerlink" title="7.UDF、UDAF、UDTF的区别？"></a>7.UDF、UDAF、UDTF的区别？</h4><ul>
-<li>UDF：User-Defined-Function，用户自定义函数，数据是一进一出，功能类似于大多数数学函数或者字符串处理函数；</li>
-<li>UDAF：User-Defined Aggregation Function，用户自定义聚合函数，数据是多进一出，功能类似于 count/max/min；</li>
-<li>UDTF：User-Defined Table-Generating Functions，用户自定义表生成函数，数据是一进多处，功能类似于lateral view explore()；<br><br></li>
-</ul>
-<h4 id="8-怎么自定义UDF、UDAF、UDTF函数？"><a href="#8-怎么自定义UDF、UDAF、UDTF函数？" class="headerlink" title="8.怎么自定义UDF、UDAF、UDTF函数？"></a>8.怎么自定义UDF、UDAF、UDTF函数？</h4><p><br></p>
-<h4 id="9-hive优化相关面试题"><a href="#9-hive优化相关面试题" class="headerlink" title="9.hive优化相关面试题"></a>9.hive优化相关面试题</h4><ul>
-<li>MapJoin：如果不指定 MapJoin 或者不符合 MapJoin 的条件，那么 Hive 解析器会将 Join 操作转换 成 Common Join，即：在 Reduce 阶段完成 join容易发生数据倾斜,可以用MapJoin把小 表全部加载到内存在 map 端进行 join，避免 reducer 处理;</li>
-<li>行列过滤：列处理：在 SELECT 中，只拿需要的列，如果有，尽量使用分区过滤，少用 SELECT *;</li>
-<li>行处理：在分区剪裁中，当使用外关联时，如果将副表的过滤条件写在 Where 后面，那 么就会先全表关联，之后再过滤;</li>
-<li>使用分桶;</li>
-<li><a href="https://zhuanlan.zhihu.com/p/80718835" target="_blank" rel="noopener">知乎hive调优</a>;</li>
-</ul>
-]]></content>
-      <categories>
-        <category>数据开发</category>
-      </categories>
-      <tags>
-        <tag>SQL</tag>
-        <tag>hive</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>idea2017 搭建ssm框架过程</title>
-    <url>/2021/06/17/idea2017-%E6%90%AD%E5%BB%BAssm%E6%A1%86%E6%9E%B6%E8%BF%87%E7%A8%8B/</url>
-    <content><![CDATA[<p>环境：</p>
-<pre><code>idea 2017.2.5
-
-jdk1.8
-
-maven 3.5.0
-</code></pre><h4 id="1-新建一个Maven-webapp项目"><a href="#1-新建一个Maven-webapp项目" class="headerlink" title="1. 新建一个Maven webapp项目"></a>1. 新建一个Maven webapp项目</h4><p>配置项目groupid,artifactid,version</p>
-<h4 id="2-搭建项目基本架构"><a href="#2-搭建项目基本架构" class="headerlink" title="2.搭建项目基本架构"></a>2.搭建项目基本架构</h4><pre><code>注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。
-</code></pre><h4 id="3-配置项目项目配置文件，包括mvc配置文件spring-context-mvc-xml，spring-Context上下文文件spring-context-xml-mybatis-config-xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback-lombok-所以有logback配置文件。"><a href="#3-配置项目项目配置文件，包括mvc配置文件spring-context-mvc-xml，spring-Context上下文文件spring-context-xml-mybatis-config-xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback-lombok-所以有logback配置文件。" class="headerlink" title="3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。"></a>3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。</h4><h4 id="4-接下来配置mybatis动态接口代理，在dao包下新建SysUserDao-entity下新建SysUser，mapper下新建SysUserMapper-xml，在spring-context配置文件里配置如下："><a href="#4-接下来配置mybatis动态接口代理，在dao包下新建SysUserDao-entity下新建SysUser，mapper下新建SysUserMapper-xml，在spring-context配置文件里配置如下：" class="headerlink" title="4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下："></a>4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下：</h4><h4 id="5-配置web-xml"><a href="#5-配置web-xml" class="headerlink" title="5.配置web.xml"></a>5.配置web.xml</h4><h4 id="6-完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。"><a href="#6-完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。" class="headerlink" title="6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。"></a>6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。</h4><pre><code>测试类，测试结果：
-
-dao层 
-</code></pre><p>service层：</p>
-<p>service和dao层基本测试完毕，controller在这里直接启动项目测试，为了方便，直接新建一个json类统一返回；</p>
-<p>返回值为true,并且将用户类返回，说明测试成功。</p>
-<h4 id="7-至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https-gitee-com-lonelygin-ssm。"><a href="#7-至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https-gitee-com-lonelygin-ssm。" class="headerlink" title="7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https://gitee.com/lonelygin/ssm。"></a>7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：<a href="https://gitee.com/lonelygin/ssm。" target="_blank" rel="noopener">https://gitee.com/lonelygin/ssm。</a></h4>]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>idea</tag>
-        <tag>ssm</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>java的3种代理模式</title>
-    <url>/2021/06/17/java%E7%9A%843%E7%A7%8D%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F/</url>
-    <content><![CDATA[<h4 id="1-静态代理"><a href="#1-静态代理" class="headerlink" title="1.静态代理"></a>1.静态代理</h4><pre><code>静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。
-</code></pre><p>IUserDao接口：</p>
-<p>package com.cyy.i.dao;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description:接口</p>
-</li>
-<li><p>@Date:Created in 17:00 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public interface IUserDao {</p>
-<p>void save();</p>
-<p>}<br>UserDao实现类：</p>
-<p>package com.cyy.i.dao.impl;</p>
-<p>import com.cyy.i.dao.IUserDao;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description:实现类</p>
-</li>
-<li><p>@Date:Created in 17:01 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class UserDaoimplements IUserDao {</p>
-<p>@Override</p>
-<pre><code>public void save() {
-</code></pre><p>System.out.println(“——已经保存数据！——“);</p>
-<pre><code>}
-</code></pre><p>}<br>静态代理类StaticUserDaoProxy：</p>
-<p>package com.cyy.i.proxy;</p>
-<p>import com.cyy.i.dao.IUserDao;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 代理对象，静态代理</p>
-</li>
-<li><p>@Date:Created in 17:05 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class StaticUserDaoProxyimplements IUserDao{</p>
-<p>private IUserDaotarget;</p>
-<pre><code>public StaticUserDaoProxy(IUserDao target) {
-</code></pre><p>this.target = target;</p>
-<pre><code>}
-</code></pre><p>@Override</p>
-<pre><code>public void save() {
-</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
-<pre><code>    target.save();
-
-    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
-
-}
-</code></pre><p>}<br>编写一个静态测试办法去主函数调用：</p>
-<p>public static void staticProxy(){</p>
-<p>System.out.println(“—-静态代理—-“);</p>
-<pre><code>IUserDao dao=new UserDao();
-
-//静态代理的实质是用代理类引用目标类的实例执行，将原来的办法做二层封装，实现原有事务执行前后的一些操作，即办法的重写，是事先编译好的，生成字节码的代理类。
-
-StaticUserDaoProxy daoProxy=new StaticUserDaoProxy(dao);
-
-//执行调用
-
-daoProxy.save();
-</code></pre><p>}</p>
-<p>public static void main(String[] args) {</p>
-<pre><code>staticProxy();
-</code></pre><p>}<br>测试结果：</p>
-<p>静态代理</p>
-<h4 id="2-jdk动态代理模式"><a href="#2-jdk动态代理模式" class="headerlink" title="2.jdk动态代理模式"></a>2.jdk动态代理模式</h4><pre><code>jdk动态代理模式是通过java的反射机制实现的，避免静态代理下多个接口多种事务需求而需要多写冗余的代码，而且不需要实现目标接口，同上使用相同的目标接口和实现类，只是代理类变成了DynamicUserDaoProxy。
-</code></pre><p>动态代理类DynamicUserDaoProxy：</p>
-<p>package com.cyy.i.proxy;</p>
-<p>import java.lang.reflect.InvocationHandler;</p>
-<p>import java.lang.reflect.Method;</p>
-<p>import java.lang.reflect.Proxy;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description:jdk动态代理类</p>
-</li>
-<li><p>@Date:Created in 17:15 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class DynamicUserDaoProxy {</p>
-<p>private Objecttarget;</p>
-<pre><code>public DynamicUserDaoProxy(Object target) {
-</code></pre><p>this.target = target;</p>
-<pre><code>}
-</code></pre><p>public ObjectgetProxyInstance(){</p>
-<p>return Proxy.newProxyInstance(</p>
-<p>target.getClass().getClassLoader(),</p>
-<pre><code>target.getClass().getInterfaces(),
-
-new InvocationHandler(){
-</code></pre><p>@Override</p>
-<pre><code>public Objectinvoke(Object proxy, Method method, Object[] args)throws Throwable {
-</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
-<pre><code>    Object returnValue=method.invoke(target,args);
-
-    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
-
-    return returnValue;
-
-}
-</code></pre><p>});</p>
-<pre><code>}
-</code></pre><p>}<br>同样在主函数添加测试静态方法dynamicProxy():</p>
-<p>public static void dynamicProxy(){</p>
-<p>System.out.println(“—-jdk动态代理—-“);</p>
-<pre><code>IUserDao dao=new UserDao();
-
-System.out.println(dao.getClass());
-
-IUserDao daoProxy = (IUserDao)new DynamicUserDaoProxy(dao).getProxyInstance();
-
-System.out.println(daoProxy.getClass());
-
-//执行调用
-
-daoProxy.save();
-</code></pre><p>}</p>
-<p>public static void main(String[] args) {</p>
-<pre><code>staticProxy();
-
-dynamicProxy();
-</code></pre><p>}<br>测试结果:</p>
-<p>jdk动态代理</p>
-<h4 id="3-基于cglib的动态代理"><a href="#3-基于cglib的动态代理" class="headerlink" title="3.基于cglib的动态代理"></a>3.基于cglib的动态代理</h4><pre><code>基于jdk的动态代理是需要一个实现接口的目标对象，实现单独对象的话要使用cglib的代理。新建一个CUserDao目标类，以及一个代理工厂类ProxyFactory，spring的核心包已经包括cglib的包，这里导入spring-core-4.0.0.RELEASE.jar的版本。
-</code></pre><p>CUserDao目标类：</p>
-<p>package com.cyy.ni.dao;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: CUserDao目标类</p>
-</li>
-<li><p>@Date:Created in 18:01 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class CUserDao {</p>
-<p>public void save() {</p>
-<p>System.out.println(“—-已经保存数据!—-“);</p>
-<pre><code>}
-</code></pre><p>}<br>代理工厂类ProxyFactory：</p>
-<p>package com.cyy.ni.proxy;</p>
-<p>import org.springframework.cglib.proxy.Enhancer;</p>
-<p>import org.springframework.cglib.proxy.MethodInterceptor;</p>
-<p>import org.springframework.cglib.proxy.MethodProxy;</p>
-<p>import java.lang.reflect.Method;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 代理工厂类ProxyFactory</p>
-</li>
-<li><p>@Date:Created in 18:01 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class ProxyFactoryimplements MethodInterceptor {</p>
-<p>private Objecttarget;</p>
-<pre><code>public ProxyFactory(Object target) {
-</code></pre><p>this.target = target;</p>
-<pre><code>}
-</code></pre><p>public ObjectgetProxyInstance() {</p>
-<p>Enhancer en=new Enhancer();</p>
-<pre><code>    en.setSuperclass(target.getClass());
-
-    en.setCallback(this);
-
-    return en.create();
-
-}
-</code></pre><p>@Override</p>
-<pre><code>public Objectintercept(Object o, Method method, Object[] objects, MethodProxy proxy)throws Throwable {
-</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
-<pre><code>    Object reuturnValue = method.invoke(target, objects);
-
-    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
-
-    return reuturnValue;
-
-}
-</code></pre><p>}<br>主函数中的的静态方法：</p>
-<p>public static void CGlibDynamicProxy(){</p>
-<pre><code>System.out.println(&quot;----CGlib动态代理----&quot;);
-
-CUserDao target =new CUserDao();
-
-CUserDao proxy = (CUserDao)new ProxyFactory(target).getProxyInstance();
-
-System.out.println(proxy.getClass());
-
-proxy.save();
-</code></pre><p>}</p>
-<p>public static void main(String[] args) {</p>
-<pre><code>    CGlibDynamicProxy();
-
-}
-</code></pre><p>测试结果：</p>
-<p>cglib代理</p>
-<h4 id="4-spring中的代理"><a href="#4-spring中的代理" class="headerlink" title="4.spring中的代理"></a>4.spring中的代理</h4><pre><code>Spring中代理对象可通过xml配置方式获得，也可通过ProxyFactory手动编程方式创建对象。先讲手动编程的方式。Spring中的代理对象其实是JDK Proxy和CGLIB Proxy 的结合。 下面我们新建spring包，新建目标类MyTarget，目标接口PeopleService，它的实现类EnglishService，织入类AroundInteceptor实现aop包下MethodInterceptor的接口，测试类ProxyFactoryTest，这里要导入的几个jar包有spring-aop-4.0.0.RELEASE.jar，aopalliance-1.0.jar，aspectjweaver-1.8.1.jar，commons-logging-1.0.4.jar。
-</code></pre><p>目标类MyTarget：</p>
-<p>package com.cyy.spring;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 目标类MyTarget</p>
-</li>
-<li><p>@Date:Created in 19:29 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class MyTarget {</p>
-<p>public void printName(){</p>
-<p>System.out.println(“name:Target-“);</p>
-<pre><code>}
-</code></pre><p>}<br>目标接口PeopleService：</p>
-<p>package com.cyy.spring;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 目标接口PeopleService</p>
-</li>
-<li><p>@Date:Created in 19:30 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public interface PeopleService {</p>
-<p>public void sayHello();</p>
-<pre><code>public void printName(String name);
-</code></pre><p>}<br>实现类EnglishService：</p>
-<p>package com.cyy.spring;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 实现类EnglishService</p>
-</li>
-<li><p>@Date:Created in 19:34 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class EnglishServiceimplements PeopleService {</p>
-<p>@Override</p>
-<pre><code>public void sayHello() {
-</code></pre><p>System.out.println(“Hi”);</p>
-<pre><code>}
-</code></pre><p>@Override</p>
-<pre><code>public void printName(String name) {
-</code></pre><p>System.out.println(“Your name:”+name);</p>
-<pre><code>}
-</code></pre><p>}<br>织入类AroundInteceptor：</p>
-<p>package com.cyy.spring;</p>
-<p>import org.aopalliance.intercept.MethodInterceptor;</p>
-<p>import org.aopalliance.intercept.MethodInvocation;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 织入类AroundInteceptor</p>
-</li>
-<li><p>@Date:Created in 19:40 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class AroundInteceptorimplements MethodInterceptor {</p>
-<p>@Override</p>
-<pre><code>public Objectinvoke(MethodInvocation methodInvocation)throws Throwable {
-</code></pre><p>System.out.println(methodInvocation.getMethod().getName()+”调用之前”);</p>
-<pre><code>    Object res=methodInvocation.proceed();
-
-    System.out.println(methodInvocation.getMethod().getName()+&quot;调用之后&quot;);
-
-    return res;
-
-}
-</code></pre><p>}<br>测试类ProxyFactoryTest：</p>
-<p>package com.cyy.spring;</p>
-<p>import org.junit.Test;</p>
-<p>import org.springframework.aop.framework.ProxyFactory;</p>
-<p>/**</p>
-<ul>
-<li><p>@Author: Cyy</p>
-</li>
-<li><p>@Description: 测试类ProxyFactoryTest</p>
-</li>
-<li><p>@Date:Created in 19:42 2018/7/19</p>
-</li>
-</ul>
-<p>*/</p>
-<p>public class ProxyFactoryTest {</p>
-<p>//没有指定代理类的使用cglib代理</p>
-<p>@Test</p>
-<pre><code>public void classProxy(){
-
-    ProxyFactory factory=new ProxyFactory();
-
-    factory.setTarget(new MyTarget());
-
-    factory.addAdvice(new AroundInteceptor());
-
-    MyTarget myTarget = (MyTarget) factory.getProxy();
-
-    myTarget.printName();
-
-    System.out.println(myTarget.getClass().getName());
-
-}
-</code></pre><p>//指定代理类的使用jdk代理</p>
-<p>@Test</p>
-<pre><code>public void interfaceProxy(){
-</code></pre><p>ProxyFactory factory=new ProxyFactory();</p>
-<pre><code>    factory.setInterfaces(new Class[]{PeopleService.class});
-
-    factory.addAdvice(new AroundInteceptor());
-
-    factory.setTarget(new EnglishService());
-
-    PeopleService peopleProxy = (PeopleService) factory.getProxy();
-
-    peopleProxy.sayHello();
-
-    peopleProxy.printName(&quot;cyy&quot;);
-
-    System.out.println(peopleProxy.getClass().getName());
-
-}
-</code></pre><p>}<br>测试结果：</p>
-<pre><code>从运行结果的代理类的class name ,以及前两节中讲的，很清晰的看到Spring中对于指定接口的代理类，Spring中使用的是JDK的Proxy，对于不指定接口的使用CGLIB的方式。对于上面的测试方法interfaceProxy，我们只注释掉 
-</code></pre><p>//factory.setInterfaces(new Class[] { PeopleService.class }) 这行代码，在次运行，结果为：</p>
-<p>使用的是CGLIB处理，从而验证我们的猜想。 </p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>java之静态代码块与构造方法加载次序</title>
-    <url>/2021/06/17/java%E4%B9%8B%E9%9D%99%E6%80%81%E4%BB%A3%E7%A0%81%E5%9D%97%E4%B8%8E%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95%E5%8A%A0%E8%BD%BD%E6%AC%A1%E5%BA%8F/</url>
-    <content><![CDATA[<ul>
-<li>java中的静态代码块，非静态块，构造办法的加载顺序是这样的：<br>静态代码块 （程序加载时一次）—&gt;非静态块（每次实例化一次）—&gt; 构造方法（每次实例化一次），废话不多说，上代码。</li>
-</ul>
-<p>#####A类：</p>
-<blockquote>
-<pre><code>public class A {
-
-    static {
-        System.out.print(&quot;1&quot;);
-    }
-     {
-        System.out.print(&quot;#&quot;);
-    }
-
-    public A(){
-        System.out.print(&quot;a&quot;);
-    }
-
-
-}
-</code></pre></blockquote>
-<p>#####B类：</p>
-<blockquote>
-<pre><code>/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 16:08 2018/7/28
- */
-public class B extends A {
-
-    static {
-        System.out.print(&quot;2&quot;);
-    }
-     {
-        System.out.print(&quot;*&quot;);
-    }
-
-    public B(){
-        System.out.print(&quot;b&quot;);
-    }
-    {
-        System.out.print(&quot;c&quot;);
-    }
-
-    public static void main(String[] args) {
-//        A a=new A();//结果12a,执行一次2个静态区代码，执行非静态代码块，再执行A的构造办法
-//        B b=new B();//结果12ab,执行一次2个静态区代码，执行非静态代码块，再依次执行A和B的构造办法
-        A ab=new B();//同上
-
-        ab=new B();//此时静态代码块已经加载,只加载一次，执行非静态代码块，是每次实例化都一次，跟构造方法一样，比构造办法先，输出非静态代码和构造办法的部分
-
-    }
-}
-</code></pre></blockquote>
-<p>我们尝试运行，看看结果：<br><img src="../../../../images/post-images/10224563-039c5928d44ca760.png" alt="image.png"><br>结果是12#a*b#a*b,来分析下整个流程：</p>
-<ul>
-<li>第一步按顺序加载2个类的静态代码块，程序载入时，只会执行一次，输出12；</li>
-<li>第二步按顺序分别加载A类和B类的非静态代码块以及构造方法，输出#a*b;</li>
-<li>第三步，再次实例化B类的时候，不在静态代码块了，只会加载非静态代码块和构造方法，再次输出结果#a*b;</li>
-</ul>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>java实现多线程的6种方式</title>
-    <url>/2021/06/17/java%E5%AE%9E%E7%8E%B0%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%846%E7%A7%8D%E6%96%B9%E5%BC%8F/</url>
-    <content><![CDATA[<p>java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。</p>
-<h4 id="1-基于继承Thread类的实现"><a href="#1-基于继承Thread类的实现" class="headerlink" title="1.基于继承Thread类的实现"></a>1.基于继承Thread类的实现</h4><blockquote>
-<pre><code>/**
-* @Author: Cyy
-* @Description: 使用继承Thread实现线程的方式
-* @Date:Created in 23:33 2018/7/27
-*/
-public class Thread01 extends Thread {
-
-@Override
- public void run() {
-    super.run();
-    System.out.println(&quot;使用继承Thread实现线程的方式。。。&quot;);
-    int i=0;
-    while (true) {
-
-        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException  e) {
-            e.printStackTrace();
-        }
-    }
-}
-
-public Thread01(String name){
-    super(name);
-}
-public static void main(String[] args) {
-    Thread01 thread_1=new Thread01(&quot;t1&quot;);
-    Thread01 thread_2=new Thread01(&quot;t2&quot;);
-    thread_1.start();
-    thread_2.start();
-    while (true) {
-            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException  e) {
-            e.printStackTrace();
-        }
-    }
- }
-}
-</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-88d736905e9966c0.png" alt="image.png"></p>
-</blockquote>
-<h4 id="2-基于实现Runnable接口的实现"><a href="#2-基于实现Runnable接口的实现" class="headerlink" title="2.基于实现Runnable接口的实现"></a>2.基于实现Runnable接口的实现</h4><blockquote>
-<pre><code>/**
-* @Author: Cyy
-* @Description:基于实现Runnable接口的实现
-* @Date:Created in 23:46 2018/7/27
-*/
-public class Thread02 implements Runnable {
-@Override
-public void run() {
-    System.out.println(&quot;使用实现Runnable实现线程的方式。。。&quot;);
-    while(true){
-            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try{
-            Thread.sleep(1000);
-        }catch (InterruptedException  e){
-            e.printStackTrace();
-        }
-    }
-}
-public static void main(String[] args) {
-    Thread02 thread01=new Thread02();
-    Thread02 thread02=new Thread02();
-    Thread thread1=new Thread(thread01,&quot;t1&quot;);
-    thread1.start();
-    Thread thread2=new Thread(thread02,&quot;t2&quot;);
-    thread2.start();
-    while (true) {
-        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException  e) {
-            e.printStackTrace();
-        }
-    }
-  }
- }
-</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-f166fcf2937e4e63.png" alt="image.png"></p>
-</blockquote>
-<h4 id="3-基于内部类的实现"><a href="#3-基于内部类的实现" class="headerlink" title="3.基于内部类的实现"></a>3.基于内部类的实现</h4><blockquote>
-<pre><code>public class Thread00 {
-
-    public static void main(String[] args) {
-
-        //基于子类的实现
-        new Thread(&quot;t_t&quot;){
-            @Override
-            public void run() {
-                super.run();
-                while (true) {
-                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-
-        //基于接口的实现
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        },&quot;t_r&quot;){}.start();
-
-        while (true) {
-                System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-4551d8c4def647f6.png" alt="image.png"><br>另外，还有同时实现基于子类和接口的实现的情况：</p>
-<blockquote>
-<pre><code>/**
- * @Author: Cyy
- * @Description: 同时基于子类和内部类
- * @Date:Created in 10:11 2018/7/28
- */
-public class Thread03 {
-
-    public static void main(String args[]){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    System.out.println(&quot;Runnable is running...&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }){
-            @Override
-            public void run() {
-//                super.run();
-                while (true) {
-                    System.out.println(&quot;sub is running...&quot;);
-                    try {
-                            Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-61a1e5b9bb26d736.png" alt="image.png"><br>这里运行结果只有子类线程的打印，原因是虽然实现了Thread类构造办法里Runnable接口的实例，但是子类已经将父类的run方法进行重写了，所以只会执行子类的办法。</p>
-<h4 id="4-基于带返回值的线程实现方式"><a href="#4-基于带返回值的线程实现方式" class="headerlink" title="4.基于带返回值的线程实现方式"></a>4.基于带返回值的线程实现方式</h4><blockquote>
-<pre><code>import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 10:35 2018/7/28
- */
-public class Thread04 {
-
-    public static void main(String args[]) throws ExecutionException, InterruptedException {
-        Callable&lt;Integer&gt; call=new Callable&lt;Integer&gt;() {
-            @Override
-            public Integer call() throws Exception {
-                System.out.println(&quot;thread start...&quot;);
-                Thread.sleep(2000);
-                return 520;
-            }
-        };
-
-        FutureTask&lt;Integer&gt; task=new FutureTask&lt;&gt;(call);
-        Thread t=new Thread(task);
-        t.start();
-        System.out.println(&quot;线程的执行结果 &quot;+task.get());
-
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-13077b7fb6481123.png" alt="image.png"></p>
-<h4 id="5-基于线程池的方式。"><a href="#5-基于线程池的方式。" class="headerlink" title="5.基于线程池的方式。"></a>5.基于线程池的方式。</h4><blockquote>
-<pre><code>import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 13:02 2018/7/28
- */
-public class Thread05 {
-
-    public static void main(String[] args) {
-
-        ExecutorService threadPool= Executors.newFixedThreadPool(5);
-
-        while (true) {
-            threadPool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    System.out.println(Thread.currentThread().getName() + &quot; is running...&quot;);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-        }
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-2133e7d7e0cd6a0e.png" alt="image.png"></p>
-<ul>
-<li>可以基于ExecutorService、Callable、Future实现有返回结果的多线程。</li>
-</ul>
-<blockquote>
-<pre><code>import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.*;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 13:16 2018/7/28
- */
-public class Thread06 {
-
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
-        System.out.println(&quot;----程序开始运行-----&quot;);
-
-        Date date1=new Date();
-        int taskSize=5;
-
-        ExecutorService threadPool= Executors.newFixedThreadPool(taskSize);
-        List&lt;Future&gt; list=new ArrayList&lt;Future&gt;();
-        for (int i=0;i&lt;taskSize;i++) {
-            Callable c=new Callable() {
-                @Override
-                public Object call() throws Exception {
-                    Date dateTmp1 = new Date();
-                    Thread.sleep(2000);
-                    Date dateTmp2 = new Date();
-                    long time = dateTmp2.getTime() - dateTmp1.getTime();
-                    return time;
-                }
-            };
-            Future f = threadPool.submit(c);
-            list.add(f);
-        }
-        threadPool.shutdown();
-        for (Future f : list) {
-            System.out.println(&quot;&gt;&gt;&gt;&quot;+f.get().toString());
-        }
-        Date date2=new Date();
-        System.out.println(&quot;-----程序结束运行-----，程序运行时间【&quot;+(date2.getTime()-date1.getTime())+&quot;毫秒】&quot;);
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：<br><img src="../../../../images/post-images/10224563-77c92e58f3e72d7b.png" alt="image.png"></p>
-<h4 id="6-基于定时任务实现的多线程"><a href="#6-基于定时任务实现的多线程" class="headerlink" title="6.基于定时任务实现的多线程"></a>6.基于定时任务实现的多线程</h4><blockquote>
-<pre><code>import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
-
-/**
- * @Author: Cyy
- * @Description:
- * @Date:Created in 16:43 2018/7/28
- */
-public class Thread07 {
-
-    private static final SimpleDateFormat format=new SimpleDateFormat(&quot;yyyy-MM-dd hh:mm:ss&quot;);
-
-    //定时任务
-    public static void timeLapse() throws ParseException {
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                System.out.println(&quot;定时任务开始执行。。。。。&quot;);
-            }
-        },format.parse(&quot;2018-07-28 16:51:00&quot;));
-
-    }
-    public static void timeLapseBySomeTimes(){
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                System.out.println(Thread.currentThread().getName()+&quot; is Running...&quot;);
-            }
-        },new Date(),1000);
-    }
-    public static void main(String[] args) throws ParseException {
-//        timeLapse();
-        timeLapseBySomeTimes();
-        timeLapseBySomeTimes();
-        while (true) {
-            System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-}
-</code></pre></blockquote>
-<p>运行结果：</p>
-<p><img src="../../../../images/post-images/10224563-a872cc0e4d4c4047.png" alt="image.png"></p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>java</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>python-时间序列处理</title>
     <url>/2021/06/17/python-%E6%97%B6%E9%97%B4%E5%BA%8F%E5%88%97%E5%A4%84%E7%90%86/</url>
     <content><![CDATA[<p>数据说明：’./data/raw/pm25.csv’文件为某地2017年一段时间内的PM2.5的每小时监测数据，数据按时间顺序记录（从2017-01-01 00:00:00开始，中间不间断），由于各种原因造成了某些时刻的数据缺失。</p>
@@ -1332,6 +749,254 @@ smooth_method()
       <tags>
         <tag>python</tag>
         <tag>时间序列处理</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>浅谈java基础之JVM</title>
+    <url>/2021/06/17/%E6%B5%85%E8%B0%88java%E5%9F%BA%E7%A1%80%E4%B9%8BJVM/</url>
+    <content><![CDATA[<h4 id="java实现跨平台的原理"><a href="#java实现跨平台的原理" class="headerlink" title="java实现跨平台的原理"></a>java实现跨平台的原理</h4><ul>
+<li>java实现跨平台的原理是基于JVM实现的，即Java Virtual Machine,对于不同机器平台有不同的JVM版本（JVM本身是用C/C++实现的），通过模拟一台计算机来达到一个计算机所具有的计算功能，底层都是运行编译器生成的java字节码文件，实现了 “一次编译，到处运行” 的目的。<br>总结： JVM 屏蔽了与各个计算机平台相关的软件或者硬件之间的差异，使得与平台相关的耦合统一由 JVM 提供者来实现<h4 id="JVM的组成以及各部分详解"><a href="#JVM的组成以及各部分详解" class="headerlink" title="JVM的组成以及各部分详解"></a>JVM的组成以及各部分详解</h4>JVM的基本结构是由4部分组成的：</li>
+<li>类加载器，在 JVM 启动时或者类运行时将需要的 class 加载到 JVM 中；</li>
+<li>执行引擎，执行引擎负责执行class文件包含的字节码指令，相当于机器的CPU；</li>
+<li>内存区，将内存划分成若干个区域，模拟机器上上的存储，记录和调度功能模块，比如各种功能的寄存器和PC指针记录器；</li>
+<li>本地方法调用，调用C/C++实现的本地代码的返回结果；<br><img src="../../../../images/post-images/10224563-59034e35b9037bf9.png" alt="image.png"><h4 id="类加载器基本原理"><a href="#类加载器基本原理" class="headerlink" title="类加载器基本原理"></a>类加载器基本原理</h4>类加载器（class loader），用来加载java类到虚拟机中。一般来说，java虚拟机使用java的过程如下：java源程序经过java编译器转化之后变化成java字节码文件。类加载器负责读取java字节码文件，并转化成java.lang.Class的一个实例，每个实例就是一个java类,通过实例的newInstance()方法生成该类的一个对象，或者使用java动态代理生成的会有更复杂的过程，或者通过网络下载的。<h4 id="补充：java判断2个对象的过程"><a href="#补充：java判断2个对象的过程" class="headerlink" title="补充：java判断2个对象的过程"></a>补充：java判断2个对象的过程</h4>第一步查看类名是否相同，第二步查看类加载器是否相同，只有2者都是相同的情况下才会被认为2者是相同的。具体来说，可以在不同包里面新建2个相同类名的类，进行编译运行测试，判断2者是否属于相同，判断对象是否相同可以用.equal()方法；<h4 id="类加载器加载class文件的详细过程"><a href="#类加载器加载class文件的详细过程" class="headerlink" title="类加载器加载class文件的详细过程"></a>类加载器加载class文件的详细过程</h4><img src="../../../../images/post-images/10224563-b8cb7ca912749afc.png" alt="image.png"></li>
+<li>第一阶段找到这个class文件，并且 把它加载到内存中；</li>
+<li>第二阶段分为3个小步骤，即<ul>
+<li>字节码验证；</li>
+<li>class类数据分析；</li>
+<li>相应的内存分配与符号链接；</li>
+</ul>
+</li>
+<li>第三个阶段是静态属性和初始化赋值，静态代码块的执行；<br>#####（1）加载阶段的详细分析<br>查找并加载类的二进制数据时的类加载的第一个阶段，即加载阶段需要执行3个操作：</li>
+<li>通过一个类的全限定名称来获取其定义的二进制流；</li>
+<li>将二进制的静态存储结构转化为方法区的运行时数据结构；</li>
+<li>在java堆中生成一个这个类的java.lang.Class对象，作为对方法区中的这些数据的访问入口。</li>
+</ul>
+<p>相对于类加载的其他阶段而言，加载阶段（准确地说，是加载阶段获取类的二进制字节流的动作）是可控性最强的阶段，因为开发人员既可以使用系统提供的类加载器来完成加载，也可以自定义自己的类加载器来完成加载。</p>
+<p>加载阶段完成后，虚拟机外部的二进制字节流就按照虚拟机所需的格式存储在方法区之中，而且在Java堆中也创建一个 java.lang.Class类的对象，这样便可以通过该对象访问方法区中的这些数据。</p>
+<p>#####（2）连接阶段详细分析</p>
+<h6 id="验证：确保被加载的类的正确性"><a href="#验证：确保被加载的类的正确性" class="headerlink" title="验证：确保被加载的类的正确性"></a>验证：确保被加载的类的正确性</h6><p>验证是连接阶段的第一步，这一阶段的目的是为了确保Class文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机自身的安全。验证阶段大致会完成4个阶段的检验动作：</p>
+<ul>
+<li>文件格式验证：验证字节流是否符合Class文件格式的规范；例如：是否以 0xCAFEBABE开头、主次版本号是否在当前虚拟机的处理范围之内、常量池中的常量是否有不被支持的类型。</li>
+<li>元数据验证：对字节码描述的信息进行语义分析（注意：对比javac编译阶段的语义分析），以保证其描述的信息符合Java语言规范的要求；例如：这个类是否有父类，除了 java.lang.Object之外。</li>
+<li>字节码验证：通过数据流和控制流分析，确定程序语义是合法的、符合逻辑的。</li>
+<li>符号引用验证：确保解析动作能正确执行。</li>
+</ul>
+<p>验证阶段是非常重要的，但不是必须的，它对程序运行期没有影响，如果所引用的类经过反复验证，那么可以考虑采用 -Xverifynone 参数来关闭大部分的类验证措施，以缩短虚拟机类加载的时间。</p>
+<h6 id="准备：为类的静态变量分配内存，并将其初始化为默认值"><a href="#准备：为类的静态变量分配内存，并将其初始化为默认值" class="headerlink" title="准备：为类的静态变量分配内存，并将其初始化为默认值"></a>准备：为类的静态变量分配内存，并将其初始化为默认值</h6><p>准备阶段是正式为类变量分配内存并设置类变量初始值的阶段，这些内存都将在方法区中分配。对于该阶段有以下几点需要注意：</p>
+<ul>
+<li>这时候进行内存分配的仅包括类变量（static），而不包括实例变量，实例变量会在对象实例化时随着对象一块分配在Java堆中。</li>
+<li>这里所设置的初始值通常情况下是数据类型默认的零值（如0、0L、null、false等），而不是被在Java代码中被显式地赋予的值。</li>
+</ul>
+<p>假设一个类变量的定义为： public static int value = 3;</p>
+<p>那么变量value在准备阶段过后的初始值为 0，而不是 3，因为这时候尚未开始执行任何 Java 方法，而把 value 赋值为 3 的public static指令是在程序编译后，存放于类构造器 <clinit>（）方法之中的，所以把value赋值为3的动作将在初始化阶段才会执行。</clinit></p>
+<blockquote>
+<p>这里还需要注意如下几点：</p>
+<ul>
+<li>对基本数据类型来说，对于类变量（static）和全局变量，如果不显式地对其赋值而直接使用，则系统会为其赋予默认的零值，而对于局部变量来说，在使用前必须显式地为其赋值，否则编译时不通过。</li>
+<li>对于同时被static和final修饰的常量，必须在声明的时候就为其显式地赋值，否则编译时不通过；而只被final修饰的常量则既可以在声明时显式地为其赋值，也可以在类初始化时显式地为其赋值，总之，在使用前必须为其显式地赋值，系统不会为其赋予默认零值。</li>
+<li>对于引用数据类型reference来说，如数组引用、对象引用等，如果没有对其进行显式地赋值而直接使用，系统都会为其赋予默认的零值，即null。</li>
+<li>如果在数组初始化时没有对数组中的各元素赋值，那么其中的元素将根据对应的数据类型而被赋予默认的零值。</li>
+<li>如果类字段的字段属性表中存在 ConstantValue 属性，即同时被 final 和 static 修饰，那么在准备阶段变量 value 就会被初始化为 ConstValue 属性所指定的值。</li>
+</ul>
+</blockquote>
+<p>假设上面的类变量 value 被定义为： public static final int value = 3;</p>
+<p>编译时 Javac 将会为 value 生成 ConstantValue 属性，在准备阶段虚拟机就会根据 ConstantValue 的设置将 value 赋值为 3。我们可以理解为 static final 常量在编译期就将其结果放入了调用它的类的常量池中。</p>
+<h6 id="解析：把类中的符号引用转换为直接引用"><a href="#解析：把类中的符号引用转换为直接引用" class="headerlink" title="解析：把类中的符号引用转换为直接引用"></a>解析：把类中的符号引用转换为直接引用</h6><p>#####（3）初始化阶段详细分析<br>初始化，为类的静态变量赋予正确的初始值，JVM负责对类进行初始化，主要对类变量进行初始化。在Java中对类变量进行初始值设定有两种方式：</p>
+<ul>
+<li>声明类变量是指定初始值</li>
+<li>使用静态代码块为类变量指定初始值</li>
+</ul>
+<p>JVM初始化步骤</p>
+<ul>
+<li>假如这个类还没有被加载和连接，则程序先加载并连接该类</li>
+<li>假如该类的直接父类还没有被初始化，则先初始化其直接父类</li>
+<li>假如类中有初始化语句，则系统依次执行这些初始化语句</li>
+</ul>
+<p>类初始化时机：只有当对类的主动使用的时候才会导致类的初始化，类的<br>主动使用包括以下六种：</p>
+<ul>
+<li>创建类的实例，也就是new的方式</li>
+<li>访问某个类或接口的静态变量，或者对该静态变量赋值</li>
+<li>调用类的静态方法</li>
+<li>反射（如 Class.forName(“com.shengsiyuan.Test”)）</li>
+<li>初始化某个类的子类，则其父类也会被初始化</li>
+<li>Java虚拟机启动时被标明为启动类的类（ JavaTest），直接使用 java.exe命令来运行某个主类</li>
+</ul>
+<h6 id="结束生命周期"><a href="#结束生命周期" class="headerlink" title="结束生命周期"></a>结束生命周期</h6><p>在如下几种情况下，Java虚拟机将结束生命周期</p>
+<ul>
+<li>执行了 System.exit()方法</li>
+<li>程序正常执行结束</li>
+<li>程序在执行过程中遇到了异常或错误而异常终止</li>
+<li>由于操作系统出现错误而导致Java虚拟机进程终止</li>
+</ul>
+<h4 id="双亲委派模型（Parent-Delegation-Model）"><a href="#双亲委派模型（Parent-Delegation-Model）" class="headerlink" title="双亲委派模型（Parent Delegation Model）"></a>双亲委派模型（Parent Delegation Model）</h4><p>类的加载过程采用双亲委派机制，这种机制能更好的保证 Java 平台的安全性。<br>类加载器 ClassLoader 是具有层次结构的，也就是父子关系，其中，Bootstrap 是所有类加载器的父亲，如下图所示：<br><img src="../../../../images/post-images/10224563-247d5c507d8494e3.png" alt="image.png"></p>
+<blockquote>
+<p>该模型要求除了顶层的 Bootstrap class loader 启动类加载器外，其余的类加载器都应当有自己的父类加载器。子类加载器和父类加载器不是以继承（Inheritance）的关系来实现，而是通过组合（Composition）关系来复用父加载器的代码。每个类加载器都有自己的命名空间（由该加载器及所有父类加载器所加载的类组成，在同一个命名空间中，不会出现类的完整名字（包括类的包名）相同的两个类；在不同的命名空间中，有可能会出现类的完整名字（包括类的包名）相同的两个类）。</p>
+</blockquote>
+<p>双亲委派模型的工作过程如下：</p>
+<ul>
+<li>当前 ClassLoader 首先从自己已经加载的类中查询是否此类已经加载，如果已经加载则直接返回原来已经加载的类。<blockquote>
+<p>每个类加载器都有自己的加载缓存，当一个类被加载了以后就会放入缓存，等下次加载的时候就可以直接返回了。</p>
+</blockquote>
+</li>
+<li>当前 ClassLoader 的缓存中没有找到被加载的类的时候，委托父类加载器去加载，父类加载器采用同样的策略，首先查看自己的缓存，然后委托父类的父类去加载，一直到 bootstrap ClassLoader。<blockquote>
+<p>当所有的父类加载器都没有加载的时候，再由当前的类加载器加载，并将其放入它自己的缓存中，以便下次有加载请求的时候直接返回。</p>
+</blockquote>
+</li>
+</ul>
+<p>这样设计的原因：</p>
+<blockquote>
+<p>这是对于使用这种模型来组织累加器的好处；主要是为了安全性，避免用户自己编写的类动态替换 Java 的一些核心类，比如 String，同时也避免了重复加载，因为 JVM 中区分不同类，不仅仅是根据类名，相同的 class 文件被不同的 ClassLoader 加载就是不同的两个类，如果相互转型的话会抛java.lang.ClassCaseException。</p>
+</blockquote>
+<h4 id="JVM内存管理"><a href="#JVM内存管理" class="headerlink" title="JVM内存管理"></a>JVM内存管理</h4><h5 id="（1）内存划分"><a href="#（1）内存划分" class="headerlink" title="（1）内存划分"></a>（1）内存划分</h5><p><img src="../../../../images/post-images/10224563-2b40e6da3a433ed9.png" alt="image.png"></p>
+<p>1.方法区（线程共享）：各个线程共享的一个区域，用于存储虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码等数据。虽然 Java 虚拟机规范把方法区描述为堆的一个逻辑部分，但是它却又一个别名叫做 Non-Heap（非堆），目的应该是与 Java 堆区分开来。</p>
+<ul>
+<li>运行时常量池：是方法区的一部分，用于存放编译器生成的各种字面量和符号引用。</li>
+</ul>
+<p>2.堆内存（线程共享）：所有线程共享的一块区域，垃圾收集器管理的主要区域。目前主要的垃圾回收算法都是分代收集算法，所以 Java 堆中还可以细分为：新生代和老年代；再细致一点的有 Eden 空间、From Survivor 空间、To Survivor 空间等，默认情况下新生代按照8:1:1的比例来分配。根据 Java 虚拟机规范的规定，Java 堆可以处于物理上不连续的内存空间中，只要逻辑上是连续的即可，就像我们的磁盘一样；</p>
+<p>3.程序计数器： Java 线程私有，类似于操作系统里的 PC 计数器，它可以看做是当前线程所执行的字节码的行号指示器。如果线程正在执行的是一个 Java 方法，这个计数器记录的是正在执行的虚拟机字节码指令的地址；如果正在执行的是 Native 方法，这个计数器值则为空（Undefined）。此内存区域是唯一一个在 Java 虚拟机规范中没有规定任何 OutOfMemoryError 情况的区域；</p>
+<p>4.虚拟机栈（栈内存）：Java线程私有，虚拟机展描述的是Java方法执行的内存模型：每个方法在执行的时候，都会创建一个栈帧用于存储局部变量、操作数、动态链接、方法出口等信息；每个方法调用都意味着一个栈帧在虚拟机栈中入栈到出栈的过程；</p>
+<p>5.本地方法栈 ：和Java虚拟机栈的作用类似，区别是该区域为 JVM 提供使用 native 方法的服务；</p>
+<p>作者：我没有三颗心脏<br>链接：<a href="https://www.jianshu.com/p/bfb876565a1e" target="_blank" rel="noopener">https://www.jianshu.com/p/bfb876565a1e</a><br>來源：简书<br>简书著作权归作者所有，任何形式的转载都请联系作者获得授权并注明出处。</p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>java</tag>
+        <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>java之静态代码块与构造方法加载次序</title>
+    <url>/2021/06/17/java%E4%B9%8B%E9%9D%99%E6%80%81%E4%BB%A3%E7%A0%81%E5%9D%97%E4%B8%8E%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95%E5%8A%A0%E8%BD%BD%E6%AC%A1%E5%BA%8F/</url>
+    <content><![CDATA[<ul>
+<li>java中的静态代码块，非静态块，构造办法的加载顺序是这样的：<br>静态代码块 （程序加载时一次）—&gt;非静态块（每次实例化一次）—&gt; 构造方法（每次实例化一次），废话不多说，上代码。</li>
+</ul>
+<p>#####A类：</p>
+<blockquote>
+<pre><code>public class A {
+
+    static {
+        System.out.print(&quot;1&quot;);
+    }
+     {
+        System.out.print(&quot;#&quot;);
+    }
+
+    public A(){
+        System.out.print(&quot;a&quot;);
+    }
+
+
+}
+</code></pre></blockquote>
+<p>#####B类：</p>
+<blockquote>
+<pre><code>/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 16:08 2018/7/28
+ */
+public class B extends A {
+
+    static {
+        System.out.print(&quot;2&quot;);
+    }
+     {
+        System.out.print(&quot;*&quot;);
+    }
+
+    public B(){
+        System.out.print(&quot;b&quot;);
+    }
+    {
+        System.out.print(&quot;c&quot;);
+    }
+
+    public static void main(String[] args) {
+//        A a=new A();//结果12a,执行一次2个静态区代码，执行非静态代码块，再执行A的构造办法
+//        B b=new B();//结果12ab,执行一次2个静态区代码，执行非静态代码块，再依次执行A和B的构造办法
+        A ab=new B();//同上
+
+        ab=new B();//此时静态代码块已经加载,只加载一次，执行非静态代码块，是每次实例化都一次，跟构造方法一样，比构造办法先，输出非静态代码和构造办法的部分
+
+    }
+}
+</code></pre></blockquote>
+<p>我们尝试运行，看看结果：<br><img src="../../../../images/post-images/10224563-039c5928d44ca760.png" alt="image.png"><br>结果是12#a*b#a*b,来分析下整个流程：</p>
+<ul>
+<li>第一步按顺序加载2个类的静态代码块，程序载入时，只会执行一次，输出12；</li>
+<li>第二步按顺序分别加载A类和B类的非静态代码块以及构造方法，输出#a*b;</li>
+<li>第三步，再次实例化B类的时候，不在静态代码块了，只会加载非静态代码块和构造方法，再次输出结果#a*b;</li>
+</ul>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>spring 事务理解</title>
+    <url>/2021/06/17/spring-%E4%BA%8B%E5%8A%A1%E7%90%86%E8%A7%A3/</url>
+    <content><![CDATA[<h3 id="1-事务的概念"><a href="#1-事务的概念" class="headerlink" title="1.事务的概念"></a>1.事务的概念</h3><p> 通俗的讲，事务指的是一组业务操作ABCD，要么全部成功，要么全部不成功。</p>
+<h3 id="2-关系数据库的事务的特性-ACID"><a href="#2-关系数据库的事务的特性-ACID" class="headerlink" title="2.关系数据库的事务的特性(ACID)"></a>2.关系数据库的事务的特性(ACID)</h3><ul>
+<li>原子性(Atomicity)：事务是数据库的逻辑工作单位，而且是必须是原子工作单位，对于修改，要么全部执行，要么全部不执行。</li>
+<li>一致性(Consistency)：事务在完成时，必须是所有的数据都保持一致状态。在相关数据库中，所有规则都必须应用于事务的修改，以保持所有数据的完整性。</li>
+<li>隔离性(Isolation)：一个事务的执行不能被其他事务所影响。事务必须是互相隔离的，防止并发读写同一个数据的情况发生 。</li>
+<li><p>持久性(Durability) : 一个事务一旦提交，事物的操作便永久性的保存在DB中。即使此时再执行回滚操作也不能撤消所做的更改。</p>
+<h3 id="3-spring事务的隔离级别"><a href="#3-spring事务的隔离级别" class="headerlink" title="3.spring事务的隔离级别"></a>3.spring事务的隔离级别</h3></li>
+<li><p>ISOLATION_DEFAULT  –使用数据库默认的事务隔离级别。</p>
+<ul>
+<li><p>ISOLATION_READ_UNCOMMITTED  –这是事务最低的隔离级别，它充许令外一个事务可以看到这个事务未提交的数据(<strong>读未提交</strong>)。</p>
+</li>
+<li><p>ISOLATION_READ_COMMITTED  –保证一个事务修改的数据提交后才能被另外一个事务读取。另外一个事务不能读取该事务未提交的数据(<strong>读已提交</strong>)。</p>
+</li>
+<li><p>ISOLATION_REPEATABLE_READ  –这种事务隔离级别可以防止脏读，不可重复读。但是可能出现幻像读(<strong>虚读</strong>)。</p>
+</li>
+<li><p>ISOLATION_SERIALIZABLE  –这是花费最高代价但是最可靠的事务隔离级别。事务被处理为顺序执行。除了防止脏读，不可重复读外，还避免了幻像读(<strong>序列化</strong>)。</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>理解Spring事务的隔离级别，需要明白的几个概念：</p>
+<ul>
+<li>脏读（脏数据）: 指当一个事务正在访问数据，并且对数据进行了修改，而这种修改还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。因为这个数据是还没有提交的数据， 那么另外一个事务读到的这个数据是脏数据，依据脏数据所做的操作可能是不正确的。</li>
+<li>不可重复读: 指在一个事务内，多次读同一数据。在这个事务还没有结束时，另外一个事务也访问该同一数据。那么，在第一个事务中的两次读数据之间，由于第二个事务的修改，那么第一个事务两次读到的数据可能是不一样的。这样就发生了在一个事务内两次读到的数据是不一样的，因此称为是不可重复读。</li>
+<li>幻觉读: 指当事务不是独立执行时发生的一种现象，例如第一个事务对一个表中的数据进行了修改，这种修改涉及到表中的全部数据行。同时，第二个事务也修改这个表中的数据，这种修改是向表中插入一行新数据。那么，以后就会发生操作第一个事务的用户发现表中还有没有修改的数据行，就好象发生了幻觉一样。<h3 id="4-Spring事务的传播属性（Propagation）"><a href="#4-Spring事务的传播属性（Propagation）" class="headerlink" title="4.Spring事务的传播属性（Propagation）"></a>4.Spring事务的传播属性（Propagation）</h3></li>
+<li><p>PROPAGATION_REQUIRED  –支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置。</p>
+</li>
+<li><p>PROPAGATION_SUPPORTS  –支持当前事务，如果当前没有事务，就以非事务方式执行。</p>
+</li>
+<li><p>PROPAGATION_MANDATORY  –支持当前事务，如果当前没有事务，就抛出异常。</p>
+</li>
+<li><p>PROPAGATION_REQUIRES_NEW  –新建事务，如果当前存在事务，把当前事务挂起。</p>
+</li>
+<li><p>PROPAGATION_NOT_SUPPORTED  –以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。</p>
+</li>
+<li><p>PROPAGATION_NEVER  –以非事务方式执行，如果当前存在事务，则抛出异常。</p>
+<h3 id="5-JDBC事务的隔离级别"><a href="#5-JDBC事务的隔离级别" class="headerlink" title="5.JDBC事务的隔离级别"></a>5.JDBC事务的隔离级别</h3></li>
+<li><p>TRANSACTION_NONE  –不支持事务，实际项目中很少使用。</p>
+</li>
+<li><p>TRANSACTION_READ_UNCOMMITTED  –在提交前一个事务可以看到另一个事务的变化。脏读、不可重复的读和幻觉读都是允许的。</p>
+</li>
+<li><p>TRANSACTION_READ_COMMITTED  –读取未提交的数据是不允许的。这个级别仍然允许不可重复的读和虚读产生。</p>
+</li>
+<li><p>TRANSACTION_REPEATABLE_READ  –事务保证能够再次读取相同的数据而不会失败，但虚读仍然会出现。</p>
+</li>
+<li><p>TRANSACTION_SERIALIZABLE  –最高的事务级别，它防止脏读、不可重复的读和虚读。</p>
+</li>
+</ul>
+<p><img src="../../../../images/post-images/10224563-5d3e594331d0c758.png" alt="$LBPYPLJ89T4Z~VED9O)9@E.png"></p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>spring</tag>
+        <tag>事务</tag>
       </tags>
   </entry>
   <entry>
@@ -1788,209 +1453,6 @@ public void demo02(){
       </tags>
   </entry>
   <entry>
-    <title>mysql 连接</title>
-    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
-    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
-<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
-<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
-<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>mysql</tag>
-        <tag>SQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>一个你不会认识的陌生人</title>
-    <url>/2021/06/17/%E4%B8%80%E4%B8%AA%E4%BD%A0%E4%B8%8D%E4%BC%9A%E8%AE%A4%E8%AF%86%E7%9A%84%E9%99%8C%E7%94%9F%E4%BA%BA/</url>
-    <content><![CDATA[<p>漫长的时光里</p>
-<p>你独自一个人度过</p>
-<p>生命总是孤独</p>
-<p>你总是默默承受</p>
-<p>即使每一个过客</p>
-<p>终究有谢幕离场的时分</p>
-<p>我是一个你不会认识的陌生人</p>
-<p>你是一道我永远也遇不上的彩虹</p>
-<p>没有遇上方知有</p>
-<p>好在花有清香月有阴</p>
-<p>我们在不同的世界</p>
-<p>演绎着类似的人生</p>
-<p>陌生的旧情人</p>
-<p>你是谁的新欢和旧爱</p>
-<p>而我只是一个</p>
-<p>你不会认识的陌生人</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>spring 事务理解</title>
-    <url>/2021/06/17/spring-%E4%BA%8B%E5%8A%A1%E7%90%86%E8%A7%A3/</url>
-    <content><![CDATA[<h3 id="1-事务的概念"><a href="#1-事务的概念" class="headerlink" title="1.事务的概念"></a>1.事务的概念</h3><p> 通俗的讲，事务指的是一组业务操作ABCD，要么全部成功，要么全部不成功。</p>
-<h3 id="2-关系数据库的事务的特性-ACID"><a href="#2-关系数据库的事务的特性-ACID" class="headerlink" title="2.关系数据库的事务的特性(ACID)"></a>2.关系数据库的事务的特性(ACID)</h3><ul>
-<li>原子性(Atomicity)：事务是数据库的逻辑工作单位，而且是必须是原子工作单位，对于修改，要么全部执行，要么全部不执行。</li>
-<li>一致性(Consistency)：事务在完成时，必须是所有的数据都保持一致状态。在相关数据库中，所有规则都必须应用于事务的修改，以保持所有数据的完整性。</li>
-<li>隔离性(Isolation)：一个事务的执行不能被其他事务所影响。事务必须是互相隔离的，防止并发读写同一个数据的情况发生 。</li>
-<li><p>持久性(Durability) : 一个事务一旦提交，事物的操作便永久性的保存在DB中。即使此时再执行回滚操作也不能撤消所做的更改。</p>
-<h3 id="3-spring事务的隔离级别"><a href="#3-spring事务的隔离级别" class="headerlink" title="3.spring事务的隔离级别"></a>3.spring事务的隔离级别</h3></li>
-<li><p>ISOLATION_DEFAULT  –使用数据库默认的事务隔离级别。</p>
-<ul>
-<li><p>ISOLATION_READ_UNCOMMITTED  –这是事务最低的隔离级别，它充许令外一个事务可以看到这个事务未提交的数据(<strong>读未提交</strong>)。</p>
-</li>
-<li><p>ISOLATION_READ_COMMITTED  –保证一个事务修改的数据提交后才能被另外一个事务读取。另外一个事务不能读取该事务未提交的数据(<strong>读已提交</strong>)。</p>
-</li>
-<li><p>ISOLATION_REPEATABLE_READ  –这种事务隔离级别可以防止脏读，不可重复读。但是可能出现幻像读(<strong>虚读</strong>)。</p>
-</li>
-<li><p>ISOLATION_SERIALIZABLE  –这是花费最高代价但是最可靠的事务隔离级别。事务被处理为顺序执行。除了防止脏读，不可重复读外，还避免了幻像读(<strong>序列化</strong>)。</p>
-</li>
-</ul>
-</li>
-</ul>
-<p>理解Spring事务的隔离级别，需要明白的几个概念：</p>
-<ul>
-<li>脏读（脏数据）: 指当一个事务正在访问数据，并且对数据进行了修改，而这种修改还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。因为这个数据是还没有提交的数据， 那么另外一个事务读到的这个数据是脏数据，依据脏数据所做的操作可能是不正确的。</li>
-<li>不可重复读: 指在一个事务内，多次读同一数据。在这个事务还没有结束时，另外一个事务也访问该同一数据。那么，在第一个事务中的两次读数据之间，由于第二个事务的修改，那么第一个事务两次读到的数据可能是不一样的。这样就发生了在一个事务内两次读到的数据是不一样的，因此称为是不可重复读。</li>
-<li>幻觉读: 指当事务不是独立执行时发生的一种现象，例如第一个事务对一个表中的数据进行了修改，这种修改涉及到表中的全部数据行。同时，第二个事务也修改这个表中的数据，这种修改是向表中插入一行新数据。那么，以后就会发生操作第一个事务的用户发现表中还有没有修改的数据行，就好象发生了幻觉一样。<h3 id="4-Spring事务的传播属性（Propagation）"><a href="#4-Spring事务的传播属性（Propagation）" class="headerlink" title="4.Spring事务的传播属性（Propagation）"></a>4.Spring事务的传播属性（Propagation）</h3></li>
-<li><p>PROPAGATION_REQUIRED  –支持当前事务，如果当前没有事务，就新建一个事务，一般默认采用此配置。</p>
-</li>
-<li><p>PROPAGATION_SUPPORTS  –支持当前事务，如果当前没有事务，就以非事务方式执行。</p>
-</li>
-<li><p>PROPAGATION_MANDATORY  –支持当前事务，如果当前没有事务，就抛出异常。</p>
-</li>
-<li><p>PROPAGATION_REQUIRES_NEW  –新建事务，如果当前存在事务，把当前事务挂起。</p>
-</li>
-<li><p>PROPAGATION_NOT_SUPPORTED  –以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。</p>
-</li>
-<li><p>PROPAGATION_NEVER  –以非事务方式执行，如果当前存在事务，则抛出异常。</p>
-<h3 id="5-JDBC事务的隔离级别"><a href="#5-JDBC事务的隔离级别" class="headerlink" title="5.JDBC事务的隔离级别"></a>5.JDBC事务的隔离级别</h3></li>
-<li><p>TRANSACTION_NONE  –不支持事务，实际项目中很少使用。</p>
-</li>
-<li><p>TRANSACTION_READ_UNCOMMITTED  –在提交前一个事务可以看到另一个事务的变化。脏读、不可重复的读和幻觉读都是允许的。</p>
-</li>
-<li><p>TRANSACTION_READ_COMMITTED  –读取未提交的数据是不允许的。这个级别仍然允许不可重复的读和虚读产生。</p>
-</li>
-<li><p>TRANSACTION_REPEATABLE_READ  –事务保证能够再次读取相同的数据而不会失败，但虚读仍然会出现。</p>
-</li>
-<li><p>TRANSACTION_SERIALIZABLE  –最高的事务级别，它防止脏读、不可重复的读和虚读。</p>
-</li>
-</ul>
-<p><img src="../../../../images/post-images/10224563-5d3e594331d0c758.png" alt="$LBPYPLJ89T4Z~VED9O)9@E.png"></p>
-]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>spring</tag>
-        <tag>事务</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>两公里的月光</title>
-    <url>/2022/10/02/%E4%B8%A4%E5%85%AC%E9%87%8C%E7%9A%84%E6%9C%88%E5%85%89/</url>
-    <content><![CDATA[<p>有人说 时光总在深夜流逝<br>可是一直要到了今夜<br>我才能明白<br>仿佛是在风中纷纷翻动的书页<br>时光也会在深夜翩然而至</p>
-<p>当月色澄明如水<br>溶入四野<br>仿佛是风中纷纷翻动的书页<br>带着轻微的颤栗与喘息<br>时光在我们眼前浮现<br>千世的繁华<br>千世的劫难</p>
-<p>在每一次月圆之夜的祭奠里<br>我们想必都曾经一如今夜这样地<br>携手并肩而行<br>而月色如水<br>穿越过松林<br>在这两公里的山径上<br>与我们静静相对的<br>是两公里的悲欢<br>两公里的月光</p>
-<p><img src="../../../../images/post-images/image.png" alt="image.png"></p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>圣诞树与新月</title>
-    <url>/2022/10/02/%E5%9C%A3%E8%AF%9E%E6%A0%91%E4%B8%8E%E6%96%B0%E6%9C%88/</url>
-    <content><![CDATA[<p>当雨淅淅沥沥之时<br>是你照耀着我<br>夏夜中的皓月<br>星星们喃喃低语<br>它们犹如圣诞树般<br>为你我欢声歌唱<br>曾经多少个夏夜<br>那成千上万件微不足道的<br>你未知晓的事<br>纠结缠绕于我心中</p>
-<p>我正沦陷于你的双眸中<br>就像仲夏夜飘落的初雪一般<br>你便是这如同难以置信的奇迹般<br>令人惊叹的瞬间</p>
-<p>或许你知道的<br>关于你 存在着只有我一人知晓的模样<br>纵使在这仲夏夜吹拂而来的风<br>我心绪纷飞<br>也会一直等你<br>就像圣诞树与新月<br>我只是渴望<br>与你同在同一片天空下</p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>挪威的森林</title>
-    <url>/2021/06/23/%E6%8C%AA%E5%A8%81%E7%9A%84%E6%A3%AE%E6%9E%97/</url>
-    <content><![CDATA[<p>与你的相遇</p>
-<p>像是夜里与一颗流星的邂逅</p>
-<p>在望不到尽头的山野里</p>
-<p>彼此相守</p>
-<p>往后的岁月里</p>
-<p>我们各自奔流</p>
-<p>在远方时空里</p>
-<p>演绎每一场都市夜景下的灯火通明</p>
-<p><br><br>夜里游动，黑猫流窜的小区</p>
-<p>给予记忆无声的催眠</p>
-<p>彼时年轻人的欢声笑语与热血</p>
-<p>都融化做深夜里的一杯杯清酒</p>
-<p>随夜色褪去</p>
-<p>你是否将我遗忘</p>
-<p>如同曾经千千万万个挪威的森林</p>
-<p>而终究独身于无人之境</p>
-<p><br></p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>意难平</title>
-    <url>/2021/06/23/%E6%84%8F%E9%9A%BE%E5%B9%B3/</url>
-    <content><![CDATA[<p>风起意难平</p>
-<p>我终究是你故事里的一个配角</p>
-<p>风起意难平</p>
-<p>我终于将所有遗憾慢慢填满心间</p>
-<p>风起意难平</p>
-<p>我终究是一个你不会认识的陌生人</p>
-<p><br></p>
-<p>层楼终身误</p>
-<p>你终究是人间里的一介过客</p>
-<p>层楼终身误</p>
-<p>你终究是神游太虚的一场梦境</p>
-<p>层楼终生误</p>
-<p>你终将成为谁的新欢与旧爱</p>
-<p><br></p>
-<p>到底意难平</p>
-<p>我们也注定分离</p>
-<p><br></p>
-]]></content>
-      <categories>
-        <category>现代诗</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>新辞</title>
-    <url>/2021/06/17/%E6%96%B0%E8%BE%9E/</url>
-    <content><![CDATA[<p>歌管楼台声细细，秋千院落夜沉沉。</p>
-<p>徒有斜阳与人语，不念故乡念旧人。</p>
-<p><img src="../../../../images/post-images/10224563-bb430fb614396c21.jpg" alt="img.jpg"></p>
-]]></content>
-      <categories>
-        <category>古风拾迹</category>
-      </categories>
-      <tags>
-        <tag>诗歌</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>spring之aop配置与springboot aop配置</title>
     <url>/2021/06/17/spring%E4%B9%8Baop%E9%85%8D%E7%BD%AE%E4%B8%8Espringboot-aop%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<p>spring的面向切面编程，即aop编程是有3种作用的：</p>
@@ -2294,138 +1756,384 @@ try {
       </tags>
   </entry>
   <entry>
-    <title>浅谈java基础之JVM</title>
-    <url>/2021/06/17/%E6%B5%85%E8%B0%88java%E5%9F%BA%E7%A1%80%E4%B9%8BJVM/</url>
-    <content><![CDATA[<h4 id="java实现跨平台的原理"><a href="#java实现跨平台的原理" class="headerlink" title="java实现跨平台的原理"></a>java实现跨平台的原理</h4><ul>
-<li>java实现跨平台的原理是基于JVM实现的，即Java Virtual Machine,对于不同机器平台有不同的JVM版本（JVM本身是用C/C++实现的），通过模拟一台计算机来达到一个计算机所具有的计算功能，底层都是运行编译器生成的java字节码文件，实现了 “一次编译，到处运行” 的目的。<br>总结： JVM 屏蔽了与各个计算机平台相关的软件或者硬件之间的差异，使得与平台相关的耦合统一由 JVM 提供者来实现<h4 id="JVM的组成以及各部分详解"><a href="#JVM的组成以及各部分详解" class="headerlink" title="JVM的组成以及各部分详解"></a>JVM的组成以及各部分详解</h4>JVM的基本结构是由4部分组成的：</li>
-<li>类加载器，在 JVM 启动时或者类运行时将需要的 class 加载到 JVM 中；</li>
-<li>执行引擎，执行引擎负责执行class文件包含的字节码指令，相当于机器的CPU；</li>
-<li>内存区，将内存划分成若干个区域，模拟机器上上的存储，记录和调度功能模块，比如各种功能的寄存器和PC指针记录器；</li>
-<li>本地方法调用，调用C/C++实现的本地代码的返回结果；<br><img src="../../../../images/post-images/10224563-59034e35b9037bf9.png" alt="image.png"><h4 id="类加载器基本原理"><a href="#类加载器基本原理" class="headerlink" title="类加载器基本原理"></a>类加载器基本原理</h4>类加载器（class loader），用来加载java类到虚拟机中。一般来说，java虚拟机使用java的过程如下：java源程序经过java编译器转化之后变化成java字节码文件。类加载器负责读取java字节码文件，并转化成java.lang.Class的一个实例，每个实例就是一个java类,通过实例的newInstance()方法生成该类的一个对象，或者使用java动态代理生成的会有更复杂的过程，或者通过网络下载的。<h4 id="补充：java判断2个对象的过程"><a href="#补充：java判断2个对象的过程" class="headerlink" title="补充：java判断2个对象的过程"></a>补充：java判断2个对象的过程</h4>第一步查看类名是否相同，第二步查看类加载器是否相同，只有2者都是相同的情况下才会被认为2者是相同的。具体来说，可以在不同包里面新建2个相同类名的类，进行编译运行测试，判断2者是否属于相同，判断对象是否相同可以用.equal()方法；<h4 id="类加载器加载class文件的详细过程"><a href="#类加载器加载class文件的详细过程" class="headerlink" title="类加载器加载class文件的详细过程"></a>类加载器加载class文件的详细过程</h4><img src="../../../../images/post-images/10224563-b8cb7ca912749afc.png" alt="image.png"></li>
-<li>第一阶段找到这个class文件，并且 把它加载到内存中；</li>
-<li>第二阶段分为3个小步骤，即<ul>
-<li>字节码验证；</li>
-<li>class类数据分析；</li>
-<li>相应的内存分配与符号链接；</li>
-</ul>
+    <title>java的3种代理模式</title>
+    <url>/2021/06/17/java%E7%9A%843%E7%A7%8D%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F/</url>
+    <content><![CDATA[<h4 id="1-静态代理"><a href="#1-静态代理" class="headerlink" title="1.静态代理"></a>1.静态代理</h4><pre><code>静态代理是由代理类使用目标接口的实现类的引用实现的一种代理模式，比如新建目标接口IUserDao，实现类UserDao和，静态代理类StaticUserDaoProxy（静态代理类也要实现相同的接口）。
+</code></pre><p>IUserDao接口：</p>
+<p>package com.cyy.i.dao;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
 </li>
-<li>第三个阶段是静态属性和初始化赋值，静态代码块的执行；<br>#####（1）加载阶段的详细分析<br>查找并加载类的二进制数据时的类加载的第一个阶段，即加载阶段需要执行3个操作：</li>
-<li>通过一个类的全限定名称来获取其定义的二进制流；</li>
-<li>将二进制的静态存储结构转化为方法区的运行时数据结构；</li>
-<li>在java堆中生成一个这个类的java.lang.Class对象，作为对方法区中的这些数据的访问入口。</li>
-</ul>
-<p>相对于类加载的其他阶段而言，加载阶段（准确地说，是加载阶段获取类的二进制字节流的动作）是可控性最强的阶段，因为开发人员既可以使用系统提供的类加载器来完成加载，也可以自定义自己的类加载器来完成加载。</p>
-<p>加载阶段完成后，虚拟机外部的二进制字节流就按照虚拟机所需的格式存储在方法区之中，而且在Java堆中也创建一个 java.lang.Class类的对象，这样便可以通过该对象访问方法区中的这些数据。</p>
-<p>#####（2）连接阶段详细分析</p>
-<h6 id="验证：确保被加载的类的正确性"><a href="#验证：确保被加载的类的正确性" class="headerlink" title="验证：确保被加载的类的正确性"></a>验证：确保被加载的类的正确性</h6><p>验证是连接阶段的第一步，这一阶段的目的是为了确保Class文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机自身的安全。验证阶段大致会完成4个阶段的检验动作：</p>
-<ul>
-<li>文件格式验证：验证字节流是否符合Class文件格式的规范；例如：是否以 0xCAFEBABE开头、主次版本号是否在当前虚拟机的处理范围之内、常量池中的常量是否有不被支持的类型。</li>
-<li>元数据验证：对字节码描述的信息进行语义分析（注意：对比javac编译阶段的语义分析），以保证其描述的信息符合Java语言规范的要求；例如：这个类是否有父类，除了 java.lang.Object之外。</li>
-<li>字节码验证：通过数据流和控制流分析，确定程序语义是合法的、符合逻辑的。</li>
-<li>符号引用验证：确保解析动作能正确执行。</li>
-</ul>
-<p>验证阶段是非常重要的，但不是必须的，它对程序运行期没有影响，如果所引用的类经过反复验证，那么可以考虑采用 -Xverifynone 参数来关闭大部分的类验证措施，以缩短虚拟机类加载的时间。</p>
-<h6 id="准备：为类的静态变量分配内存，并将其初始化为默认值"><a href="#准备：为类的静态变量分配内存，并将其初始化为默认值" class="headerlink" title="准备：为类的静态变量分配内存，并将其初始化为默认值"></a>准备：为类的静态变量分配内存，并将其初始化为默认值</h6><p>准备阶段是正式为类变量分配内存并设置类变量初始值的阶段，这些内存都将在方法区中分配。对于该阶段有以下几点需要注意：</p>
-<ul>
-<li>这时候进行内存分配的仅包括类变量（static），而不包括实例变量，实例变量会在对象实例化时随着对象一块分配在Java堆中。</li>
-<li>这里所设置的初始值通常情况下是数据类型默认的零值（如0、0L、null、false等），而不是被在Java代码中被显式地赋予的值。</li>
-</ul>
-<p>假设一个类变量的定义为： public static int value = 3;</p>
-<p>那么变量value在准备阶段过后的初始值为 0，而不是 3，因为这时候尚未开始执行任何 Java 方法，而把 value 赋值为 3 的public static指令是在程序编译后，存放于类构造器 <clinit>（）方法之中的，所以把value赋值为3的动作将在初始化阶段才会执行。</clinit></p>
-<blockquote>
-<p>这里还需要注意如下几点：</p>
-<ul>
-<li>对基本数据类型来说，对于类变量（static）和全局变量，如果不显式地对其赋值而直接使用，则系统会为其赋予默认的零值，而对于局部变量来说，在使用前必须显式地为其赋值，否则编译时不通过。</li>
-<li>对于同时被static和final修饰的常量，必须在声明的时候就为其显式地赋值，否则编译时不通过；而只被final修饰的常量则既可以在声明时显式地为其赋值，也可以在类初始化时显式地为其赋值，总之，在使用前必须为其显式地赋值，系统不会为其赋予默认零值。</li>
-<li>对于引用数据类型reference来说，如数组引用、对象引用等，如果没有对其进行显式地赋值而直接使用，系统都会为其赋予默认的零值，即null。</li>
-<li>如果在数组初始化时没有对数组中的各元素赋值，那么其中的元素将根据对应的数据类型而被赋予默认的零值。</li>
-<li>如果类字段的字段属性表中存在 ConstantValue 属性，即同时被 final 和 static 修饰，那么在准备阶段变量 value 就会被初始化为 ConstValue 属性所指定的值。</li>
-</ul>
-</blockquote>
-<p>假设上面的类变量 value 被定义为： public static final int value = 3;</p>
-<p>编译时 Javac 将会为 value 生成 ConstantValue 属性，在准备阶段虚拟机就会根据 ConstantValue 的设置将 value 赋值为 3。我们可以理解为 static final 常量在编译期就将其结果放入了调用它的类的常量池中。</p>
-<h6 id="解析：把类中的符号引用转换为直接引用"><a href="#解析：把类中的符号引用转换为直接引用" class="headerlink" title="解析：把类中的符号引用转换为直接引用"></a>解析：把类中的符号引用转换为直接引用</h6><p>#####（3）初始化阶段详细分析<br>初始化，为类的静态变量赋予正确的初始值，JVM负责对类进行初始化，主要对类变量进行初始化。在Java中对类变量进行初始值设定有两种方式：</p>
-<ul>
-<li>声明类变量是指定初始值</li>
-<li>使用静态代码块为类变量指定初始值</li>
-</ul>
-<p>JVM初始化步骤</p>
-<ul>
-<li>假如这个类还没有被加载和连接，则程序先加载并连接该类</li>
-<li>假如该类的直接父类还没有被初始化，则先初始化其直接父类</li>
-<li>假如类中有初始化语句，则系统依次执行这些初始化语句</li>
-</ul>
-<p>类初始化时机：只有当对类的主动使用的时候才会导致类的初始化，类的<br>主动使用包括以下六种：</p>
-<ul>
-<li>创建类的实例，也就是new的方式</li>
-<li>访问某个类或接口的静态变量，或者对该静态变量赋值</li>
-<li>调用类的静态方法</li>
-<li>反射（如 Class.forName(“com.shengsiyuan.Test”)）</li>
-<li>初始化某个类的子类，则其父类也会被初始化</li>
-<li>Java虚拟机启动时被标明为启动类的类（ JavaTest），直接使用 java.exe命令来运行某个主类</li>
-</ul>
-<h6 id="结束生命周期"><a href="#结束生命周期" class="headerlink" title="结束生命周期"></a>结束生命周期</h6><p>在如下几种情况下，Java虚拟机将结束生命周期</p>
-<ul>
-<li>执行了 System.exit()方法</li>
-<li>程序正常执行结束</li>
-<li>程序在执行过程中遇到了异常或错误而异常终止</li>
-<li>由于操作系统出现错误而导致Java虚拟机进程终止</li>
-</ul>
-<h4 id="双亲委派模型（Parent-Delegation-Model）"><a href="#双亲委派模型（Parent-Delegation-Model）" class="headerlink" title="双亲委派模型（Parent Delegation Model）"></a>双亲委派模型（Parent Delegation Model）</h4><p>类的加载过程采用双亲委派机制，这种机制能更好的保证 Java 平台的安全性。<br>类加载器 ClassLoader 是具有层次结构的，也就是父子关系，其中，Bootstrap 是所有类加载器的父亲，如下图所示：<br><img src="../../../../images/post-images/10224563-247d5c507d8494e3.png" alt="image.png"></p>
-<blockquote>
-<p>该模型要求除了顶层的 Bootstrap class loader 启动类加载器外，其余的类加载器都应当有自己的父类加载器。子类加载器和父类加载器不是以继承（Inheritance）的关系来实现，而是通过组合（Composition）关系来复用父加载器的代码。每个类加载器都有自己的命名空间（由该加载器及所有父类加载器所加载的类组成，在同一个命名空间中，不会出现类的完整名字（包括类的包名）相同的两个类；在不同的命名空间中，有可能会出现类的完整名字（包括类的包名）相同的两个类）。</p>
-</blockquote>
-<p>双亲委派模型的工作过程如下：</p>
-<ul>
-<li>当前 ClassLoader 首先从自己已经加载的类中查询是否此类已经加载，如果已经加载则直接返回原来已经加载的类。<blockquote>
-<p>每个类加载器都有自己的加载缓存，当一个类被加载了以后就会放入缓存，等下次加载的时候就可以直接返回了。</p>
-</blockquote>
+<li><p>@Description:接口</p>
 </li>
-<li>当前 ClassLoader 的缓存中没有找到被加载的类的时候，委托父类加载器去加载，父类加载器采用同样的策略，首先查看自己的缓存，然后委托父类的父类去加载，一直到 bootstrap ClassLoader。<blockquote>
-<p>当所有的父类加载器都没有加载的时候，再由当前的类加载器加载，并将其放入它自己的缓存中，以便下次有加载请求的时候直接返回。</p>
-</blockquote>
+<li><p>@Date:Created in 17:00 2018/7/19</p>
 </li>
 </ul>
-<p>这样设计的原因：</p>
-<blockquote>
-<p>这是对于使用这种模型来组织累加器的好处；主要是为了安全性，避免用户自己编写的类动态替换 Java 的一些核心类，比如 String，同时也避免了重复加载，因为 JVM 中区分不同类，不仅仅是根据类名，相同的 class 文件被不同的 ClassLoader 加载就是不同的两个类，如果相互转型的话会抛java.lang.ClassCaseException。</p>
-</blockquote>
-<h4 id="JVM内存管理"><a href="#JVM内存管理" class="headerlink" title="JVM内存管理"></a>JVM内存管理</h4><h5 id="（1）内存划分"><a href="#（1）内存划分" class="headerlink" title="（1）内存划分"></a>（1）内存划分</h5><p><img src="../../../../images/post-images/10224563-2b40e6da3a433ed9.png" alt="image.png"></p>
-<p>1.方法区（线程共享）：各个线程共享的一个区域，用于存储虚拟机加载的类信息、常量、静态变量、即时编译器编译后的代码等数据。虽然 Java 虚拟机规范把方法区描述为堆的一个逻辑部分，但是它却又一个别名叫做 Non-Heap（非堆），目的应该是与 Java 堆区分开来。</p>
+<p>*/</p>
+<p>public interface IUserDao {</p>
+<p>void save();</p>
+<p>}<br>UserDao实现类：</p>
+<p>package com.cyy.i.dao.impl;</p>
+<p>import com.cyy.i.dao.IUserDao;</p>
+<p>/**</p>
 <ul>
-<li>运行时常量池：是方法区的一部分，用于存放编译器生成的各种字面量和符号引用。</li>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description:实现类</p>
+</li>
+<li><p>@Date:Created in 17:01 2018/7/19</p>
+</li>
 </ul>
-<p>2.堆内存（线程共享）：所有线程共享的一块区域，垃圾收集器管理的主要区域。目前主要的垃圾回收算法都是分代收集算法，所以 Java 堆中还可以细分为：新生代和老年代；再细致一点的有 Eden 空间、From Survivor 空间、To Survivor 空间等，默认情况下新生代按照8:1:1的比例来分配。根据 Java 虚拟机规范的规定，Java 堆可以处于物理上不连续的内存空间中，只要逻辑上是连续的即可，就像我们的磁盘一样；</p>
-<p>3.程序计数器： Java 线程私有，类似于操作系统里的 PC 计数器，它可以看做是当前线程所执行的字节码的行号指示器。如果线程正在执行的是一个 Java 方法，这个计数器记录的是正在执行的虚拟机字节码指令的地址；如果正在执行的是 Native 方法，这个计数器值则为空（Undefined）。此内存区域是唯一一个在 Java 虚拟机规范中没有规定任何 OutOfMemoryError 情况的区域；</p>
-<p>4.虚拟机栈（栈内存）：Java线程私有，虚拟机展描述的是Java方法执行的内存模型：每个方法在执行的时候，都会创建一个栈帧用于存储局部变量、操作数、动态链接、方法出口等信息；每个方法调用都意味着一个栈帧在虚拟机栈中入栈到出栈的过程；</p>
-<p>5.本地方法栈 ：和Java虚拟机栈的作用类似，区别是该区域为 JVM 提供使用 native 方法的服务；</p>
-<p>作者：我没有三颗心脏<br>链接：<a href="https://www.jianshu.com/p/bfb876565a1e" target="_blank" rel="noopener">https://www.jianshu.com/p/bfb876565a1e</a><br>來源：简书<br>简书著作权归作者所有，任何形式的转载都请联系作者获得授权并注明出处。</p>
+<p>*/</p>
+<p>public class UserDaoimplements IUserDao {</p>
+<p>@Override</p>
+<pre><code>public void save() {
+</code></pre><p>System.out.println(“——已经保存数据！——“);</p>
+<pre><code>}
+</code></pre><p>}<br>静态代理类StaticUserDaoProxy：</p>
+<p>package com.cyy.i.proxy;</p>
+<p>import com.cyy.i.dao.IUserDao;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 代理对象，静态代理</p>
+</li>
+<li><p>@Date:Created in 17:05 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class StaticUserDaoProxyimplements IUserDao{</p>
+<p>private IUserDaotarget;</p>
+<pre><code>public StaticUserDaoProxy(IUserDao target) {
+</code></pre><p>this.target = target;</p>
+<pre><code>}
+</code></pre><p>@Override</p>
+<pre><code>public void save() {
+</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
+<pre><code>    target.save();
+
+    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
+
+}
+</code></pre><p>}<br>编写一个静态测试办法去主函数调用：</p>
+<p>public static void staticProxy(){</p>
+<p>System.out.println(“—-静态代理—-“);</p>
+<pre><code>IUserDao dao=new UserDao();
+
+//静态代理的实质是用代理类引用目标类的实例执行，将原来的办法做二层封装，实现原有事务执行前后的一些操作，即办法的重写，是事先编译好的，生成字节码的代理类。
+
+StaticUserDaoProxy daoProxy=new StaticUserDaoProxy(dao);
+
+//执行调用
+
+daoProxy.save();
+</code></pre><p>}</p>
+<p>public static void main(String[] args) {</p>
+<pre><code>staticProxy();
+</code></pre><p>}<br>测试结果：</p>
+<p>静态代理</p>
+<h4 id="2-jdk动态代理模式"><a href="#2-jdk动态代理模式" class="headerlink" title="2.jdk动态代理模式"></a>2.jdk动态代理模式</h4><pre><code>jdk动态代理模式是通过java的反射机制实现的，避免静态代理下多个接口多种事务需求而需要多写冗余的代码，而且不需要实现目标接口，同上使用相同的目标接口和实现类，只是代理类变成了DynamicUserDaoProxy。
+</code></pre><p>动态代理类DynamicUserDaoProxy：</p>
+<p>package com.cyy.i.proxy;</p>
+<p>import java.lang.reflect.InvocationHandler;</p>
+<p>import java.lang.reflect.Method;</p>
+<p>import java.lang.reflect.Proxy;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description:jdk动态代理类</p>
+</li>
+<li><p>@Date:Created in 17:15 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class DynamicUserDaoProxy {</p>
+<p>private Objecttarget;</p>
+<pre><code>public DynamicUserDaoProxy(Object target) {
+</code></pre><p>this.target = target;</p>
+<pre><code>}
+</code></pre><p>public ObjectgetProxyInstance(){</p>
+<p>return Proxy.newProxyInstance(</p>
+<p>target.getClass().getClassLoader(),</p>
+<pre><code>target.getClass().getInterfaces(),
+
+new InvocationHandler(){
+</code></pre><p>@Override</p>
+<pre><code>public Objectinvoke(Object proxy, Method method, Object[] args)throws Throwable {
+</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
+<pre><code>    Object returnValue=method.invoke(target,args);
+
+    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
+
+    return returnValue;
+
+}
+</code></pre><p>});</p>
+<pre><code>}
+</code></pre><p>}<br>同样在主函数添加测试静态方法dynamicProxy():</p>
+<p>public static void dynamicProxy(){</p>
+<p>System.out.println(“—-jdk动态代理—-“);</p>
+<pre><code>IUserDao dao=new UserDao();
+
+System.out.println(dao.getClass());
+
+IUserDao daoProxy = (IUserDao)new DynamicUserDaoProxy(dao).getProxyInstance();
+
+System.out.println(daoProxy.getClass());
+
+//执行调用
+
+daoProxy.save();
+</code></pre><p>}</p>
+<p>public static void main(String[] args) {</p>
+<pre><code>staticProxy();
+
+dynamicProxy();
+</code></pre><p>}<br>测试结果:</p>
+<p>jdk动态代理</p>
+<h4 id="3-基于cglib的动态代理"><a href="#3-基于cglib的动态代理" class="headerlink" title="3.基于cglib的动态代理"></a>3.基于cglib的动态代理</h4><pre><code>基于jdk的动态代理是需要一个实现接口的目标对象，实现单独对象的话要使用cglib的代理。新建一个CUserDao目标类，以及一个代理工厂类ProxyFactory，spring的核心包已经包括cglib的包，这里导入spring-core-4.0.0.RELEASE.jar的版本。
+</code></pre><p>CUserDao目标类：</p>
+<p>package com.cyy.ni.dao;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: CUserDao目标类</p>
+</li>
+<li><p>@Date:Created in 18:01 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class CUserDao {</p>
+<p>public void save() {</p>
+<p>System.out.println(“—-已经保存数据!—-“);</p>
+<pre><code>}
+</code></pre><p>}<br>代理工厂类ProxyFactory：</p>
+<p>package com.cyy.ni.proxy;</p>
+<p>import org.springframework.cglib.proxy.Enhancer;</p>
+<p>import org.springframework.cglib.proxy.MethodInterceptor;</p>
+<p>import org.springframework.cglib.proxy.MethodProxy;</p>
+<p>import java.lang.reflect.Method;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 代理工厂类ProxyFactory</p>
+</li>
+<li><p>@Date:Created in 18:01 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class ProxyFactoryimplements MethodInterceptor {</p>
+<p>private Objecttarget;</p>
+<pre><code>public ProxyFactory(Object target) {
+</code></pre><p>this.target = target;</p>
+<pre><code>}
+</code></pre><p>public ObjectgetProxyInstance() {</p>
+<p>Enhancer en=new Enhancer();</p>
+<pre><code>    en.setSuperclass(target.getClass());
+
+    en.setCallback(this);
+
+    return en.create();
+
+}
+</code></pre><p>@Override</p>
+<pre><code>public Objectintercept(Object o, Method method, Object[] objects, MethodProxy proxy)throws Throwable {
+</code></pre><p>System.out.println(“执行目标事务前的操作。。。”);</p>
+<pre><code>    Object reuturnValue = method.invoke(target, objects);
+
+    System.out.println(&quot;执行目标事务后的操作。。。&quot;);
+
+    return reuturnValue;
+
+}
+</code></pre><p>}<br>主函数中的的静态方法：</p>
+<p>public static void CGlibDynamicProxy(){</p>
+<pre><code>System.out.println(&quot;----CGlib动态代理----&quot;);
+
+CUserDao target =new CUserDao();
+
+CUserDao proxy = (CUserDao)new ProxyFactory(target).getProxyInstance();
+
+System.out.println(proxy.getClass());
+
+proxy.save();
+</code></pre><p>}</p>
+<p>public static void main(String[] args) {</p>
+<pre><code>    CGlibDynamicProxy();
+
+}
+</code></pre><p>测试结果：</p>
+<p>cglib代理</p>
+<h4 id="4-spring中的代理"><a href="#4-spring中的代理" class="headerlink" title="4.spring中的代理"></a>4.spring中的代理</h4><pre><code>Spring中代理对象可通过xml配置方式获得，也可通过ProxyFactory手动编程方式创建对象。先讲手动编程的方式。Spring中的代理对象其实是JDK Proxy和CGLIB Proxy 的结合。 下面我们新建spring包，新建目标类MyTarget，目标接口PeopleService，它的实现类EnglishService，织入类AroundInteceptor实现aop包下MethodInterceptor的接口，测试类ProxyFactoryTest，这里要导入的几个jar包有spring-aop-4.0.0.RELEASE.jar，aopalliance-1.0.jar，aspectjweaver-1.8.1.jar，commons-logging-1.0.4.jar。
+</code></pre><p>目标类MyTarget：</p>
+<p>package com.cyy.spring;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 目标类MyTarget</p>
+</li>
+<li><p>@Date:Created in 19:29 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class MyTarget {</p>
+<p>public void printName(){</p>
+<p>System.out.println(“name:Target-“);</p>
+<pre><code>}
+</code></pre><p>}<br>目标接口PeopleService：</p>
+<p>package com.cyy.spring;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 目标接口PeopleService</p>
+</li>
+<li><p>@Date:Created in 19:30 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public interface PeopleService {</p>
+<p>public void sayHello();</p>
+<pre><code>public void printName(String name);
+</code></pre><p>}<br>实现类EnglishService：</p>
+<p>package com.cyy.spring;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 实现类EnglishService</p>
+</li>
+<li><p>@Date:Created in 19:34 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class EnglishServiceimplements PeopleService {</p>
+<p>@Override</p>
+<pre><code>public void sayHello() {
+</code></pre><p>System.out.println(“Hi”);</p>
+<pre><code>}
+</code></pre><p>@Override</p>
+<pre><code>public void printName(String name) {
+</code></pre><p>System.out.println(“Your name:”+name);</p>
+<pre><code>}
+</code></pre><p>}<br>织入类AroundInteceptor：</p>
+<p>package com.cyy.spring;</p>
+<p>import org.aopalliance.intercept.MethodInterceptor;</p>
+<p>import org.aopalliance.intercept.MethodInvocation;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 织入类AroundInteceptor</p>
+</li>
+<li><p>@Date:Created in 19:40 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class AroundInteceptorimplements MethodInterceptor {</p>
+<p>@Override</p>
+<pre><code>public Objectinvoke(MethodInvocation methodInvocation)throws Throwable {
+</code></pre><p>System.out.println(methodInvocation.getMethod().getName()+”调用之前”);</p>
+<pre><code>    Object res=methodInvocation.proceed();
+
+    System.out.println(methodInvocation.getMethod().getName()+&quot;调用之后&quot;);
+
+    return res;
+
+}
+</code></pre><p>}<br>测试类ProxyFactoryTest：</p>
+<p>package com.cyy.spring;</p>
+<p>import org.junit.Test;</p>
+<p>import org.springframework.aop.framework.ProxyFactory;</p>
+<p>/**</p>
+<ul>
+<li><p>@Author: Cyy</p>
+</li>
+<li><p>@Description: 测试类ProxyFactoryTest</p>
+</li>
+<li><p>@Date:Created in 19:42 2018/7/19</p>
+</li>
+</ul>
+<p>*/</p>
+<p>public class ProxyFactoryTest {</p>
+<p>//没有指定代理类的使用cglib代理</p>
+<p>@Test</p>
+<pre><code>public void classProxy(){
+
+    ProxyFactory factory=new ProxyFactory();
+
+    factory.setTarget(new MyTarget());
+
+    factory.addAdvice(new AroundInteceptor());
+
+    MyTarget myTarget = (MyTarget) factory.getProxy();
+
+    myTarget.printName();
+
+    System.out.println(myTarget.getClass().getName());
+
+}
+</code></pre><p>//指定代理类的使用jdk代理</p>
+<p>@Test</p>
+<pre><code>public void interfaceProxy(){
+</code></pre><p>ProxyFactory factory=new ProxyFactory();</p>
+<pre><code>    factory.setInterfaces(new Class[]{PeopleService.class});
+
+    factory.addAdvice(new AroundInteceptor());
+
+    factory.setTarget(new EnglishService());
+
+    PeopleService peopleProxy = (PeopleService) factory.getProxy();
+
+    peopleProxy.sayHello();
+
+    peopleProxy.printName(&quot;cyy&quot;);
+
+    System.out.println(peopleProxy.getClass().getName());
+
+}
+</code></pre><p>}<br>测试结果：</p>
+<pre><code>从运行结果的代理类的class name ,以及前两节中讲的，很清晰的看到Spring中对于指定接口的代理类，Spring中使用的是JDK的Proxy，对于不指定接口的使用CGLIB的方式。对于上面的测试方法interfaceProxy，我们只注释掉 
+</code></pre><p>//factory.setInterfaces(new Class[] { PeopleService.class }) 这行代码，在次运行，结果为：</p>
+<p>使用的是CGLIB处理，从而验证我们的猜想。 </p>
 ]]></content>
       <categories>
         <category>后端</category>
       </categories>
       <tags>
         <tag>java</tag>
-        <tag>JVM</tag>
       </tags>
   </entry>
   <entry>
-    <title>正则表达式</title>
-    <url>/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</url>
-    <content><![CDATA[<p>? 通配符匹配文件名中的 0 个或 1 个字符</p>
-<p>* 通配符匹配零个或多个字符</p>
-<p>^ 为匹配输入字符串的开始位置。</p>
-<p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p>
-<p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p>
-<p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p>
-<p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
-<p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>
-]]></content>
+    <title>idea2017 搭建ssm框架过程</title>
+    <url>/2021/06/17/idea2017-%E6%90%AD%E5%BB%BAssm%E6%A1%86%E6%9E%B6%E8%BF%87%E7%A8%8B/</url>
+    <content><![CDATA[<p>环境：</p>
+<pre><code>idea 2017.2.5
+
+jdk1.8
+
+maven 3.5.0
+</code></pre><h4 id="1-新建一个Maven-webapp项目"><a href="#1-新建一个Maven-webapp项目" class="headerlink" title="1. 新建一个Maven webapp项目"></a>1. 新建一个Maven webapp项目</h4><p>配置项目groupid,artifactid,version</p>
+<h4 id="2-搭建项目基本架构"><a href="#2-搭建项目基本架构" class="headerlink" title="2.搭建项目基本架构"></a>2.搭建项目基本架构</h4><pre><code>注意，这里自己新建的java文件夹要在设置那里标识成为Source Root,resources 设置为Resource Root。
+</code></pre><h4 id="3-配置项目项目配置文件，包括mvc配置文件spring-context-mvc-xml，spring-Context上下文文件spring-context-xml-mybatis-config-xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback-lombok-所以有logback配置文件。"><a href="#3-配置项目项目配置文件，包括mvc配置文件spring-context-mvc-xml，spring-Context上下文文件spring-context-xml-mybatis-config-xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback-lombok-所以有logback配置文件。" class="headerlink" title="3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。"></a>3.配置项目项目配置文件，包括mvc配置文件spring-context-mvc.xml，spring Context上下文文件spring-context.xml,mybatis-config.xml全局配置文件，数据库jdbc配置文件，使用的日志框架是logback+lombok,所以有logback配置文件。</h4><h4 id="4-接下来配置mybatis动态接口代理，在dao包下新建SysUserDao-entity下新建SysUser，mapper下新建SysUserMapper-xml，在spring-context配置文件里配置如下："><a href="#4-接下来配置mybatis动态接口代理，在dao包下新建SysUserDao-entity下新建SysUser，mapper下新建SysUserMapper-xml，在spring-context配置文件里配置如下：" class="headerlink" title="4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下："></a>4.接下来配置mybatis动态接口代理，在dao包下新建SysUserDao,entity下新建SysUser，mapper下新建SysUserMapper.xml，在spring-context配置文件里配置如下：</h4><h4 id="5-配置web-xml"><a href="#5-配置web-xml" class="headerlink" title="5.配置web.xml"></a>5.配置web.xml</h4><h4 id="6-完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。"><a href="#6-完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。" class="headerlink" title="6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。"></a>6.完善项目结构，方便测试，分别在controller下新建SysUserController，service下新建impl包和SysyUserService接口，impl下新建SysUserServiceImpl，utils下新建MD5Util工具类。</h4><pre><code>测试类，测试结果：
+
+dao层 
+</code></pre><p>service层：</p>
+<p>service和dao层基本测试完毕，controller在这里直接启动项目测试，为了方便，直接新建一个json类统一返回；</p>
+<p>返回值为true,并且将用户类返回，说明测试成功。</p>
+<h4 id="7-至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https-gitee-com-lonelygin-ssm。"><a href="#7-至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https-gitee-com-lonelygin-ssm。" class="headerlink" title="7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：https://gitee.com/lonelygin/ssm。"></a>7.至此，基本的搭建步骤基本完成，其中一些细节方面的，比如pom依赖的配置，各种配置文件的详细配置，可以参考我码云上的代码，只是一个基本的配置，读者可以根据自己的需求自行改变，在此贴出改项目码云地址：<a href="https://gitee.com/lonelygin/ssm。" target="_blank" rel="noopener">https://gitee.com/lonelygin/ssm。</a></h4>]]></content>
       <categories>
         <category>后端</category>
       </categories>
       <tags>
-        <tag>正则匹配</tag>
+        <tag>idea</tag>
+        <tag>ssm</tag>
       </tags>
   </entry>
   <entry>
@@ -2540,262 +2248,554 @@ try {
       </tags>
   </entry>
   <entry>
-    <title>無題</title>
-    <url>/2021/06/17/%E7%84%A1%E9%A1%8C/</url>
-    <content><![CDATA[<p>就像没说完的一段故事</p>
-<p>就像断了的弦</p>
-<p>孤寂在夜空盘旋</p>
-<p>旅人在灯下行走</p>
-<p>车辆穿梭于漆黑的夜</p>
-<p>喧嚣隐去于沉睡的异世界</p>
-<p>圆月下的立交桥路面</p>
-<p>水银镜一般映射光华</p>
-<p>深夜的路灯</p>
-<p>独自闷不吭声</p>
-<p>光线四处逃窜</p>
-<p>疲惫不堪的倒在地上</p>
-<p>摸索着所有能触及的黑暗</p>
-<p>潮水在离森林不远处翻滚声息</p>
-<p>萤火虫于溪岸跃动身影</p>
-<p>追寻</p>
-<p>自黄昏到黑夜</p>
-<p>流动的城市灯火</p>
-<p>停留于指尖瞬间</p>
-<p>抑或</p>
-<p>雨中潮湿的羽翼</p>
-<p>在遥远的空中挥动</p>
-<p>在视野中渐行渐远</p>
+    <title>mysql 连接</title>
+    <url>/2021/06/17/mysql-%E8%BF%9E%E6%8E%A5/</url>
+    <content><![CDATA[<h4 id="1-内连接"><a href="#1-内连接" class="headerlink" title="1.内连接"></a>1.内连接</h4><p>内连接是连接的几个表之间完全匹配的记录；<br>基本格式为select a.*,b.* from a inner join b on a.id=b.id</p>
+<h4 id="2-左外连接"><a href="#2-左外连接" class="headerlink" title="2.左外连接"></a>2.左外连接</h4><p>左外连接是连接的几个表之间以左边为基准的连接，即左边的记录右边没有的会显示为空；<br>基本格式为select a.*,b.* from a left (outer) join b on a.id=b.id</p>
+<h4 id="3-右外连接"><a href="#3-右外连接" class="headerlink" title="3.右外连接"></a>3.右外连接</h4><p>右外连接是连接的几个表之间以右边为基准的连接，即左外连接的逆向，即右边的记录左边没有的会显示为空；<br>基本格式为select a.*,b.* from a right (outer) join b on a.id=b.id </p>
+<h4 id="4-全连接"><a href="#4-全连接" class="headerlink" title="4.全连接"></a>4.全连接</h4><p>全连接是几个表之间的记录是返回左表和右表中的所有行。<br>如果某行在另一个表中没有匹配行，则另一个表的选择列表的匹配行赋为空值，如果表之间有匹配行，则整个结果集行包含基表的数据值。<br>基本格式为select a.*,b.* from a full (outer) join b on a.id=b.id</p>
 ]]></content>
       <categories>
-        <category>现代诗</category>
+        <category>后端</category>
       </categories>
       <tags>
-        <tag>诗歌</tag>
+        <tag>mysql</tag>
+        <tag>SQL</tag>
       </tags>
   </entry>
   <entry>
-    <title>鄉愁</title>
-    <url>/2021/06/17/%E9%84%89%E6%84%81/</url>
-    <content><![CDATA[<p>芦苇飘荡的季节﻿</p>
-<p>少年将沉沉的离别披在肩上﻿</p>
-<p>乡愁像芦苇荡里的水一样柔﻿</p>
-<p>遗忘的日子里﻿</p>
-<p>心中总是若有所思﻿</p>
-<p>乡愁像渔家的灯火一样引人入眠﻿</p>
-<p>岁月像车轮一般轧过如路面荒芜的日子﻿</p>
-<p>远处月台橘黄色的站台灯碰弯了旅人的思绪﻿</p>
-<p>恍惚流失的光阴迷失在记忆的岔道口﻿</p>
-<p>春日大海的阳光照耀着北回归线﻿</p>
-<p>视野里的芦苇叶子眯成一线﻿</p>
-<p>蓝的海黑的海 逐渐缩成点的海鸥﻿</p>
-<p>露水闪透着晶莹的清晨﻿</p>
-<p>列车经过铁轨吸进一个个影子后逝去﻿</p>
-<p>乡愁像一曲永不停息的曲子﻿</p>
-<p>在风尘苦旅的夜里奏起</p>
+    <title>MySQL中exists和in的区别及使用场景</title>
+    <url>/2021/06/17/MySQL%E4%B8%ADexists%E5%92%8Cin%E7%9A%84%E5%8C%BA%E5%88%AB%E5%8F%8A%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF/</url>
+    <content><![CDATA[<blockquote>
+<p>1.对B查询涉及id，使用索引，故B表效率高，可用大表 –&gt;外小内大<br>select <em> from A where exists (select </em> from B where A.id=B.id);</p>
+</blockquote>
+<blockquote>
+<p>2.对A查询涉及id，使用索引，故A表效率高，可用大表 –&gt;外大内小<br>select * from A where A.id in (select id from B);</p>
+</blockquote>
+<h5 id="1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"><a href="#1-exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；" class="headerlink" title="1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；"></a>1. exists是对外表做loop循环，每次loop循环再对内表（子查询）进行查询，那么因为对内表的查询使用的索引（内表效率高，故可用大表），而外表有多大都需要遍历，不可避免（尽量用小表），故内表大的使用exists，可加快效率；</h5><h5 id="2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"><a href="#2-in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。" class="headerlink" title="2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。"></a>2. in是把外表和内表做hash连接，先查询内表，再把内表结果与外表匹配，对外表使用索引（外表效率高，可用大表），而内表多大都需要查询，不可避免，故外表大的使用in，可加快效率。</h5><h5 id="3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。"><a href="#3-如果用not-in-，则是内外表都全表扫描，无索引，效率低，可考虑使用not-exists，也可使用A-left-join-B-on-A-id-B-id-where-B-id-is-null-进行优化。" class="headerlink" title="3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。"></a>3. 如果用not in ，则是内外表都全表扫描，无索引，效率低，可考虑使用not exists，也可使用A left join B on A.id=B.id where B.id is null 进行优化。</h5><p>　　此外，新近遇到的坑，mysql版本问题：</p>
+<p>　　MySQL版本问题：5.6.5优化了子查询，引入物化子查询(针对where clause的subquery)，子查询物化将子查询结果存入临时表，确保子查询只执行一次，该表不记录重复数据且采用哈希索引查找;</p>
+<p>而之前的版本则会把非相关子查询转化为相关子查询，导致效率低下（尤其是子查询是小表，外表是大表的情况下，效率变慢许多）。　</p>
+<p>　相关子查询：子查询依赖外层连接的返回值；</p>
+<p>　　非相关子查询：子查询不依赖外层连接的返回值；</p>
+<p>　　子查询分两种，from语句（派生表）和where语句（子查询），派生表的效率要高一些，5.6的优化就是把where语句变成from语句。</p>
+<p>　　本来是内表小，用的in，但是据说5.6之前的版本会把非相关子查询改为相关子查询，就是把in的语句改成了exists的，结果效率超低。</p>
+<p>　　实验说明：派生表join比派生表的速度还要快。而使用in查询需要很多分钟还没有查出来。　</p>
+<blockquote>
+<p>#使用派生表 4.68秒<br>SELECT id FROM la WHERE cardid IN (<br>SELECT cardid FROM (<br>select cardid from la group by cardid having count(1)&gt;50) a) ;<br>#使用派生表的内连接 1.26秒<br>SELECT id FROM la JOIN (<br>select cardid from la group by cardid having count(1)&gt;50) a ON la.cardid=a.cardid;</p>
+</blockquote>
 ]]></content>
       <categories>
-        <category>现代诗</category>
+        <category>后端</category>
       </categories>
       <tags>
-        <tag>诗歌</tag>
+        <tag>mysql</tag>
+        <tag>SQL</tag>
       </tags>
   </entry>
   <entry>
-    <title>⼤数据系统设计思路概览</title>
-    <url>/2023/05/20/%E5%A4%A7%E6%95%B0%E6%8D%AE%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF%E6%A6%82%E8%A7%88%E4%B8%8EFlink%20SQL%E6%9E%84%E5%BB%BA%E5%AE%9E%E6%97%B6%E6%95%B0%E4%BB%93%E4%BB%8B%E7%BB%8D%E6%BC%94%E7%A4%BA/</url>
-    <content><![CDATA[<p><strong>⼀</strong> .<strong>⼤数据系统设计思路概览</strong></p>
-<p><strong>⼤数据概念与传统定义</strong></p>
-<p><strong>狭义的⼤数据</strong>–<strong>专⻔的⼤数据软硬件以及服务</strong></p>
-<p><strong>源起</strong>Google<strong>搜索引擎背后的三驾⻢⻋</strong></p>
-<ul>
-<li>GFS</li>
-<li>MapReduce</li>
-<li>BigTable</li>
-</ul>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.001.jpeg" alt="img.jpeg"></p>
-<p><strong>从</strong>GFS<strong>到</strong>DataFlow,19<strong>年⼤数据架构⽣态演进</strong></p>
-<ul>
-<li>Lambda 架构</li>
-<li>Kappa 架构</li>
-</ul>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.002.jpeg" alt="img.jpeg"></p>
-<p><strong>⼴义的⼤数据</strong>–<strong>“⼤数据”是指传统数据处理应⽤软件时，不⾜以处理的⼤的或者复杂的数据集 的术语</strong></p>
-<p><strong>维基百科的定义</strong></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.003.jpeg" alt="img.jpeg"></p>
-<p><strong>⼤数据的</strong>4V</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.004.jpeg" alt="img.jpeg"></p>
-<p><strong>⼤数据技术</strong>–<strong>⼤数据技术其实是计算机科学中很多科⽬的综合应⽤</strong></p>
-<p><strong>简单的⼤数据技术栈</strong></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.005.jpeg" alt="img.jpeg"></p>
-<p><strong>⼤数据分类–基于系统层⾯开展的细分领域</strong></p>
-<p><strong>分布式系统</strong></p>
-<p><strong>数据编码</strong></p>
-<p>数据表现形式⽆⾮两种：</p>
-<ul>
-<li>内存中数据保存对象，结构体、列表、数组、哈希表和树结构等等，传统的数据结构对于 CPU⾼效访问优化。</li>
-<li>数据写⼊⽂件通过⽹络发送，必须要编码为某种字节序列，但是由于⼀些虚拟字节⽐如指针的存在所以和内存的表现形式有可能不⼀样。</li>
-</ul>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.006.jpeg" alt="img.jpeg"></p>
-<p><strong>数据分区</strong></p>
-<p>哈希分区</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.007.jpeg" alt="img.jpeg"></p>
-<p>范围分区</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.008.jpeg" alt="img.jpeg"></p>
-<p><strong>数据复制</strong></p>
-<p>单领导者（单主复制）</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.009.jpeg" alt="img.jpeg"></p>
-<p>多领导者（多主复制）</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.010.jpeg" alt="img.jpeg"></p>
-<p>⽆领导者（⽆主复制）</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.011.jpeg" alt="img.jpeg"></p>
-<p>每种⽅法都有优点和缺点。单主复制是⾮常流⾏的，因为它很容易理解，不需要担⼼冲突解决。在出现故障节点，⽹络中断和延迟峰 值的情况下，多领导者和⽆领导者复制可以更加稳健，但代价很难推测，只能提供⾮常弱的⼀致性保证。</p>
-<p>复制可以是同步的，也可以是异步的，在发⽣故障时对系统⾏为有深远的影响。尽管在系统运⾏平稳时异步复制速度很快，但是在复 制滞后增加和服务器故障时要弄清楚会发⽣什么， 这⼀点很重要。如果⼀个领导者失败了，并且你推动⼀个异步更新的追随者成为新 的领导者，那么最近承诺的数据可能会丢失。</p>
-<p><strong>数据检索与索引</strong> </p>
-<p>哈希索引</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.012.jpeg" alt="img.jpeg"></p>
-<p>SSTables和 LSM TREE<br><img src="../../../../images/post-images/bigData/../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.013.jpeg" alt></p>
-<p>合并多个 SSTable 段，仅保留每个键的最新值。</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.014.jpeg" alt></p>
-<p>SSTable 及其内存中的索引。</p>
-<p><strong>数据模型</strong> 关系模型与⽂档模型</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.015.jpeg" alt></p>
-<p>图状数据模型</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.016.jpeg" alt></p>
-<p><strong>数据批处理与流处理</strong></p>
-<p>mapreduce 模式的批处理</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.017.jpeg" alt></p>
-<p>flink的 dataflow流处理模式</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.018.jpeg" alt></p>
-<p><strong>数据事务⼀致性</strong></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.019.jpeg" alt></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.020.jpeg" alt></p>
-<p><strong>数据压缩与存储 列存储</strong></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.021.jpeg" alt></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.022.jpeg" alt></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.023.png" alt></p>
-<p><strong>数据⼀致性与共识</strong></p>
-<p>分布式系统挑战</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.024.jpeg" alt></p>
-<p>2PC/3PC和 Paxos协议是经典的分布式协议</p>
-<p>Two Phase指的是 Commit-request阶段 Commit阶段。</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.025.png" alt> 请求阶段</p>
-<p>在请求阶段，协调者将通知事务参与者准备提交或取消事务，然后进⼊表决过程。 在表决过程中，参与者将告知协调者⾃⼰的决策：同意（事务参与者本地作业执⾏成功）或取消（本地作业执⾏故障）。</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.026.png" alt> 提交阶段</p>
-<p>在该阶段，协调者将基于第⼀个阶段的投票结果进⾏决策：提交或取消。 当且仅当所有的参与者同意提交事务协调者才通知所有的参与者提交事务，否则协调者将通知所有的参与者取消事务。参与者在接收 到协调者发来的消息后将执⾏响应的操作。</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.027.png" alt></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.028.png" alt> 同步阻塞</p>
-<p>执⾏过程中，所有参与节点都是事务独占状态，当参与者占有公共资源时，第三⽅节点访问公共资源被阻塞。</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.029.png" alt> 单点问题</p>
-<p>⼀旦协调者发⽣故障，参与者会⼀直阻塞下去。</p>
-<p>![](../../../../images/post-images/bigData/Aspo</p>
-<p>在第⼆阶段中，假设协调者发出了事务 commit的通知，但是因为⽹络问题该通知仅被⼀部分参与者所收到并执⾏ commit，其余的参与 者没有收到通知⼀直处于阻塞状态，这段时间就产⽣了数据的不⼀致性。</p>
-<p>Three Phase分别为 CanCommit、 PreCommit、 DoCommit。</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.031.png" alt></p>
-<p><strong>三阶段提交针对两阶段提交做了改进：</strong></p>
-<ul>
-<li>引⼊超时机制。在 2PC中，只有协调者拥有超时机制， 3PC同时在协调者和参与者中都引⼊超时机制。</li>
-<li>在第⼀阶段和第⼆阶段中插⼊⼀个准备阶段。保证了在最后提交阶段之前各参与节点的状态是⼀致的。</li>
-</ul>
-<p>Paxos算法</p>
-<p>应⽤最⼴的分布式⼀致性算法。</p>
-<p>节点⻆⾊</p>
-<ul>
-<li>Proposer:提案者 ;</li>
-<li>Acceptor:批准者 ;</li>
-<li>Learner:学习者 ;</li>
-</ul>
-<p>约束条件：</p>
-<ul>
-<li>Acceptor必须接受它收到的第⼀个提案；</li>
-<li>如果⼀个提案的 v值被⼤多数 Acceptor接受过，那后续的所有被接受的提案中也必须包含 v值（ v值可以理解为提案的内容，提案 由⼀个或多个 v和提案编号组成）；</li>
-<li>如果某⼀轮 Paxos 协议批准了某个 value，则以后各轮 Paxos 只能批准这个 value；</li>
-</ul>
-<p>通信， 两个阶段 4个过程 ：</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.032.jpeg" alt></p>
-<p>选举</p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.033.png" alt></p>
-<p><a href="**⽤户购买商品统计表**--**buy\_cnt\_per\_hour**">^1</a><strong>⼤数据当今的趋势与潮流</strong></p>
-<p><strong>流批⼀体实时计算 数据湖 ⽆服务化</strong>(serverless) <strong>应⽤层⾯</strong>–<strong>低代码化</strong></p>
-<p><strong>⼆</strong>.Flink SQL <strong>构建端到端的实时数据应⽤简单</strong>Demo<strong>演示</strong></p>
-<p><strong>基于</strong>docker<strong>集成组件</strong></p>
-<ul>
-<li><strong>Flink SQL CLI:</strong> used to submit queries and visualize their results.</li>
-<li><strong>Flink Cluster:</strong> a Flink JobManager and a Flink TaskManager container to execute queries.</li>
-<li><strong>MySQL:</strong> MySQL 5.7 and a pre-populated category table in the database. The category table will be joined with data in Kafka to enrich the real-time data.</li>
-<li><strong>Kafka:</strong> mainly used as a data source. The DataGen component automatically writes data into a Kafka topic.</li>
-<li><strong>Zookeeper:</strong> this component is required by Kafka.</li>
-<li><strong>Elasticsearch:</strong> mainly used as a data sink.</li>
-<li><strong>Kibana:</strong> used to visualize the data in Elasticsearch.</li>
-<li><strong>DataGen:</strong> the data generator. After the container is started, user behavior data is automatically generated and sent to the Kafka topic. By default, 2000 data entries are generated each second for about 1.5 hours. You can modify DataGen’s speedupparameter in docker-compose.yml to adjust the generation rate (which takes effect after Docker Compose is restarted).</li>
-</ul>
-<p><strong>相关的</strong>flinkSQL</p>
-<p><strong>数据流外部表构建</strong></p>
-<p><strong>⽤户⾏为⽇志表</strong>–<strong>user_behavior</strong></p>
-<p>[^2] CREATE TABLE user_behavior (<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.034.png" alt></p>
-<p>2  user_id BIGINT,<br>2  item_id BIGINT,<br>2  category_id BIGINT,<br>2  behavior STRING,<br>2  ts TIMESTAMP(3),<br>2  proctime AS PROCTIME(),   – generates processing-time attribute using computed column</p>
-<p>8 WATERMARK FOR ts AS ts - INTERVAL ‘5’ SECOND  – defines watermark on ts column, marks ts as even 9 ) WITH (</p>
-<p>10 ‘connector’ = ‘kafka’,  – using kafka connector</p>
-<p>11 ‘topic’ = ‘user_behavior’,  – kafka topic</p>
-<p>12 ‘scan.startup.mode’ = ‘earliest-offset’,  – reading from the beginning</p>
-<p>13 ‘properties.bootstrap.servers’ = ‘kafka:9094’,  – kafka broker address</p>
-<p>14 ‘format’ = ‘json’  – the data format is json 15 );</p>
-<p>2  hour_of_day BIGINT,<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.035.png" alt><br>2  buy_cnt BIGINT<br>2  ) WITH (</p>
-<p>5 ‘connector’ = ‘elasticsearch-7’, – using elasticsearch connector</p>
-<p>6 ‘hosts’ = ‘<a href="http://elasticsearch:9200&#39;" target="_blank" rel="noopener">http://elasticsearch:9200&#39;</a>,  – elasticsearch address</p>
-<p>7 ‘index’ = ‘buy_cnt_per_hour’  – elasticsearch index name, similar to database table name 8 );</p>
-<p><strong>实现实时统计每天各时段商品购买量统计</strong></p>
-<p>[^3] INSERT INTO buy_cnt_per_hour<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.036.png" alt></p>
-<p>[^4] SELECT HOUR(TUMBLE_START(ts, INTERVAL ‘1’ HOUR)), COUNT(*) [^5] FROM user_behavior</p>
-<p>[^6] WHERE behavior = ‘buy’</p>
-<p>[^7] GROUP BY TUMBLE(ts, INTERVAL ‘1’ HOUR);</p>
-<p><strong>cumulative_uv 外部表</strong></p>
-<p>1  CREATE TABLE cumulative_uv (<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.037.png" alt><br>1  date_str STRING,<br>1  time_str STRING,<br>1  uv BIGINT,</p>
-<p>5 PRIMARY KEY (date_str, time_str) NOT ENFORCED [^8] ) WITH (</p>
-<p>[^9] ‘connector’ = ‘elasticsearch-7’,</p>
-<p>[^10] ‘hosts’ = ‘<a href="http://elasticsearch:9200&#39;" target="_blank" rel="noopener">http://elasticsearch:9200&#39;</a>,</p>
-<p>[^11] ‘index’ = ‘cumulative_uv’</p>
-<p>[^12] );</p>
-<p><strong>实现实时每</strong>10<strong>分钟唯⼀访客的累计统计</strong></p>
-<p>1  INSERT INTO cumulative_uv<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.038.png" alt><br>1  SELECT date_str, MAX(time_str), COUNT(DISTINCT user_id) as uv<br>1  FROM (<br>1  SELECT</p>
-<p>5 DATE_FORMAT( ts, ‘yyyy-MM-dd’) as date_str,</p>
-<p>6 SUBSTR(DATE_FORMAT( ts, ‘HH:mm’),1,4) || ‘0’ as time_str,</p>
-<p>7  user_id<br>7  FROM user_behavior)<br>7  GROUP BY date_str;</p>
-<p><strong>顶级品类分布维度外部表</strong></p>
-<p>12 );<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.039.png" alt></p>
-<p><strong>顶级品类分布计算结果外部表</strong></p>
-<p>1  CREATE TABLE top_category (<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.040.png" alt><br>1  category_name STRING PRIMARY KEY NOT ENFORCED,<br>1  buy_cnt BIGINT<br>1  ) WITH (</p>
-<p>5 ‘connector’ = ‘elasticsearch-7’,</p>
-<p>6 ‘hosts’ = ‘<a href="http://elasticsearch:9200&#39;" target="_blank" rel="noopener">http://elasticsearch:9200&#39;</a>,</p>
-<p>7 ‘index’ = ‘top_category’ 8 );</p>
-<p><strong>⾏为表与品类纬度表实时关联虚拟视图</strong></p>
-<p>1  CREATE VIEW rich_user_behavior AS<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.041.png" alt><br>1  SELECT U.user_id, U.item_id, U.behavior, C.parent_category_name as category_name<br>1  FROM user_behavior AS U LEFT JOIN category_dim FOR SYSTEM_TIME AS OF U.proctime AS C<br>1  ON U.category_id = C.sub_category_id;</p>
-<p><strong>实时计算顶级品类分布</strong></p>
-<p>1  INSERT INTO top_category<img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.042.png" alt><br>1  SELECT category_name, COUNT(*) buy_cnt<br>1  FROM rich_user_behavior<br>1  WHERE behavior = ‘buy’<br>1  GROUP BY category_name;</p>
-<p>Kibana<strong>可视化</strong></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.043.jpeg" alt></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.044.jpeg" alt></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.045.jpeg" alt></p>
-<p><strong>三</strong>.<strong>学习渠道与图书推荐</strong></p>
-<p><strong>计算机体系原理必读</strong></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.046.jpeg" alt></p>
-<p><strong>分布式经典</strong></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.047.jpeg" alt></p>
-<p><strong>⼤数据技术栈相关</strong></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.048.jpeg" alt></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.049.jpeg" alt></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.050.jpeg" alt></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.051.jpeg" alt></p>
-<p><strong>其他⼀些相关和拓展</strong></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.052.jpeg" alt></p>
-<p><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.053.jpeg" alt><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.054.png" alt><img src="../../../../images/post-images/bigData/Aspose.Words.7df77b81-7b9a-40c4-b0c6-732c8f053766.055.png" alt></p>
-<p>[^2]: CREATE TABLE buy_cnt_per_hour (<br>[^3]: CREATE TABLE category_dim (<br>[^4]: <code></code>sub_category_id BIGINT,<br>[^5]: <code></code>parent_category_name STRING<br>[^6]: ) WITH (<br>[^7]: ‘connector’ = ‘jdbc’,<br>[^8]: ‘url’ = ‘jdbc:mysql://mysql:3306/flink’,<br>[^9]: ‘table-name’ = ‘category’,<br>[^10]: ‘username’ = ‘root’,<br>[^11]: ‘password’ = ‘123456’,<br>[^12]: ‘lookup.cache.max-rows’ = ‘5000’,</p>
-<pre><code>11 &apos;lookup.cache.ttl&apos; = &apos;10min&apos;
-</code></pre>]]></content>
+    <title>正则表达式</title>
+    <url>/2021/06/17/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</url>
+    <content><![CDATA[<p>? 通配符匹配文件名中的 0 个或 1 个字符</p>
+<p>* 通配符匹配零个或多个字符</p>
+<p>^ 为匹配输入字符串的开始位置。</p>
+<p>[0-9]+匹配多个数字， [0-9] 匹配单个数字，+ 匹配一个或者多个。</p>
+<p>abc$匹配字母 abc 并以 abc 结尾，$ 为匹配输入字符串的结束位置。</p>
+<p>runoo+b，可以匹配 runoob、runooob、runoooooob 等，+ 号代表前面的字符必须至少出现一次（1次或多次）。</p>
+<p>runoo*b，可以匹配 runob、runoob、runoooooob 等，* 号代表字符可以不出现，也可以出现一次或者多次（0次、或1次、或多次）。</p>
+<p>colou?r 可以匹配 color 或者 colour，? 问号代表前面的字符最多只可以出现一次（0次、或1次）</p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>正则匹配</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>flink 理解</title>
+    <url>/2021/06/17/flink-%E7%90%86%E8%A7%A3/</url>
+    <content><![CDATA[<h4 id="统一的批处理与流处理系统"><a href="#统一的批处理与流处理系统" class="headerlink" title="统一的批处理与流处理系统"></a>统一的批处理与流处理系统</h4><p>在大数据处理领域，批处理任务与流处理任务一般被认为是两种不同的任务，一个大数据项目一般会被设计为只能处理其中一种任务，例如Apache Storm、Apache Smaza只支持流处理任务，而Aapche MapReduce、Apache Tez、Apache Spark只支持批处理任务。Spark Streaming是Apache Spark之上支持流处理任务的子系统，看似一个特例，实则不然——Spark Streaming采用了一种micro-batch的架构，即把输入的数据流切分成细粒度的batch，并为每一个batch数据提交一个批处理的Spark任务，所以Spark Streaming本质上还是基于Spark批处理系统对流式数据进行处理，和Apache Storm、Apache Smaza等完全流式的数据处理方式完全不同。通过其灵活的执行引擎，Flink能够同时支持批处理任务与流处理任务。</p>
+<p>在执行引擎这一层，流处理系统与批处理系统最大不同在于节点间的数据传输方式。对于一个流处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，然后立刻通过网络传输到下一个节点，由下一个节点继续处理。而对于一个批处理系统，其节点间数据传输的标准模型是：当一条数据被处理完成后，序列化到缓存中，并不会立刻通过网络传输到下一个节点，当缓存写满，就持久化到本地硬盘上，当所有数据都被处理完成后，才开始将处理后的数据通过网络传输到下一个节点。这两种数据传输模式是两个极端，对应的是流处理系统对低延迟的要求和批处理系统对高吞吐量的要求。Flink的执行引擎采用了一种十分灵活的方式，同时支持了这两种数据传输模型。Flink以固定的缓存块为单位进行网络数据传输，用户可以通过缓存块超时值指定缓存块的传输时机。如果缓存块的超时值为0，则Flink的数据传输方式类似上文所提到流处理系统的标准模型，此时系统可以获得最低的处理延迟。如果缓存块的超时值为无限大，则Flink的数据传输方式类似上文所提到批处理系统的标准模型，此时系统可以获得最高的吞吐量。同时缓存块的超时值也可以设置为0到无限大之间的任意值。缓存块的超时阈值越小，则Flink流处理执行引擎的数据处理延迟越低，但吞吐量也会降低，反之亦然。通过调整缓存块的超时阈值，用户可根据需求灵活地权衡系统延迟和吞吐量。</p>
+<p><img src="../../../../images/post-images/10224563-5fabfeda80713045.png" alt="img.png"></p>
+]]></content>
       <categories>
         <category>数据开发</category>
       </categories>
       <tags>
-        <tag>big data</tag>
+        <tag>flink</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>Griffin POC</title>
+    <url>/2021/06/17/Griffin-POC/</url>
+    <content><![CDATA[<pre><code>Apache Griffin是一个应用于分布式数据系统中的开源数据质量解决方案。在Hadoop, Spark, Storm等分布式系统中，提供了一整套统一的流程来定义和检测数据集的质量并及时报告问题。
+</code></pre><p>Apache Griffin填补了开源世界里在大数据质量领域的空白。就像空气质量，水和食品安全等无时不刻地在影响人类的生命一样，数据质量在数据科学领域是至关重要的。在大数据时代，企业决策调整，商机发现等越来越依赖于大数据的数据分析和数据挖掘，而数据质量的保证是所有一切数据分析和数据挖掘的基础。</p>
+<h6 id="系统架构"><a href="#系统架构" class="headerlink" title="系统架构"></a>系统架构</h6><p><img src="../../../../images/post-images/10224563-4cdc01da7a0a285c.png" alt="img.png"></p>
+<p>Griffin架构图</p>
+<p>1.apache griffin  安装配置；</p>
+<p>从官网下载最新版本<a href="http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；" target="_blank" rel="noopener">http://griffin.apache.org/docs/latest.html，源码版本进行编译安装；</a></p>
+<p>2.(1)配置measure组件；</p>
+<pre><code>配置env-batch.json中hdfs和es的path,分别为&quot;hdfs://10.2.29.101:8020/griffin/batch/persist&quot;,&quot;http://10.2.29.102:9200/griffin/accuracy&quot;,env-streaming.json类似，env-streaming.json还要配置zk的host为“10.2.29.101:2181“，其他默认；
+
+配置config-batch.json，config-streaming.json其中的sinks至少要有es，配置config-batch-advanced.json[&quot;HDFS&quot;,&quot;ELASTICSEARCH&quot;,&quot;CONSOLE&quot;]，运行maven命令，mvn clean package -Dmaven.test.skip=true;
+</code></pre><p>   (2)配置service组件；</p>
+<pre><code>配置env下env_streaming.json，env_batch.json，配置同measure;
+
+配置application.properties，配置端口为9270，server.port=9270；
+
+配置quartz数据库，进入postgres用户下bin目录下，createdb -O &lt;username&gt; quartz，将项目中的Init_quartz_postgres.sql quartz拷贝到一个目录，psql -p &lt;port&gt; -h &lt;host address&gt; -U &lt;username&gt; -f Init_quartz_postgres.sql quartz；
+
+配置spring.datasource为相应的数据库quartz，设置用户名密码，设置相应数据库驱动，设置hive.metastore.uris=thrift://en1-dev1-tbdp.trendy-global.com:9083，hive.metastore.dbname=default，kafka.schema.registry.url=http://en1- dev1-tbdp.trendy-global.com:6667，fs.defaultFS=hdfs://nn1-dev1-tbdp.trendy-global.com:8020，elasticsearch.host=10.2.29.102，elasticsearch.port=9200，livy.uri=http://en1-dev1-tbdp.trendy-global.com:8999/batches，yarn.uri=http://en1-dev1-tbdp.trendy-global.com:8088；
+
+配置sparkProperties.json，如下：
+</code></pre><p>{</p>
+<p>   “file”: “hdfs:///griffin/griffin-measure.jar”,</p>
+<p>   “className”: “org.apache.griffin.measure.Application”,</p>
+<p>   “name”: “griffin”,</p>
+<p>   “queue”: “default”,</p>
+<p>   “numExecutors”: 3,</p>
+<p>   “executorCores”: 1,</p>
+<p>   “driverMemory”: “1g”,</p>
+<p>   “executorMemory”: “1g”,</p>
+<p>   “files”: [ “hdfs:///livy/hive-site.xml” ]</p>
+<p>}；</p>
+<pre><code>然后在service根目录下运行maven命令，mvn clean package -Dmaven.test.skip=true;
+
+将measure组件按照sparkProperties.json配置的丢到hdfs上；
+</code></pre><p>   (3)配置ui组件；</p>
+<pre><code>配置ui/angular/src/app/service/service.service.ts文件public BACKEND_SERVER = &apos;http://localhost:9270&apos;;为之前service的端口；
+
+在angular下运行命令npm run build 
+</code></pre><p>3.运行；</p>
+<p>  （1）启动service组件，命令：</p>
+<p>java -jar -Dserver.port=9270 -Dfs.defaultFS=hdfs:///griffin/persist service-0.3.0-incubating.jar；</p>
+<p>  （2）启动ui 组件，命令：</p>
+<pre><code>在angular下运行命令npm run start或者
+
+cd ui/angular 
+
+../angular/node_modules/.bin/ng serve --port 9280
+</code></pre><p><img src="../../../../images/post-images/10224563-b1e4fcbdee632715.png" alt="img.png"><br>griffin运行界面</p>
+<p>4.建立数据质量检测方案poc；</p>
+<pre><code>（1）建立accuracy类型检测，点击create measure 按钮，按照操作步骤进行设置，注意设置分区要相对应或者不设置；
+
+（2）建立data profiling类型检测，同样按照步骤操作；
+
+（3）点击create job根据提示创建job;
+
+ 结果如图：
+</code></pre><h6 id="job界面"><a href="#job界面" class="headerlink" title="job界面"></a>job界面</h6><p><img src="../../../../images/post-images/10224563-a7e84c6a56d5f3a4.png" alt="img.png"></p>
+<h6 id="job详解界面"><a href="#job详解界面" class="headerlink" title="job详解界面"></a>job详解界面</h6><p><img src="../../../../images/post-images/10224563-aa9b60841926f0a0.png" alt="img.png"></p>
+<h6 id="job4"><a href="#job4" class="headerlink" title="job4"></a>job4</h6><p><img src="../../../../images/post-images/10224563-cd9a5aaafb910e22.png" alt="img.png"></p>
+<h6 id="mea-job1"><a href="#mea-job1" class="headerlink" title="mea-job1"></a>mea-job1</h6><p><img src="../../../../images/post-images/10224563-577da07c46b740dd.png" alt="img.png"></p>
+]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>数据质量监控</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Streamsets POC总结</title>
+    <url>/2021/06/17/POC%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<h4 id="Streamsets介绍"><a href="#Streamsets介绍" class="headerlink" title="Streamsets介绍"></a>Streamsets介绍</h4><p>Streamsets是一款大数据实时采集和ETL工具，可以实现不写一行代码完成数据的采集和流转。通过拖拽式的可视化界面，实现数据管道(Pipelines)的设计和定时任务调度。最大的特点有：</p>
+<p>(1) 可视化界面操作，不写代码完成数据的采集和流转;</p>
+<p>(2) 内置监控，可是实时查看数据流传输的基本信息和数据的质量;</p>
+<p>(3) 强大的整合力，对现有常用组件全力支持，包括50种数据源、44种数据操作、46种目的地。</p>
+<p>对于Streamsets来说，最重要的概念就是数据源(Origins)、操作(Processors)、目的地(Destinations)，创建一个Pipelines管道配置也基本是这三个方面，除此之外还有执行器(executor)，是做一些数据处理操作的。</p>
+<p>常见的Origins有Kafka、HTTP、UDP、JDBC、HDFS等；Processors可以实现对每个字段的过滤、更改、编码、聚合等操作；Destinations跟Origins差不多，可以写入Kafka、Flume、JDBC、HDFS、Redis等。</p>
+<h4 id="POC-需求"><a href="#POC-需求" class="headerlink" title="POC 需求"></a>POC 需求</h4><p>实现一个工作流程：</p>
+<p>1.对一个数据库中的所需要的表进行增量的抽取，从数据库到分布式文件系统上，比如从postgresql到hive上；</p>
+<p>2.有业务需求的抽取，因为数据库表中的修改时间字段不会跟随修改的数据而更新，所以需要在每次增量的抽取上次抽取时间点之前时间的数据（比如前3个月）；</p>
+<p>3.要能自动判断hive上是否存在该表，根据情况进行创建，之后进行数据载入；</p>
+<p>POC结果</p>
+<p>最后的实现方案是：</p>
+<p>   通过airflow调度streamsets的restapi实现pipeline的开启以及一些数据的获取和pipline的状态判断，筛选条件offset的设置，实现整个sdc的etl 流程，不过最后发现该实现方案存在较大的缺陷，而且还有一个时间变量的设置存在问题；</p>
+<p>streamsets的案例是: 全量抽取pipeline<br><a href="http://10.2.29.102:9230/collector/pipeline/streamsettest03byquerycopy57a756ec-6d71-4640-9fd9-40e4ce24eb46；" target="_blank" rel="noopener">http://10.2.29.102:9230/collector/pipeline/streamsettest03byquerycopy57a756ec-6d71-4640-9fd9-40e4ce24eb46；</a></p>
+<p>以及增量pipeline<br><a href="http://10.2.29.102:9230/collector/pipeline/streamsettest03byqueryincr6ce53b23-cb23-455e-b3f5-8921a1d93afa；" target="_blank" rel="noopener">http://10.2.29.102:9230/collector/pipeline/streamsettest03byqueryincr6ce53b23-cb23-455e-b3f5-8921a1d93afa；</a></p>
+<p>全量<br><img src="../../../../images/post-images/10224563-e5747904c91a11a1.png" alt="img.png"></p>
+<p>增量<br><img src="../../../../images/post-images/10224563-1b359d9207f8e2e2.png" alt="img.png"></p>
+<p>airflow调度脚本案例是：<a href="http://10.2.29.102:9210/admin/airflow/code?dag_id=test_my_http；" target="_blank" rel="noopener">http://10.2.29.102:9210/admin/airflow/code?dag_id=test_my_http；</a></p>
+<p>airflow调度<br><img src="../../../../images/post-images/10224563-6f993055d421c0f5.png" alt="img.png"></p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><h5 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h5><p>1.使用拖拽的方式减少了手动etl各种繁琐的代码编写，并且实时即开即用，可以实现UI界面的etl的简单操作，运行时候的可视化界面可以了解数据载入的各个过程情况，并且有rest的api可以实现其他进程的调用，比如调度程序airflow的调度，实现定时任务自动化etl，减少每次人工操作的繁琐，实现自动化智能化，适合大数据下的使用；</p>
+<h5 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h5><p>1.因为设计的时候是定制普通的etl，某些根据业务要求的etl无法实现，比如本次poc中的案例，还有pipeline 之间的依赖，包括restapi在airflow调度后的异步问题导致的etl流程顺序紊乱 ，比如本例中的conditional_task1根据实际情况进行判断，假如全量抽取之前不存在的话，会调用SimpleHttpOperator进行一次全量的抽取，但是通过restapi返回的response并不是pipeline执行完成后才返回的，执行表明已经调用成功，但是运行的状态未知，这样可能在load_crm_goods_full还没跑完的情况下（数据量大的情况下），conditional_task2开始执行，去拿load_crm_goods_full对应的pipeline的id的offset去对增量表的offset进行设置，有可能导致拿不到的结果，而导致整个etl流程失败；除此之外，run_hive_query对2表的数据进行合并的时候要拿到一个判断值去进行表的数据merge,是根据上一个job,load_crm_goods_incr的offset来取值的，但是load_crm_goods_incr要根据reset_crm_goods1，reset_crm_goods2的其中一个结果来决定，所以在定义sql的时候需要动态定义时间的值，这在整个airflow脚本中是很难实现的，暂时没有想到解决的方案。</p>
+]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>etl</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>java实现多线程的6种方式</title>
+    <url>/2021/06/17/java%E5%AE%9E%E7%8E%B0%E5%A4%9A%E7%BA%BF%E7%A8%8B%E7%9A%846%E7%A7%8D%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<p>java实现多线程基本上有5种办法，第一继承Thread类，重写run方法；第二实现继承Runnable接口，重写run方法；第三种是基于内部类的写法，同样重写run方法，实际上和前2种本质一样；第四种，基于带返回值的线程实现方式；第五种，基于线程池的方式；第六种，基于定时任务实现的多线程。</p>
+<h4 id="1-基于继承Thread类的实现"><a href="#1-基于继承Thread类的实现" class="headerlink" title="1.基于继承Thread类的实现"></a>1.基于继承Thread类的实现</h4><blockquote>
+<pre><code>/**
+* @Author: Cyy
+* @Description: 使用继承Thread实现线程的方式
+* @Date:Created in 23:33 2018/7/27
+*/
+public class Thread01 extends Thread {
+
+@Override
+ public void run() {
+    super.run();
+    System.out.println(&quot;使用继承Thread实现线程的方式。。。&quot;);
+    int i=0;
+    while (true) {
+
+        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException  e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+public Thread01(String name){
+    super(name);
+}
+public static void main(String[] args) {
+    Thread01 thread_1=new Thread01(&quot;t1&quot;);
+    Thread01 thread_2=new Thread01(&quot;t2&quot;);
+    thread_1.start();
+    thread_2.start();
+    while (true) {
+            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException  e) {
+            e.printStackTrace();
+        }
+    }
+ }
+}
+</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-88d736905e9966c0.png" alt="image.png"></p>
+</blockquote>
+<h4 id="2-基于实现Runnable接口的实现"><a href="#2-基于实现Runnable接口的实现" class="headerlink" title="2.基于实现Runnable接口的实现"></a>2.基于实现Runnable接口的实现</h4><blockquote>
+<pre><code>/**
+* @Author: Cyy
+* @Description:基于实现Runnable接口的实现
+* @Date:Created in 23:46 2018/7/27
+*/
+public class Thread02 implements Runnable {
+@Override
+public void run() {
+    System.out.println(&quot;使用实现Runnable实现线程的方式。。。&quot;);
+    while(true){
+            System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try{
+            Thread.sleep(1000);
+        }catch (InterruptedException  e){
+            e.printStackTrace();
+        }
+    }
+}
+public static void main(String[] args) {
+    Thread02 thread01=new Thread02();
+    Thread02 thread02=new Thread02();
+    Thread thread1=new Thread(thread01,&quot;t1&quot;);
+    thread1.start();
+    Thread thread2=new Thread(thread02,&quot;t2&quot;);
+    thread2.start();
+    while (true) {
+        System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException  e) {
+            e.printStackTrace();
+        }
+    }
+  }
+ }
+</code></pre><p>运行结果：<br><img src="../../../../images/post-images/10224563-f166fcf2937e4e63.png" alt="image.png"></p>
+</blockquote>
+<h4 id="3-基于内部类的实现"><a href="#3-基于内部类的实现" class="headerlink" title="3.基于内部类的实现"></a>3.基于内部类的实现</h4><blockquote>
+<pre><code>public class Thread00 {
+
+    public static void main(String[] args) {
+
+        //基于子类的实现
+        new Thread(&quot;t_t&quot;){
+            @Override
+            public void run() {
+                super.run();
+                while (true) {
+                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+
+        //基于接口的实现
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    System.out.println(Thread.currentThread().getName()+&quot; is Running....&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        },&quot;t_r&quot;){}.start();
+
+        while (true) {
+                System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-4551d8c4def647f6.png" alt="image.png"><br>另外，还有同时实现基于子类和接口的实现的情况：</p>
+<blockquote>
+<pre><code>/**
+ * @Author: Cyy
+ * @Description: 同时基于子类和内部类
+ * @Date:Created in 10:11 2018/7/28
+ */
+public class Thread03 {
+
+    public static void main(String args[]){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    System.out.println(&quot;Runnable is running...&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }){
+            @Override
+            public void run() {
+//                super.run();
+                while (true) {
+                    System.out.println(&quot;sub is running...&quot;);
+                    try {
+                            Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-61a1e5b9bb26d736.png" alt="image.png"><br>这里运行结果只有子类线程的打印，原因是虽然实现了Thread类构造办法里Runnable接口的实例，但是子类已经将父类的run方法进行重写了，所以只会执行子类的办法。</p>
+<h4 id="4-基于带返回值的线程实现方式"><a href="#4-基于带返回值的线程实现方式" class="headerlink" title="4.基于带返回值的线程实现方式"></a>4.基于带返回值的线程实现方式</h4><blockquote>
+<pre><code>import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 10:35 2018/7/28
+ */
+public class Thread04 {
+
+    public static void main(String args[]) throws ExecutionException, InterruptedException {
+        Callable&lt;Integer&gt; call=new Callable&lt;Integer&gt;() {
+            @Override
+            public Integer call() throws Exception {
+                System.out.println(&quot;thread start...&quot;);
+                Thread.sleep(2000);
+                return 520;
+            }
+        };
+
+        FutureTask&lt;Integer&gt; task=new FutureTask&lt;&gt;(call);
+        Thread t=new Thread(task);
+        t.start();
+        System.out.println(&quot;线程的执行结果 &quot;+task.get());
+
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-13077b7fb6481123.png" alt="image.png"></p>
+<h4 id="5-基于线程池的方式。"><a href="#5-基于线程池的方式。" class="headerlink" title="5.基于线程池的方式。"></a>5.基于线程池的方式。</h4><blockquote>
+<pre><code>import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 13:02 2018/7/28
+ */
+public class Thread05 {
+
+    public static void main(String[] args) {
+
+        ExecutorService threadPool= Executors.newFixedThreadPool(5);
+
+        while (true) {
+            threadPool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println(Thread.currentThread().getName() + &quot; is running...&quot;);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-2133e7d7e0cd6a0e.png" alt="image.png"></p>
+<ul>
+<li>可以基于ExecutorService、Callable、Future实现有返回结果的多线程。</li>
+</ul>
+<blockquote>
+<pre><code>import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.*;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 13:16 2018/7/28
+ */
+public class Thread06 {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        System.out.println(&quot;----程序开始运行-----&quot;);
+
+        Date date1=new Date();
+        int taskSize=5;
+
+        ExecutorService threadPool= Executors.newFixedThreadPool(taskSize);
+        List&lt;Future&gt; list=new ArrayList&lt;Future&gt;();
+        for (int i=0;i&lt;taskSize;i++) {
+            Callable c=new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    Date dateTmp1 = new Date();
+                    Thread.sleep(2000);
+                    Date dateTmp2 = new Date();
+                    long time = dateTmp2.getTime() - dateTmp1.getTime();
+                    return time;
+                }
+            };
+            Future f = threadPool.submit(c);
+            list.add(f);
+        }
+        threadPool.shutdown();
+        for (Future f : list) {
+            System.out.println(&quot;&gt;&gt;&gt;&quot;+f.get().toString());
+        }
+        Date date2=new Date();
+        System.out.println(&quot;-----程序结束运行-----，程序运行时间【&quot;+(date2.getTime()-date1.getTime())+&quot;毫秒】&quot;);
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：<br><img src="../../../../images/post-images/10224563-77c92e58f3e72d7b.png" alt="image.png"></p>
+<h4 id="6-基于定时任务实现的多线程"><a href="#6-基于定时任务实现的多线程" class="headerlink" title="6.基于定时任务实现的多线程"></a>6.基于定时任务实现的多线程</h4><blockquote>
+<pre><code>import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
+
+/**
+ * @Author: Cyy
+ * @Description:
+ * @Date:Created in 16:43 2018/7/28
+ */
+public class Thread07 {
+
+    private static final SimpleDateFormat format=new SimpleDateFormat(&quot;yyyy-MM-dd hh:mm:ss&quot;);
+
+    //定时任务
+    public static void timeLapse() throws ParseException {
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println(&quot;定时任务开始执行。。。。。&quot;);
+            }
+        },format.parse(&quot;2018-07-28 16:51:00&quot;));
+
+    }
+    public static void timeLapseBySomeTimes(){
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println(Thread.currentThread().getName()+&quot; is Running...&quot;);
+            }
+        },new Date(),1000);
+    }
+    public static void main(String[] args) throws ParseException {
+//        timeLapse();
+        timeLapseBySomeTimes();
+        timeLapseBySomeTimes();
+        while (true) {
+            System.out.println(Thread.currentThread().getName() + &quot; is Running...&quot;);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+</code></pre></blockquote>
+<p>运行结果：</p>
+<p><img src="../../../../images/post-images/10224563-a872cc0e4d4c4047.png" alt="image.png"></p>
+]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>hive跨集群迁移表</title>
+    <url>/2021/06/17/hive%E8%B7%A8%E9%9B%86%E7%BE%A4%E8%BF%81%E7%A7%BB%E8%A1%A8/</url>
+    <content><![CDATA[<h4 id="1-export-table-xxx-to-‘-tmp-xxxx’"><a href="#1-export-table-xxx-to-‘-tmp-xxxx’" class="headerlink" title="1.export table xxx to ‘/tmp/xxxx’;"></a>1.export table xxx to ‘/tmp/xxxx’;</h4><h4 id="2-hadoop-fs-get-tmp-xxx-tmp-xxx"><a href="#2-hadoop-fs-get-tmp-xxx-tmp-xxx" class="headerlink" title="2.hadoop fs - get /tmp/xxx /tmp/xxx"></a>2.hadoop fs - get /tmp/xxx /tmp/xxx</h4><h4 id="3-scp文件。。。"><a href="#3-scp文件。。。" class="headerlink" title="3.scp文件。。。"></a>3.scp文件。。。</h4><h4 id="4-zip-r-tmp-xxxx-zip-tmp-xxx"><a href="#4-zip-r-tmp-xxxx-zip-tmp-xxx" class="headerlink" title="4.zip -r /tmp/xxxx.zip /tmp/xxx"></a>4.zip -r /tmp/xxxx.zip /tmp/xxx</h4><h4 id="5-unzip-xxx-zip-tmp"><a href="#5-unzip-xxx-zip-tmp" class="headerlink" title="5.unzip xxx.zip /tmp/"></a>5.unzip xxx.zip /tmp/</h4><h4 id="6-hadoop-fs-put-tmp-xxxx-tmp-xxxx"><a href="#6-hadoop-fs-put-tmp-xxxx-tmp-xxxx" class="headerlink" title="6.hadoop fs -put /tmp/xxxx /tmp/xxxx"></a>6.hadoop fs -put /tmp/xxxx /tmp/xxxx</h4><h4 id="7-import-table-xxx-from-‘-tmp-xxx’"><a href="#7-import-table-xxx-from-‘-tmp-xxx’" class="headerlink" title="7.import table xxx from ‘/tmp/xxx’__"></a>7.import table xxx from ‘/tmp/xxx’__</h4>]]></content>
+      <categories>
+        <category>数据开发</category>
+      </categories>
+      <tags>
+        <tag>hive</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2018/06/28/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
+]]></content>
   </entry>
 </search>
