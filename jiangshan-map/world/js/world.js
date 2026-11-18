@@ -317,7 +317,7 @@ function prepareFeature(ft) {
     ctx.textBaseline = "middle";
     ctx.lineJoin = "round";
     ranked.forEach((ft) => {
-      if (boxes.length >= 14) return;
+      if (boxes.length >= (state.scale > 220 ? 28 : 18)) return;
       const s0 = projToScreen(ft.pb[0], ft.pb[1]);
       const s1 = projToScreen(ft.pb[2], ft.pb[3]);
       const bw = Math.abs(s1[0] - s0[0]);
@@ -344,7 +344,7 @@ function prepareFeature(ft) {
   }
 
   function drawCities(boxes) {
-    if (state.scale < 155) return;
+    if (state.scale < 95) return;
     const year = era().year;
     const { w, h } = size();
     ctx.font = "12px WenQuanYi Micro Hei, sans-serif";
@@ -352,7 +352,7 @@ function prepareFeature(ft) {
     ctx.textBaseline = "middle";
     CITIES.forEach((city) => {
       if (year < city.a || year > city.b) return;
-      if (city.p > 1 && state.scale < 210) return;
+      if (city.p > 1 && state.scale < 150) return;
       const s = projToScreen.apply(null, project(city.x, city.y));
       if (s[0] < 8 || s[1] < 8 || s[0] > w - 8 || s[1] > h - 8) return;
       ctx.fillStyle = "#9c3b32";

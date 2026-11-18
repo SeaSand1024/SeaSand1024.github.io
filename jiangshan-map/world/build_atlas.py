@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parent
 RAW = Path("/tmp/wh-raw")
 OUT = ROOT / "data"
 BASE = "https://raw.githubusercontent.com/aourednik/historical-basemaps/master/geojson/"
-LAND_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson"
+LAND_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_land.geojson"
 
 YEARS = [
     -3000, -1000, -500, -323, -100, 100, 400, 700, 800, 1000,
@@ -189,7 +189,7 @@ def split_dateline(poly: Polygon):
 def quantize_ring(coords):
     ring = []
     for x, y in coords:
-        p = [round(x, 1), round(y, 1)]
+        p = [round(x, 2), round(y, 2)]
         if ring and ring[-1] == p:
             continue
         ring.append(p)
@@ -204,14 +204,14 @@ def quantize_ring(coords):
 def geom_to_coords(geom):
     polys = []
     for poly in explode(geom):
-        if poly.area < 0.35:
+        if poly.area < 0.04:
             continue
         outer = quantize_ring(poly.exterior.coords)
         if not outer:
             continue
         rings = [outer]
         for hole in poly.interiors:
-            if Polygon(hole).area < 1.2:
+            if Polygon(hole).area < 0.08:
                 continue
             hq = quantize_ring(hole.coords)
             if hq:
@@ -247,10 +247,10 @@ def load_year(year: int, names: dict):
         key = (name, subject, k)
         meta[key] = (name, subject, k)
         for poly in explode(geom):
-            if poly.area < 0.35:
+            if poly.area < 0.04:
                 continue
             for part in split_dateline(poly):
-                if part.area >= 0.35:
+                if part.area >= 0.04:
                     grouped[key].append(part)
     features = []
     for key, parts in grouped.items():
@@ -262,9 +262,9 @@ def load_year(year: int, names: dict):
         if not merged.is_valid:
             merged = make_valid(merged)
         area = abs(merged.area)
-        if area < 0.8:
+        if area < 0.12:
             continue
-        tol = 0.42 if area > 180 else 0.28 if area > 30 else 0.16
+        tol = 0.08 if area > 180 else 0.045 if area > 30 else 0.02
         simplified = merged.simplify(tol, preserve_topology=True)
         coords = geom_to_coords(simplified)
         if not coords:
@@ -291,14 +291,14 @@ def load_year(year: int, names: dict):
 
 
 def load_land():
-    path = RAW / "ne_110m_land.geojson"
+    path = RAW / "ne_50m_land.geojson"
     download(LAND_URL, path)
     with path.open() as f:
         data = json.load(f)
     coords = []
     for ft in data["features"]:
         geom = make_valid(shape(ft["geometry"]))
-        geom = geom.simplify(0.2, preserve_topology=True)
+        geom = geom.simplify(0.04, preserve_topology=True)
         coords.extend(geom_to_coords(geom))
     return coords
 
@@ -335,7 +335,7 @@ def main():
 
     search_list = sorted(search.values(), key=lambda r: r["n"])
     catalog = {
-        "attribution": "疆域底图：aourednik/historical-basemaps（GPL-3.0），已简化并加中文译名。海岸：Natural Earth 1:110m，公有领域。",
+        "attribution": "疆域底图：aourednik/historical-basemaps（GPL-3.0），保留更细的岸线与小邦，并加中文译名。海岸：Natural Earth 1:50m，公有领域。",
         "eras": eras,
         "search": search_list,
     }
