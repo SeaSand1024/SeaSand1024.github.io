@@ -3,77 +3,65 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>寰宇时序 · 世界历史地图</title>
+  <title>江山时序 · 世界历史地图</title>
   <link rel="canonical" href="https://seasand1024.github.io/jiangshan-map/world/" />
-  <meta name="description" content="从公元前3000年到2010年，拖动时间看世界历史版图。疆域是世界尺度的示意，纪事按史书写明底图与史事不一致的地方。" />
-  <meta name="theme-color" content="#e7e0d2" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23f6f0e4' width='16' height='16'/%3E%3Ccircle cx='8' cy='8' r='4' fill='%239c3b32'/%3E%3C/svg%3E" />
+  <meta name="description" content="江山时序的世界历史断面。墨卡托投影，宣纸设色。从公元前3000年到2010年，大事落在事发地点。" />
+  <meta name="theme-color" content="#f3eee4" />
+  <link rel="icon" href="../assets/favicon.svg" />
   <link rel="stylesheet" href="css/world.css" />
 </head>
 <body>
-  <div class="app">
-    <aside class="panel" id="panel">
-      <header class="brand">
-        <p class="eyebrow">世界历史地图</p>
-        <h1>寰宇时序</h1>
-        <p class="year" id="year-label">—</p>
-        <p class="era" id="era-title"></p>
-      </header>
-
-      <section id="picked" class="picked" hidden></section>
-
-      <section class="story">
-        <h2>这一年</h2>
-        <p id="story"></p>
-        <p id="caveat" class="caveat" hidden></p>
-      </section>
-
-      <section>
-        <h2>三件大事</h2>
-        <ol id="events" class="events"></ol>
-      </section>
-
-      <section>
-        <h2>图上最大的政权</h2>
-        <div id="legend" class="legend"></div>
-        <p id="counts" class="counts"></p>
-      </section>
-
-      <section class="toggles">
-        <label><input type="checkbox" id="toggle-culture" checked /> 显示部族与文化区</label>
-        <label><input type="checkbox" id="toggle-cities" checked /> 显示城市</label>
-      </section>
-
-      <p class="source" id="source"></p>
-      <p class="jump"><a href="https://seasand1024.github.io/jiangshan-map/">中国历代细图，回到江山时序</a></p>
-    </aside>
-
-    <div class="stage" id="stage">
-      <canvas id="map"></canvas>
-      <div id="tip" class="tip" hidden></div>
-      <div class="views" id="views" role="group" aria-label="地图范围">
-        <button type="button" data-view="world">世界</button>
-        <button type="button" data-view="med">地中海</button>
-        <button type="button" data-view="europe">欧洲</button>
-        <button type="button" data-view="eastasia">东亚</button>
-        <button type="button" data-view="indianocean">印度洋</button>
-        <button type="button" data-view="americas">美洲</button>
-      </div>
-      <div class="searchwrap">
+  <div id="atlas-shell">
+    <header id="nav-bar">
+      <h1>
+        <a class="home-link" href="../" title="回到中国历代细图"><span class="seal">江山时序</span></a>
+        <span class="subtitle">世界历史地图 · 前3000 → 2010</span>
+      </h1>
+      <div class="tools">
+        <div class="views" id="views" role="group" aria-label="地图范围">
+          <button type="button" data-view="world" class="active">世界</button>
+          <button type="button" data-view="med">地中海</button>
+          <button type="button" data-view="europe">欧洲</button>
+          <button type="button" data-view="eastasia">东亚</button>
+          <button type="button" data-view="indianocean">印度洋</button>
+          <button type="button" data-view="americas">美洲</button>
+        </div>
         <label class="search">
           <span class="sr">搜索</span>
-          <input id="q" type="search" placeholder="搜帝国、国家、城市" autocomplete="off" />
+          <input id="q" type="search" placeholder="搜政权、城市" autocomplete="off" />
         </label>
         <div id="results" class="results" hidden></div>
       </div>
-    </div>
+    </header>
+
+    <main id="stage">
+      <canvas id="map" aria-label="世界历史地图"></canvas>
+      <div id="tip" class="tip" hidden></div>
+      <aside id="panel" class="card">
+        <p class="year" id="year-label">—</p>
+        <p class="era" id="era-title"></p>
+        <section id="picked" class="picked" hidden></section>
+        <p id="story"></p>
+        <p id="caveat" class="caveat" hidden></p>
+        <h2>大事</h2>
+        <ol id="events" class="events"></ol>
+        <h2>图上政权</h2>
+        <div id="legend" class="legend"></div>
+        <p id="counts" class="counts"></p>
+        <div class="toggles">
+          <label><input type="checkbox" id="toggle-culture" /> 部族与文化区</label>
+          <label><input type="checkbox" id="toggle-cities" checked /> 城市</label>
+        </div>
+        <p class="source" id="source"></p>
+      </aside>
+    </main>
 
     <footer class="timeline">
       <div class="time-row">
         <button type="button" id="prev" aria-label="上一个断面">上一断面</button>
         <button type="button" id="play" aria-pressed="false">播放</button>
         <button type="button" id="next" aria-label="下一个断面">下一断面</button>
-        <p class="hint">左右方向键切换断面，空格播放。边界按断面跳转，中间年份不另画。</p>
+        <p class="hint">方向键换断面，空格播放。点朱点或大事，镜头移到事发地。</p>
       </div>
       <div id="chips" class="chips" role="tablist" aria-label="历史断面"></div>
     </footer>

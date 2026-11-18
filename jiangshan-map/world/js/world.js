@@ -1,7 +1,4 @@
 (function () {
-  const ROBX = [1, 0.9986, 0.9954, 0.9900, 0.9822, 0.9730, 0.9600, 0.9427, 0.9216, 0.8962, 0.8679, 0.8350, 0.7986, 0.7597, 0.7186, 0.6732, 0.6213, 0.5722, 0.5322];
-  const ROBY = [0, 0.0620, 0.1240, 0.1860, 0.2480, 0.3100, 0.3720, 0.4340, 0.4958, 0.5571, 0.6176, 0.6769, 0.7346, 0.7903, 0.8435, 0.8936, 0.9394, 0.9761, 1];
-
   const VIEWS = {
     world: null,
     med: [-12, 22, 48, 48],
@@ -86,7 +83,7 @@
     userMoved: false,
     selected: null,
     hover: null,
-    showCulture: true,
+    showCulture: false,
     showCities: true,
     playing: false,
     timer: 0,
@@ -94,14 +91,10 @@
   };
 
   function project(lon, lat) {
-    const alat = Math.max(-90, Math.min(90, lat));
-    const sign = alat < 0 ? -1 : 1;
-    const a = Math.abs(alat);
-    const i = Math.min(17, Math.floor(a / 5));
-    const t = (a - i * 5) / 5;
-    const X = ROBX[i] * (1 - t) + ROBX[i + 1] * t;
-    const Y = ROBY[i] * (1 - t) + ROBY[i + 1] * t;
-    return [0.8487 * X * (lon * Math.PI / 180), 1.3523 * Y * sign];
+    const latC = Math.max(-78, Math.min(78, lat));
+    const x = lon * Math.PI / 180;
+    const y = Math.log(Math.tan(Math.PI / 4 + (latC * Math.PI) / 360));
+    return [x, y];
   }
 
   function projectMulti(multi) {
@@ -262,13 +255,13 @@ function prepareFeature(ft) {
   function draw() {
     const { w, h } = size();
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = "#c5d3cf";
+    ctx.fillStyle = "#d6e0de";
     ctx.fillRect(0, 0, w, h);
     if (!state.catalog) return;
     drawGraticule();
-    ctx.fillStyle = "#f3e6cf";
-    ctx.strokeStyle = "rgba(36,28,22,0.18)";
-    ctx.lineWidth = 1;
+    ctx.fillStyle = "#efe8da";
+    ctx.strokeStyle = "rgba(92,83,70,0.45)";
+    ctx.lineWidth = 0.6;
     state.land.forEach((poly) => {
       traceMulti([poly]);
       ctx.fill();
@@ -282,9 +275,9 @@ function prepareFeature(ft) {
         ctx.globalAlpha = selected ? 0.4 : 0.84;
         ctx.fillStyle = ft.fill;
         ctx.fill("evenodd");
-        ctx.globalAlpha = 0.55;
-        ctx.strokeStyle = "rgba(36,28,22,0.4)";
-        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.9;
+        ctx.strokeStyle = "rgba(43,38,34,0.55)";
+        ctx.lineWidth = 0.8;
         ctx.stroke();
       } else {
         ctx.globalAlpha = 0.42;
@@ -308,26 +301,43 @@ function prepareFeature(ft) {
     }
     const boxes = drawLabels(list);
     if (state.showCities) drawCities(boxes);
+    drawEventPins(boxes);
   }
 
   function drawLabels(list) {
     const boxes = [];
     const ranked = list.filter((ft) => ft.k === 1 && state.names[ft.n]).slice().sort((a, b) => b.a - a.a);
+    const labelCap = state.scale > 260 ? 24 : state.scale > 160 ? 14 : 9;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.lineJoin = "round";
     ranked.forEach((ft) => {
-      if (boxes.length >= (state.scale > 220 ? 28 : 18)) return;
-      const s0 = projToScreen(ft.pb[0], ft.pb[1]);
-      const s1 = projToScreen(ft.pb[2], ft.pb[3]);
-      const bw = Math.abs(s1[0] - s0[0]);
-      const bh = Math.abs(s1[1] - s0[1]);
-      if (bw < 28 || bh < 16) return;
+      if (boxes.length >= labelCap) return;
+      let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity, best = 0, at = null;
+      ft.pg.forEach((poly) => {
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        let sx = 0, sy = 0;
+        poly[0].forEach((p) => {
+          const s = projToScreen(p[0], p[1]);
+          x0 = Math.min(x0, s[0]); y0 = Math.min(y0, s[1]);
+          x1 = Math.max(x1, s[0]); y1 = Math.max(y1, s[1]);
+          sx += s[0]; sy += s[1];
+        });
+        const area = Math.abs(x1 - x0) * Math.abs(y1 - y0);
+        if (area > best) {
+          best = area;
+          minx = x0; miny = y0; maxx = x1; maxy = y1;
+          at = [sx / poly[0].length, sy / poly[0].length];
+        }
+      });
+      const bw = maxx - minx;
+      const bh = maxy - miny;
+      if (bw < 46 || bh < 22) return;
       const text = labelOf(ft.n);
       const font = Math.max(11, Math.min(16, Math.min(bw, bh) / 7));
-      ctx.font = "600 " + font + "px WenQuanYi Micro Hei, sans-serif";
+      ctx.font = "600 " + font + "px Noto Serif SC, Songti SC, serif";
       const tw = ctx.measureText(text).width;
-      const at = projToScreen(ft.pc[0], ft.pc[1]);
+      if (!at) return;
       const box = { x: at[0] - tw / 2 - 2, y: at[1] - font / 2 - 1, w: tw + 4, h: font + 2 };
       if (box.x < 0 || box.y < 0) return;
       const { w, h } = size();
@@ -341,6 +351,51 @@ function prepareFeature(ft) {
       ctx.fillText(text, at[0], at[1]);
     });
     return boxes;
+  }
+
+  function eventCoords(ev) {
+    if (ev.cs && ev.cs.length) return ev.cs;
+    return ev.c ? [ev.c] : [];
+  }
+
+  function focusCoord(lon, lat) {
+    const p = project(lon, lat);
+    state.userMoved = true;
+    state.cx = p[0];
+    state.cy = p[1];
+    state.scale = Math.max(state.scale, 320);
+    draw();
+  }
+
+  function drawEventPins(boxes) {
+    const { w, h } = size();
+    ctx.font = "12px " + "Noto Serif SC, Songti SC, serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    era().events.forEach((ev) => {
+      eventCoords(ev).forEach((coord, index) => {
+        const s = projToScreen.apply(null, project(coord[0], coord[1]));
+        if (s[0] < 6 || s[1] < 6 || s[0] > w - 6 || s[1] > h - 6) return;
+        ctx.fillStyle = "#b5452f";
+        ctx.beginPath();
+        ctx.arc(s[0], s[1], 3.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#f3eee4";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        if (index > 0 || state.scale < 140) return;
+        const label = ev.place || ev.t;
+        const tw = ctx.measureText(label).width;
+        const box = { x: s[0] + 6, y: s[1] - 8, w: tw + 4, h: 16 };
+        if (boxes.some((b) => !(box.x > b.x + b.w || b.x > box.x + box.w || box.y > b.y + b.h || b.y > box.y + box.h))) return;
+        boxes.push(box);
+        ctx.strokeStyle = "rgba(243,238,228,0.94)";
+        ctx.lineWidth = 3;
+        ctx.strokeText(label, s[0] + 8, s[1]);
+        ctx.fillStyle = "#b5452f";
+        ctx.fillText(label, s[0] + 8, s[1]);
+      });
+    });
   }
 
   function drawCities(boxes) {
@@ -388,12 +443,17 @@ function prepareFeature(ft) {
       const li = document.createElement("li");
       const strong = document.createElement("strong");
       strong.textContent = ev.t;
-      li.append(strong, document.createTextNode("　" + ev.d));
+      const place = ev.place ? " · " + ev.place : "";
+      li.append(strong, document.createTextNode(place + "　" + ev.d));
+      if (ev.c) {
+        li.className = "pinned";
+        li.addEventListener("click", () => focusCoord(ev.c[0], ev.c[1]));
+      }
       events.append(li);
     });
     const counts = { 1: 0, 0: 0, 2: 0 };
     state.features.forEach((ft) => { counts[ft.k] = (counts[ft.k] || 0) + 1; });
-    $("counts").textContent = "这个断面有 " + counts[1] + " 个政权，" + counts[0] + " 个文化区，" + counts[2] + " 块粗略范围。";
+    $("counts").textContent = "政权 " + counts[1] + "　文化区 " + counts[0] + "　范围 " + counts[2];
     const legend = $("legend");
     legend.replaceChildren();
     const legendPool = state.features.filter((ft) => ft.k === 1 && state.names[ft.n]);
